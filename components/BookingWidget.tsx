@@ -7,6 +7,7 @@ import { StaffSelectionStep } from "./booking/StaffSelectionStep";
 import { DateTimeStep } from "./booking/DateTimeStep";
 import { InformationStep } from "./booking/InformationStep";
 import { SuccessStep } from "./booking/SuccessStep";
+import { Scissors, UserCheck, CalendarDays, Info, CheckCircle } from "lucide-react";
 import { 
   BookingStep, 
   Department, 
@@ -26,6 +27,17 @@ const STEPS = [
   { title: "Information", icon: "info", value: "information" },
   { title: "Success", icon: "check-circle", value: "success" },
 ];
+
+const getStepIcon = (stepValue: string) => {
+  switch (stepValue) {
+    case 'service': return Scissors;
+    case 'staff': return UserCheck;
+    case 'datetime': return CalendarDays;
+    case 'information': return Info;
+    case 'success': return CheckCircle;
+    default: return Scissors;
+  }
+};
 
 export default function BookingWidget() {
   const [currentStep, setCurrentStep] = useState<BookingStep>("service");
@@ -691,16 +703,28 @@ export default function BookingWidget() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="flex flex-col items-center gap-6 pb-16 px-4">
+      <div className="flex flex-col items-center gap-6 pb-16 px-2 sm:px-4">
         <div className="w-full max-w-5xl overflow-hidden">
-          <div className="p-8">
-            <div className="stepper-container">
+          <div className="p-4 sm:p-8">
+            {/* Desktop Stepper */}
+            <div className="hidden sm:block stepper-container">
               <Stepper 
                 steps={STEPS} 
                 currentStep={currentStep} 
                 className="mb-0"
               />
             </div>
+            
+            {/* Mobile Step Indicator */}
+            <div className="sm:hidden fixed top-4 right-4 z-50">
+              <div className="w-12 h-12 bg-orange-primary rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-in-out">
+                {(() => {
+                  const IconComponent = getStepIcon(currentStep);
+                  return <IconComponent className="w-6 h-6 text-white" />;
+                })()}
+              </div>
+            </div>
+            
             {renderCurrentStep()}
           </div>
         </div>

@@ -97,14 +97,14 @@ export function DateTimeStep({
 
   return (
     <div className="service-selection-container">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-3">Select Date & Time</h2>
-        <p className="text-lg font-medium">Choose your preferred appointment slot</p>
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-3xl font-bold mb-2 sm:mb-3">Select Date & Time</h2>
+        <p className="text-sm sm:text-lg font-medium">Choose your preferred appointment slot</p>
       </div>
 
       {/* MST timezone indicator */}
       <div className="text-center mb-4">
-        <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+        <div className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide">
           TIME ZONE: MOUNTAIN TIME - EDMONTON (GMT-06:00)
         </div>
       </div>
@@ -112,20 +112,20 @@ export function DateTimeStep({
       <div className="space-y-4">
         {/* Date Slider - Only show when slots are loaded */}
         {workingSlotsLoaded && availableDates.length > 0 ? (
-          <Card className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm smooth-transition">
-            <div className="flex items-center justify-between mb-4">
+          <Card className="bg-white rounded-xl border-0 sm:border border-gray-200 p-4 sm:p-6 shadow-none sm:shadow-sm smooth-transition">
+            <div className="flex items-center mb-4 sm:mb-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigateDate(-1)}
                 disabled={currentDateIndex <= 0}
-                className="p-2 smooth-transition"
+                className="p-1 sm:p-2 smooth-transition flex-shrink-0"
               >
-                <ChevronLeft className="text-xl" />
+                <ChevronLeft className="text-lg sm:text-xl" />
               </Button>
               
-              {/* Show 2 dates on mobile, 3 on larger screens */}
-              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:mx-4 stagger-animation">
+              {/* Show 2 dates on mobile, 3 on larger screens - use full width */}
+              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mx-2 sm:mx-4 stagger-animation">
                 {visibleDates.map((dateInfo) => (
                   <div
                     key={dateInfo.dateString}
@@ -139,13 +139,13 @@ export function DateTimeStep({
                       selectedDate?.dateString === dateInfo.dateString && "selected"
                     )}
                   >
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                    <div className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5 sm:mb-1">
                       {dateInfo.label}
                     </div>
-                    <div className="font-bold text-lg text-black">
+                    <div className="font-bold text-sm sm:text-lg text-black">
                       {dateInfo.dayName}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-xs sm:text-sm text-gray-600">
                       {dateInfo.dateDisplay}
                     </div>
                   </div>
@@ -157,9 +157,9 @@ export function DateTimeStep({
                 size="sm"
                 onClick={() => navigateDate(1)}
                 disabled={currentDateIndex >= availableDates.length - (typeof window !== 'undefined' && window.innerWidth < 640 ? 2 : 3)}
-                className="p-2 smooth-transition"
+                className="p-1 sm:p-2 smooth-transition flex-shrink-0"
               >
-                <ChevronRight className="text-xl" />
+                <ChevronRight className="text-lg sm:text-xl" />
               </Button>
             </div>
           </Card>

@@ -70,9 +70,9 @@ export function ServiceSelectionStep({
 
   return (
     <div className="service-selection-container">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-3">Select Your Service</h2>
-        <p className="text-lg font-medium">Choose a group and a specific service you'd like to book</p>
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-3xl font-bold mb-2 sm:mb-3 whitespace-nowrap">Select Your Service</h2>
+        <p className="text-sm sm:text-lg font-medium">Choose a group and a specific service you'd like to book</p>
       </div>
       
       <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
@@ -109,10 +109,11 @@ export function ServiceSelectionStep({
           {/* Mobile: Step 1 - Group Selection */}
           {!selectedDepartment && (
             <div className="sm:hidden">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-semibold text-black mb-2">Step 1: Choose Your Service Category</h3>
+              <div className="text-center mb-4 hidden">
+                <h3 className="text-base font-semibold text-black mb-1 whitespace-nowrap">Step 1: Choose Your Service Category</h3>
+                <p className="text-sm text-gray-600">Select a category to see available services</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 {departments.map((item) => {
                   const IconComponent = getIcon(item.icon || 'user');
                   return (
@@ -120,16 +121,16 @@ export function ServiceSelectionStep({
                       key={item.id}
                       onClick={() => onDepartmentSelect(item.id)}
                       className={cn(
-                        "group-button cursor-pointer flex flex-col items-center justify-center transition-all duration-200 hover:shadow-sm p-3 rounded-xl border-2",
+                        "group-button cursor-pointer flex flex-col items-center justify-center transition-all duration-200 hover:shadow-sm p-2 rounded-lg border-2",
                         selectedDepartment === item.id && "selected"
                       )}
                     >
                       <IconComponent className={cn(
-                        "w-5 h-5 mb-1",
+                        "w-4 h-4 mb-1",
                         selectedDepartment === item.id ? "text-white" : "text-orange-primary"
                       )} />
                       <span className={cn(
-                        "text-xs font-medium text-center",
+                        "text-xs font-medium text-center leading-tight",
                         selectedDepartment === item.id ? "text-white" : "text-orange-primary"
                       )}>
                         {item.name}
@@ -144,24 +145,13 @@ export function ServiceSelectionStep({
           {/* Mobile: Step 2 - Service Selection (shown after group is selected) */}
           {selectedDepartment && (
             <div className="sm:hidden">
-              <div className="flex items-center justify-between mb-6">
-                {!cameFromUrlParam && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onGoBack}
-                    className="p-2"
-                  >
-                    <ArrowLeft className="text-xl" />
-                  </Button>
-                )}
-                {!cameFromUrlParam && <div className="w-10"></div>}
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-dark">
+              <div className="mb-4">
+                <div className="text-center sm:block hidden">
+                  <h3 className="text-base font-semibold text-black mb-1 whitespace-nowrap">Step 2: Choose Your Service</h3>
+                  <p className="text-sm text-gray-600">
                     {departments.find(d => d.id === selectedDepartment)?.name} Services
                   </p>
                 </div>
-                <div className="w-10"></div>
               </div>
             </div>
           )}
@@ -210,7 +200,10 @@ export function ServiceSelectionStep({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 stagger-animation">
+              <>
+                {/* Desktop: 3-column grid */}
+                <div className="hidden sm:block">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 stagger-animation">
                 {services.map((item) => (
                   <div
                     key={item.id}
@@ -267,7 +260,71 @@ export function ServiceSelectionStep({
                     </div>
                   </div>
                 ))}
-              </div>
+                  </div>
+                </div>
+
+                {/* Mobile: Single column grid with lesser height */}
+
+                {/* Mobile: Single column grid with lesser height */}
+                <div className="sm:hidden grid grid-cols-1 gap-2 mb-4 stagger-animation">
+                  {services.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        onServiceSelect(item.id);
+                      }}
+                      className={cn(
+                        "service-card smooth-transition flex items-center justify-between p-2 rounded-lg border-2 relative",
+                        selectedService === item.id && "selected"
+                      )}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center",
+                          selectedService === item.id 
+                            ? "bg-white text-orange-primary" 
+                            : "bg-orange-100 text-orange-primary"
+                        )}>
+                          <Scissors className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <div className={cn(
+                            "text-sm font-semibold",
+                            selectedService === item.id ? "text-white" : "text-orange-primary"
+                          )}>{item.name}</div>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <div className={cn(
+                              "inline-flex items-center gap-1 text-xs",
+                              selectedService === item.id ? "text-white" : "text-orange-primary"
+                            )}>
+                              <Clock className={cn(
+                                "w-3 h-3",
+                                selectedService === item.id ? "text-white" : "text-orange-primary"
+                              )} />
+                              {formatDurationMins(item.durationMinutes)}
+                            </div>
+                            <div className={cn(
+                              "inline-flex items-center gap-1 text-xs",
+                              selectedService === item.id ? "text-white" : "text-orange-primary"
+                            )}>
+                              <Users className={cn(
+                                "w-3 h-3",
+                                selectedService === item.id ? "text-white" : "text-orange-primary"
+                              )} />
+                              {item.teamMembers?.length ?? 0} staff
+                            </div>
+                          </div>
+                        </div>
+                        {selectedService === item.id && (
+                          <div className="text-white">
+                            <CheckCircle className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}
@@ -279,7 +336,16 @@ export function ServiceSelectionStep({
             variant="outline"
             size="lg"
             className="flex-1"
-            disabled={true}
+            onClick={() => {
+              // On mobile, if department is selected, go back to groups
+              if (selectedDepartment) {
+                onDepartmentSelect("");
+              } else {
+                // On desktop or when no department selected, use original behavior
+                onGoBack();
+              }
+            }}
+            disabled={false}
           >
             <ArrowLeft className="mr-2" />
             Previous
