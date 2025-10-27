@@ -1,7 +1,8 @@
-import * as React from "react";
-import { PlasmicCanvasHost } from "@plasmicapp/loader-nextjs";
-import { PLASMIC } from "../plasmic-init";
+'use client';
 
-export default function PlasmicHost() {
-  return <PlasmicCanvasHost loader={PLASMIC} />;
+import * as React from 'react';
+import { PlasmicCanvasHost } from '@plasmicapp/loader-nextjs';
+
+export default function PlasmicHostPage() {
+  return <PlasmicCanvasHost />;
 }
