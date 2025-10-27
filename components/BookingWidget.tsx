@@ -44,10 +44,12 @@ export default function BookingWidget() {
   
   // Service selection state
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  // If you don't want to load groups at all, use a sentinel department 'all'
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [services, setServices] = useState<Service[]>([]);
   const [selectedService, setSelectedService] = useState<string>("");
-  const [loadingGroups, setLoadingGroups] = useState(true);
+  // We're not fetching groups anymore; start as not loading
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const [loadingServices, setLoadingServices] = useState(false);
   
   // Staff selection state
@@ -84,69 +86,8 @@ export default function BookingWidget() {
   });
   const [bookingLoading, setBookingLoading] = useState<boolean>(false);
   
-  // Load departments on mount (needed to seed services flow)
-  useEffect(() => {
-    const loadDepartments = async () => {
-      try {
-        const res = await fetch('https://modify.undrstatemnt.com/.netlify/functions/supabasegroups');
-        const data = await res.json();
-
-        const groups = data.groups || [];
-        const departmentItems = groups.map((group: any) => ({
-          id: group.id,
-          name: group.name,
-          description: group.description || '',
-          icon: getGroupIcon(group.name)
-        }));
-
-        setDepartments(departmentItems);
-
-        // Check for URL parameters
-        if (typeof window !== 'undefined') {
-          const params = new URLSearchParams(window.location.search);
-          const groupFromQuery = params.get('group');
-          const idFromQuery = params.get('id');
-
-          if (groupFromQuery) {
-            setPreselectedDepartmentId(groupFromQuery);
-            setCameFromUrlParam(true);
-          } else if (idFromQuery) {
-            setPreselectedDepartmentId(idFromQuery);
-          }
-        }
-
-        // Auto-select first department on desktop if none preselected
-        if (!preselectedDepartmentId && departmentItems.length > 0) {
-          const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-          if (!isMobile) {
-            setSelectedDepartment(departmentItems[0].id);
-          }
-        } else if (preselectedDepartmentId) {
-          // Find department by name or ID
-          let foundGroup = departmentItems.find((group: Department) =>
-            group.name.toLowerCase() === preselectedDepartmentId.toLowerCase()
-          );
-
-          if (!foundGroup) {
-            foundGroup = departmentItems.find((group: Department) =>
-              group.id === preselectedDepartmentId
-            );
-          }
-
-          if (foundGroup) {
-            setSelectedDepartment(foundGroup.id);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading departments:', error);
-        setDepartments([]);
-      } finally {
-        setLoadingGroups(false);
-      }
-    };
-
-    loadDepartments();
-  }, [preselectedDepartmentId]);
+  // Skip loading departments entirely; services will be loaded directly.
+  // useEffect(() => {}, []);
   //         const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   //         if (!isMobile) {
   //           setSelectedDepartment(departmentItems[0].id);
@@ -180,15 +121,18 @@ export default function BookingWidget() {
 
   // Load services when department is selected
   useEffect(() => {
-    if (!selectedDepartment) return;
-
     const loadServices = async () => {
       setLoadingServices(true);
       setSelectedService("");
       
       try {
         const start = Date.now();
-        const res = await fetch(`https://modify.undrstatemnt.com/.netlify/functions/Services?id=${selectedDepartment}`);
+        // If selectedDepartment is 'all', load all services; otherwise, filter by department
+        const base = 'https://modify.undrstatemnt.com/.netlify/functions/Services';
+        const url = selectedDepartment && selectedDepartment !== 'all'
+          ? `${base}?id=${selectedDepartment}`
+          : base;
+        const res = await fetch(url);
         const data = await res.json();
         
         const serviceItems = (data.calendars || []).map((service: any) => {
@@ -234,8 +178,12 @@ export default function BookingWidget() {
       setStaff([]);
       
       try {
-        const groupId = selectedDepartment;
-        const lastServiceApi = await fetch(`https://modify.undrstatemnt.com/.netlify/functions/Services?id=${groupId}`);
+        const base = 'https://modify.undrstatemnt.com/.netlify/functions/Services';
+        // When using 'all', fetch from the base services endpoint; else filter by department
+        const url = selectedDepartment && selectedDepartment !== 'all'
+          ? `${base}?id=${selectedDepartment}`
+          : base;
+        const lastServiceApi = await fetch(url);
         const lastServiceData = await lastServiceApi.json();
         
         const serviceObj = (lastServiceData.calendars || []).find((s: any) => s.id === selectedService);
@@ -592,10 +540,65 @@ export default function BookingWidget() {
     setBookingLoading(true);
 
     try {
-      // Booking logic would go here
-      // For now, just simulate success
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setCurrentStep("success");
+      // 1) Upsert/find customer to get contactId
+      const customerUrl = new URL("https://modify.undrstatemnt.com/.netlify/functions/customer");
+      customerUrl.searchParams.set("firstName", contactForm.firstName.trim());
+      customerUrl.searchParams.set("lastName", contactForm.lastName.trim());
+      customerUrl.searchParams.set("phone", contactForm.phone.replace(/\D/g, ""));
+      const customerRes = await fetch(customerUrl.toString());
+      const customerData = await customerRes.json();
+      const contactId = customerData?.contactId || customerData?.id || customerData?.data?.id;
+
+      // 2) Compute start/end UTC ISO from selectedDate + selectedTimeSlot (America/Edmonton)
+      const serviceObj = services.find((s) => s.id === selectedService);
+      const durationMins = serviceObj?.durationMinutes || getServiceDuration(selectedService);
+      const startIsoUtc = toUtcIsoFromEdmonton(selectedDate?.dateString || "", selectedTimeSlot);
+      const endIsoUtc = addMinutesIso(startIsoUtc, durationMins);
+
+      // 3) Book appointment (send camelCase and snake_case params for compatibility)
+      const apptUrl = new URL("https://modify.undrstatemnt.com/.netlify/functions/Apointment");
+      const params: Record<string, string> = {
+        // identifiers
+        calendarId: selectedService,
+        calendar_id: selectedService,
+        assignedUserId: selectedStaff !== 'any' ? selectedStaff : "",
+        assigned_user_id: selectedStaff !== 'any' ? selectedStaff : "",
+        contactId: contactId || "",
+        contact_id: contactId || "",
+        // timing
+        startTime: startIsoUtc,
+        start_time: startIsoUtc,
+        endTime: endIsoUtc,
+        end_time: endIsoUtc,
+        // service metadata
+        title: serviceObj?.name || "Appointment",
+        serviceName: serviceObj?.name || "",
+        service_name: serviceObj?.name || "",
+        servicePrice: "0",
+        service_price: "0",
+        serviceDuration: String(durationMins || 0),
+        service_duration: String(durationMins || 0),
+        // staff & customer display names
+        staffName: (staff.find((s) => s.id === selectedStaff)?.name) || "Any available",
+        assigned_barber_name: (staff.find((s) => s.id === selectedStaff)?.name) || "Any available",
+        customerFirstName: contactForm.firstName.trim(),
+        customerLastName: contactForm.lastName.trim(),
+        customer_first_name: contactForm.firstName.trim(),
+        customer_last_name: contactForm.lastName.trim(),
+      };
+
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) apptUrl.searchParams.set(k, v);
+      });
+
+      const apptRes = await fetch(apptUrl.toString());
+      const apptData = await apptRes.json();
+
+      if (apptRes.ok) {
+        setCurrentStep("success");
+      } else {
+        console.error('Booking error response:', apptData);
+      }
     } catch (error) {
       console.error('Booking error:', error);
     } finally {
@@ -649,7 +652,7 @@ export default function BookingWidget() {
           <ServiceSelectionStep
             departments={departments}
             selectedDepartment={selectedDepartment}
-            onDepartmentSelect={setSelectedDepartment}
+            onDepartmentSelect={(id) => setSelectedDepartment(id || 'all')}
             services={services}
             selectedService={selectedService}
             onServiceSelect={handleServiceSelectAndSubmit}
@@ -657,7 +660,7 @@ export default function BookingWidget() {
             loadingServices={loadingServices}
             onSubmit={handleServiceSubmit}
             cameFromUrlParam={cameFromUrlParam}
-            onGoBack={() => setSelectedDepartment("")}
+            onGoBack={() => setSelectedDepartment('all')}
           />
         );
       case 'staff':
@@ -761,4 +764,58 @@ export default function BookingWidget() {
       </div>
     </div>
   );
+}
+
+// --- Timezone helpers (America/Edmonton wall time -> UTC ISO) ---
+function toUtcIsoFromEdmonton(dateString: string, timeLabel: string): string {
+  if (!dateString || !timeLabel) return new Date().toISOString();
+
+  // Parse time like "2:30 PM"
+  const m = timeLabel.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!m) return new Date().toISOString();
+  let hour = parseInt(m[1], 10);
+  const minute = parseInt(m[2], 10);
+  const period = m[3].toUpperCase();
+  if (period === 'PM' && hour !== 12) hour += 12;
+  if (period === 'AM' && hour === 12) hour = 0;
+
+  const [y, mo, d] = dateString.split('-').map(Number);
+  // Start with the wall time interpreted as UTC, then adjust to find the real UTC instant for America/Edmonton
+  let guess = new Date(Date.UTC(y, (mo || 1) - 1, d || 1, hour, minute, 0, 0));
+  // Iterate to converge on correct offset (handles DST transitions)
+  for (let i = 0; i < 3; i++) {
+    const offsetMin = tzOffsetMinutes('America/Edmonton', guess);
+    const next = new Date(Date.UTC(y, (mo || 1) - 1, d || 1, hour, minute, 0, 0) - offsetMin * 60_000);
+    if (Math.abs(next.getTime() - guess.getTime()) < 1000) {
+      guess = next;
+      break;
+    }
+    guess = next;
+  }
+  return guess.toISOString();
+}
+
+function tzOffsetMinutes(timeZone: string, date: Date): number {
+  // Adapted approach similar to date-fns-tz: format parts for the given TZ and reconstruct UTC ms, comparing with original
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  });
+  const parts = dtf.formatToParts(date);
+  const get = (type: string) => Number(parts.find(p => p.type === type)?.value || '0');
+  const y = get('year');
+  const mo = get('month');
+  const d = get('day');
+  const h = get('hour');
+  const mi = get('minute');
+  const s = get('second');
+  const asUTC = Date.UTC(y, (mo || 1) - 1, d || 1, h, mi, s);
+  return (asUTC - date.getTime()) / 60000; // positive when TZ is behind UTC (e.g., -06:00 -> +360 minutes)
+}
+
+function addMinutesIso(iso: string, mins: number): string {
+  const dt = new Date(iso);
+  return new Date(dt.getTime() + (mins || 0) * 60_000).toISOString();
 }
