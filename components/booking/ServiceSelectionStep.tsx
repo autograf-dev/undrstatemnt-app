@@ -69,17 +69,17 @@ export function ServiceSelectionStep({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="service-selection-container">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-black mb-2">Select Your Service</h2>
-        <p className="text-gray-700">Choose a group and a specific service you'd like to book</p>
+        <h2 className="text-3xl font-bold mb-3">Select Your Service</h2>
+        <p className="text-lg font-medium">Choose a group and a specific service you'd like to book</p>
       </div>
       
       <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
         {/* Group selection */}
         <div className="mb-8">
           {/* Desktop: horizontal scroll */}
-          <div className="hidden sm:flex gap-2.5 overflow-x-auto whitespace-nowrap">
+          <div className="hidden sm:flex gap-2 overflow-x-visible whitespace-nowrap justify-center">
             {departments.map((item) => {
               const IconComponent = getIcon(item.icon || 'user');
               return (
@@ -87,28 +87,20 @@ export function ServiceSelectionStep({
                   key={item.id}
                   onClick={() => onDepartmentSelect(item.id)}
                   className={cn(
-                    "cursor-pointer inline-flex shrink-0 items-center justify-between transition-all duration-200 hover:shadow-sm px-2.5 py-1.5 rounded-xl border-2",
-                    selectedDepartment === item.id
-                      ? "bg-[#751A29] text-white border-[#751A29] shadow-sm"
-                      : "bg-white text-black border-gray-200 hover:border-red-300"
+                    "group-button cursor-pointer transition-all duration-200 hover:shadow-sm",
+                    selectedDepartment === item.id && "selected"
                   )}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="pt-2">
-                      <IconComponent className={cn(
-                        "w-4 h-4",
-                        selectedDepartment === item.id ? "text-white" : "text-gray-500"
-                      )} />
-                    </div>
-                    <div className="flex items-center">
-                      <span className={cn(
-                        "text-xs font-medium leading-none block",
-                        selectedDepartment === item.id ? "text-white" : "text-gray-700"
-                      )}>
-                        {item.name}
-                      </span>
-                    </div>
-                  </div>
+                  <IconComponent className={cn(
+                    "w-4 h-4",
+                    selectedDepartment === item.id ? "text-white" : "text-orange-primary"
+                  )} />
+                  <span className={cn(
+                    "text-xs font-medium",
+                    selectedDepartment === item.id ? "text-white" : "text-orange-primary"
+                  )}>
+                    {item.name}
+                  </span>
                 </div>
               );
             })}
@@ -128,19 +120,17 @@ export function ServiceSelectionStep({
                       key={item.id}
                       onClick={() => onDepartmentSelect(item.id)}
                       className={cn(
-                        "cursor-pointer flex flex-col items-center justify-center transition-all duration-200 hover:shadow-sm p-4 rounded-xl border-2",
-                        selectedDepartment === item.id
-                          ? "bg-[#751A29] text-white border-[#751A29] shadow-sm"
-                          : "bg-white text-black border-gray-200 hover:border-red-300"
+                        "group-button cursor-pointer flex flex-col items-center justify-center transition-all duration-200 hover:shadow-sm p-3 rounded-xl border-2",
+                        selectedDepartment === item.id && "selected"
                       )}
                     >
                       <IconComponent className={cn(
-                        "w-6 h-6 mb-2",
-                        selectedDepartment === item.id ? "text-white" : "text-gray-500"
+                        "w-5 h-5 mb-1",
+                        selectedDepartment === item.id ? "text-white" : "text-orange-primary"
                       )} />
                       <span className={cn(
-                        "text-sm font-medium text-center",
-                        selectedDepartment === item.id ? "text-white" : "text-gray-700"
+                        "text-xs font-medium text-center",
+                        selectedDepartment === item.id ? "text-white" : "text-orange-primary"
                       )}>
                         {item.name}
                       </span>
@@ -220,17 +210,15 @@ export function ServiceSelectionStep({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 stagger-animation">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 stagger-animation">
                 {services.map((item) => (
                   <div
                     key={item.id}
-                    onClick={() => {
-                      onServiceSelect(item.id);
-                      // Auto-advance after selection
-                      setTimeout(() => {
-                        onSubmit();
-                      }, 500);
-                    }}
+                        onClick={() => {
+                          onServiceSelect(item.id);
+                          // Instant move to next step
+                          onSubmit();
+                        }}
                     className={cn(
                       "service-card smooth-transition flex items-center justify-between",
                       selectedService === item.id && "selected"
@@ -238,26 +226,43 @@ export function ServiceSelectionStep({
                   >
                     <div className="flex items-center gap-3.5 w-full">
                       <div className={cn(
-                        "w-10 h-10 rounded-full bg-red-100 flex items-center justify-center",
-                        selectedService === item.id ? "text-red-700" : "text-gray-600"
+                        "w-10 h-10 rounded-full flex items-center justify-center",
+                        selectedService === item.id 
+                          ? "bg-white text-orange-primary" 
+                          : "bg-orange-100 text-orange-primary"
                       )}>
-                        <Scissors className="w-5 h-5 text-[oklch(0.38_0.12_16.62)]" />
+                        <Scissors className="w-5 h-5" />
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm font-semibold text-gray-700">{item.name}</div>
-                        <div className="mt-1.5 flex items-center gap-4 flex-wrap">
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-700">
-                            <Clock className="w-3.5 h-3.5 text-gray-700" />
+                        <div className={cn(
+                          "text-sm font-semibold",
+                          selectedService === item.id ? "text-white" : "text-orange-primary"
+                        )}>{item.name}</div>
+                        <div className="mt-1 flex items-center gap-3 flex-wrap">
+                          <span className={cn(
+                            "inline-flex items-center gap-1 text-xs",
+                            selectedService === item.id ? "text-white" : "text-orange-primary"
+                          )}>
+                            <Clock className={cn(
+                              "w-3.5 h-3.5",
+                              selectedService === item.id ? "text-white" : "text-orange-primary"
+                            )} />
                             {formatDurationMins(item.durationMinutes)}
                           </span>
-                          <span className="inline-flex items-center gap-1 text-[11px] text-gray-700">
-                            <Users className="w-3.5 h-3.5 text-gray-700" />
+                          <span className={cn(
+                            "inline-flex items-center gap-1 text-[11px]",
+                            selectedService === item.id ? "text-white" : "text-orange-primary"
+                          )}>
+                            <Users className={cn(
+                              "w-3.5 h-3.5",
+                              selectedService === item.id ? "text-white" : "text-orange-primary"
+                            )} />
                             {item.teamMembers?.length ?? 0} staff available
                           </span>
                         </div>
                       </div>
                       {selectedService === item.id && (
-                        <div className="text-red-700">
+                        <div className="text-white">
                           <CheckCircle className="w-5 h-5" />
                         </div>
                       )}
@@ -269,13 +274,6 @@ export function ServiceSelectionStep({
           </div>
         )}
 
-        {selectedService && (
-          <div className="text-center">
-            <div className="text-sm text-gray-600 mb-4">
-              ✓ Service selected! Moving to staff selection...
-            </div>
-          </div>
-        )}
 
         <div className="flex gap-4">
           <Button
@@ -288,15 +286,15 @@ export function ServiceSelectionStep({
             <ArrowLeft className="mr-2" />
             Previous
           </Button>
-          <Button
-            type="submit"
-            size="lg"
-            disabled={!selectedService || loadingGroups}
-            className="flex-1 bg-red-700 hover:bg-red-700 text-white"
-          >
-            Continue
-            <ArrowRight className="ml-2" />
-          </Button>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={!selectedService || loadingGroups}
+                className="flex-1 bg-orange-primary hover:bg-orange-primary text-white"
+              >
+                Continue
+                <ArrowRight className="ml-2" />
+              </Button>
         </div>
       </form>
     </div>

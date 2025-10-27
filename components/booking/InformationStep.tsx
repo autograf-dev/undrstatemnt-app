@@ -85,8 +85,8 @@ export function InformationStep({
           <ArrowLeft className="text-xl" />
         </Button>
         <div className="text-left lg:text-center flex-1">
-          <h2 className="text-2xl font-bold text-black mb-2 lg:py-2.5">Contact Information</h2>
-          <p className="text-gray-700 hidden lg:block">Please provide your details to complete the booking</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-3 lg:py-2.5">Contact Information</h2>
+          <p className="text-gray-700 text-lg font-medium hidden lg:block">Please provide your details to complete the booking</p>
         </div>
       </div>
       

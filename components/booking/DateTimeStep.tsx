@@ -30,6 +30,7 @@ interface DateTimeStepProps {
   selectedService?: Service;
   getServiceDuration: (serviceId: string) => number;
   formatDurationMins: (mins: number) => string;
+  onDateChange: (dateString: string) => void;
 }
 
 export function DateTimeStep({
@@ -45,7 +46,8 @@ export function DateTimeStep({
   onPrevious,
   selectedService,
   getServiceDuration,
-  formatDurationMins
+  formatDurationMins,
+  onDateChange
 }: DateTimeStepProps) {
   const [currentDateIndex, setCurrentDateIndex] = useState(0);
 
@@ -94,8 +96,8 @@ export function DateTimeStep({
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-black mb-2">Select Date & Time</h2>
-        <p className="text-gray-700">Choose your preferred appointment slot</p>
+        <h2 className="text-3xl font-bold text-gray-900 mb-3">Select Date & Time</h2>
+        <p className="text-gray-700 text-lg font-medium">Choose your preferred appointment slot</p>
       </div>
 
       {/* MST timezone indicator */}
@@ -127,8 +129,8 @@ export function DateTimeStep({
                     key={dateInfo.dateString}
                     onClick={() => {
                       onDateSelect(dateInfo);
-                      // Clear current time slot when date changes
-                      onTimeSlotSelect("");
+                      onTimeSlotSelect(""); // Clear current time slot
+                      onDateChange(dateInfo.dateString); // Trigger slot refresh
                     }}
                     className={cn(
                       "date-card smooth-transition",

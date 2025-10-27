@@ -288,10 +288,20 @@ export default function BookingWidget() {
               const firstDate = availableDates[0];
               if (firstDate && firstDate.dateString) {
                 setSelectedDate(firstDate);
-                fetchSlotsForDate(firstDate.dateString);
+                // Use the slots data directly instead of calling fetchSlotsForDate
+                const slotsForSelectedDate = data.slots[firstDate.dateString];
+                if (slotsForSelectedDate) {
+                  const slotsWithStatus = slotsForSelectedDate.map((slot: string) => ({
+                    time: slot,
+                    isPast: isSlotInPastMST(slot, firstDate.dateString)
+                  }));
+                  const availableSlots = slotsWithStatus.filter((slot: { time: string; isPast: boolean }) => !slot.isPast);
+                  setTimeSlots(availableSlots);
+                  console.log('Auto-loaded slots for first date:', firstDate.dateString, availableSlots);
+                }
               }
             }
-          }, 100);
+          }, 200);
         }
       } catch (error) {
         console.error('Error fetching working slots:', error);
@@ -381,28 +391,33 @@ export default function BookingWidget() {
     }
 
     console.log('Fetching slots for specific date:', dateString);
+    console.log('Working slots available:', workingSlots);
     
     setSelectedTimeSlot("");
+    setLoadingSlots(true);
 
     // Use working slots data if available
     if (workingSlots[dateString]) {
       const slotsForSelectedDate = workingSlots[dateString];
-      const slotsWithStatus = slotsForSelectedDate.map(slot => ({
+      console.log('Raw slots for date:', dateString, slotsForSelectedDate);
+      
+      const slotsWithStatus = slotsForSelectedDate.map((slot: string) => ({
         time: slot,
         isPast: isSlotInPastMST(slot, dateString)
       }));
       
       // Filter out past slots and only show future/current slots
-      const availableSlots = slotsWithStatus.filter(slot => !slot.isPast);
+      const availableSlots = slotsWithStatus.filter((slot: { time: string; isPast: boolean }) => !slot.isPast);
       
       setTimeSlots(availableSlots);
-      console.log('Using working slots for date:', dateString, availableSlots);
-      return;
+      console.log('Filtered available slots for date:', dateString, availableSlots);
+    } else {
+      // If no weekly slots for this date, show empty
+      setTimeSlots([]);
+      console.log('No weekly slots available for date:', dateString);
     }
-
-    // If no weekly slots for this date, show empty
-    setTimeSlots([]);
-    console.log('No weekly slots available for date:', dateString);
+    
+    setLoadingSlots(false);
   };
 
   const isSlotInPastMST = (slotTime: string, dateString: string): boolean => {
@@ -493,9 +508,7 @@ export default function BookingWidget() {
 
   const handleServiceSubmit = () => {
     if (selectedService) {
-      setTimeout(() => {
-        setCurrentStep("staff");
-      }, 300);
+      setCurrentStep("staff");
     }
   };
 
@@ -624,6 +637,7 @@ export default function BookingWidget() {
             selectedService={services.find(s => s.id === selectedService)}
             getServiceDuration={getServiceDuration}
             formatDurationMins={formatDurationMins}
+            onDateChange={fetchSlotsForDate}
           />
         );
       case 'information':
@@ -661,7 +675,7 @@ export default function BookingWidget() {
   return (
     <div className="min-h-screen bg-white">
       <div className="flex flex-col items-center gap-6 pb-16 px-4">
-        <div className="w-full max-w-4xl overflow-hidden">
+        <div className="w-full max-w-5xl overflow-hidden">
           <div className="p-8">
             <div className="stepper-container">
               <Stepper 

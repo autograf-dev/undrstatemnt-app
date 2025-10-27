@@ -55,8 +55,8 @@ export function StaffSelectionStep({
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-black mb-2">Choose Your Stylist</h2>
-        <p className="text-gray-700">Select your preferred stylist or let us choose the best available</p>
+        <h2 className="text-3xl font-bold text-gray-900 mb-3">Choose Your Stylist</h2>
+        <p className="text-gray-700 text-lg font-medium">Select your preferred stylist or let us choose the best available</p>
       </div>
 
       {/* Summary cards: Service | Guests | Staff */}
