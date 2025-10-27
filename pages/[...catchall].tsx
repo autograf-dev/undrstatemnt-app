@@ -8,7 +8,7 @@ import {
 import { GetStaticPaths, GetStaticProps } from 'next';
 import Error from 'next/error';
 import { useRouter } from 'next/router';
-import { PLASMIC } from '../plasmic-init';
+import { PLASMIC } from './plasmic-init';
 
 /**
  * Use fetchPages() to fetch list of pages that have been created in Plasmic

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { PlasmicRootProvider } from '@plasmicapp/loader-nextjs';
-import { PLASMIC } from './plasmic-init';
+import { PLASMIC } from './pages/plasmic-init';
 
 // You can register any code components here if needed.
 // PLASMIC.registerComponent(...);
