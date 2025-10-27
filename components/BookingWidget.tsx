@@ -88,7 +88,7 @@ export default function BookingWidget() {
   useEffect(() => {
     const loadDepartments = async () => {
       try {
-        const res = await fetch('https://restyle-backend.netlify.app/.netlify/functions/supabasegroups');
+        const res = await fetch('https://modify.undrstatemnt.com/.netlify/functions/supabasegroups');
         const data = await res.json();
         
         const groups = data.groups || [];
@@ -158,7 +158,7 @@ export default function BookingWidget() {
       
       try {
         const start = Date.now();
-        const res = await fetch(`https://restyle-backend.netlify.app/.netlify/functions/Services?id=${selectedDepartment}`);
+        const res = await fetch(`https://modify.undrstatemnt.com/.netlify/functions/Services?id=${selectedDepartment}`);
         const data = await res.json();
         
         const serviceItems = (data.calendars || []).map((service: any) => {
@@ -205,7 +205,7 @@ export default function BookingWidget() {
       
       try {
         const groupId = selectedDepartment;
-        const lastServiceApi = await fetch(`https://restyle-backend.netlify.app/.netlify/functions/Services?id=${groupId}`);
+        const lastServiceApi = await fetch(`https://modify.undrstatemnt.com/.netlify/functions/Services?id=${groupId}`);
         const lastServiceData = await lastServiceApi.json();
         
         const serviceObj = (lastServiceData.calendars || []).find((s: any) => s.id === selectedService);
@@ -220,7 +220,7 @@ export default function BookingWidget() {
 
         const staffPromises = teamMembers.map(async (member: any) => {
           try {
-            const staffRes = await fetch(`https://restyle-backend.netlify.app/.netlify/functions/Staff?id=${member.userId}`);
+            const staffRes = await fetch(`https://modify.undrstatemnt.com/.netlify/functions/Staff?id=${member.userId}`);
             const staffData = await staffRes.json();
 
             const derivedName =
@@ -277,7 +277,7 @@ export default function BookingWidget() {
       try {
         const serviceDurationMinutes = getServiceDuration(serviceId);
         
-        let apiUrl = `https://restyle-backend.netlify.app/.netlify/functions/staffSlots?calendarId=${serviceId}`;
+        let apiUrl = `https://modify.undrstatemnt.com/.netlify/functions/staffSlots?calendarId=${serviceId}`;
         if (userId && selectedStaff !== 'any') {
           apiUrl += `&userId=${userId}`;
         }
