@@ -134,8 +134,12 @@ export default function BookingWidget() {
           : base;
         const res = await fetch(url);
         const data = await res.json();
+        // Some responses return `services`, some `calendars`. Prefer `services` when present.
+        const rawServices = (Array.isArray(data.services) && data.services.length > 0)
+          ? data.services
+          : (data.calendars || []);
         
-        const serviceItems = (data.calendars || []).map((service: any) => {
+        const serviceItems = rawServices.map((service: any) => {
           const raw = Number(service.slotDuration ?? service.duration ?? 0);
           const unit = String(service.slotDurationUnit ?? service.durationUnit ?? '').toLowerCase();
           const minutes = raw > 0 ? (unit === 'hours' || unit === 'hour' ? raw * 60 : raw) : 0;
@@ -185,8 +189,12 @@ export default function BookingWidget() {
           : base;
         const lastServiceApi = await fetch(url);
         const lastServiceData = await lastServiceApi.json();
+        // Support either `services` or `calendars`
+        const serviceList = (Array.isArray(lastServiceData.services) && lastServiceData.services.length > 0)
+          ? lastServiceData.services
+          : (lastServiceData.calendars || []);
         
-        const serviceObj = (lastServiceData.calendars || []).find((s: any) => s.id === selectedService);
+        const serviceObj = serviceList.find((s: any) => s.id === selectedService);
         const teamMembers = serviceObj?.teamMembers || [];
 
         const items: Staff[] = [{

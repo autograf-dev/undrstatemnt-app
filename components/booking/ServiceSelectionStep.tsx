@@ -157,7 +157,7 @@ export function ServiceSelectionStep({
           )}
         </div>
         
-        {/* Services list for selected group */}
+        {/* Services list for selected group (or 'all') */}
         {selectedDepartment && (
           <div>
             {loadingServices ? (
@@ -198,6 +198,11 @@ export function ServiceSelectionStep({
                     </div>
                   </div>
                 </div>
+              </div>
+            ) : services.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-500 text-lg font-medium">No services available</div>
+                <div className="text-sm text-gray-400 mt-2">Please try again later.</div>
               </div>
             ) : (
               <>
