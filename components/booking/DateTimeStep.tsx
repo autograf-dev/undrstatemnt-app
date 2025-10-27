@@ -112,8 +112,8 @@ export function DateTimeStep({
       <div className="space-y-4">
         {/* Date Slider - Only show when slots are loaded */}
         {workingSlotsLoaded && availableDates.length > 0 ? (
-          <Card className="bg-white rounded-xl border-0 sm:border border-gray-200 p-4 sm:p-6 shadow-none sm:shadow-sm smooth-transition">
-            <div className="flex items-center mb-4 sm:mb-4">
+          <Card className="bg-white rounded-xl border-0 sm:border border-gray-200 p-0 sm:p-6 shadow-none sm:shadow-sm smooth-transition">
+            <div className="flex items-center mb-4 sm:mb-4 px-4 sm:px-0">
               <Button
                 variant="ghost"
                 size="sm"
@@ -194,10 +194,10 @@ export function DateTimeStep({
         
         {/* Time slots section */}
         <div className="space-y-4">
-          <Card className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm min-h-[400px] smooth-transition">
+          <Card className="bg-white rounded-xl border border-gray-200 p-0 sm:p-6 shadow-sm min-h-[400px] smooth-transition">
             {/* Show slots immediately if available */}
             {timeSlots.length > 0 ? (
-              <div className="space-y-4 fade-in">
+              <div className="space-y-4 fade-in px-4 sm:px-0">
                 <div className="flex items-center justify-center mb-4">
                   <div className="text-sm text-gray-600 font-medium">
                     Available time slots for {selectedDate?.dayName}
@@ -224,7 +224,7 @@ export function DateTimeStep({
               </div>
             ) : loadingSlots || !workingSlotsLoaded ? (
               /* Premium skeleton loading while fetching slots */
-              <div className="space-y-4">
+              <div className="space-y-4 px-4 sm:px-0">
                 <div className="flex items-center justify-center mb-6">
                   <div className="loading-spinner mr-3"></div>
                   <div className="text-sm text-gray-600 font-medium">
@@ -244,13 +244,13 @@ export function DateTimeStep({
               </div>
             ) : selectedDate && workingSlotsLoaded && timeSlots.length === 0 ? (
               /* Show message only after slots are loaded and confirmed empty */
-              <div className="text-center py-8 fade-in">
+              <div className="text-center py-8 fade-in px-4 sm:px-0">
                 <div className="text-gray-500 text-lg font-medium">No available slots for this date</div>
                 <div className="text-sm text-gray-400 mt-2">Please select another date</div>
               </div>
             ) : !selectedDate ? (
               /* Show message when no date is selected */
-              <div className="text-center py-8 fade-in">
+              <div className="text-center py-8 fade-in px-4 sm:px-0">
                 <div className="text-gray-500 text-lg font-medium">Please select a date to view available time slots</div>
                 <div className="text-sm text-gray-400 mt-2">Choose from the dates above</div>
               </div>
