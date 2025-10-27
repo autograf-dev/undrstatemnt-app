@@ -281,6 +281,17 @@ export default function BookingWidget() {
           setWorkingSlots(data.slots);
           setWorkingSlotsLoaded(true);
           generateAvailableDates(data.slots);
+          
+          // Auto-select first available date and show slots
+          setTimeout(() => {
+            if (availableDates.length > 0) {
+              const firstDate = availableDates[0];
+              if (firstDate && firstDate.dateString) {
+                setSelectedDate(firstDate);
+                fetchSlotsForDate(firstDate.dateString);
+              }
+            }
+          }, 100);
         }
       } catch (error) {
         console.error('Error fetching working slots:', error);
@@ -363,6 +374,64 @@ export default function BookingWidget() {
     return diffDays > 1 && diffDays <= 7;
   };
 
+  const fetchSlotsForDate = (dateString: string) => {
+    if (!selectedService || !dateString) {
+      setTimeSlots([]);
+      return;
+    }
+
+    console.log('Fetching slots for specific date:', dateString);
+    
+    setSelectedTimeSlot("");
+
+    // Use working slots data if available
+    if (workingSlots[dateString]) {
+      const slotsForSelectedDate = workingSlots[dateString];
+      const slotsWithStatus = slotsForSelectedDate.map(slot => ({
+        time: slot,
+        isPast: isSlotInPastMST(slot, dateString)
+      }));
+      
+      // Filter out past slots and only show future/current slots
+      const availableSlots = slotsWithStatus.filter(slot => !slot.isPast);
+      
+      setTimeSlots(availableSlots);
+      console.log('Using working slots for date:', dateString, availableSlots);
+      return;
+    }
+
+    // If no weekly slots for this date, show empty
+    setTimeSlots([]);
+    console.log('No weekly slots available for date:', dateString);
+  };
+
+  const isSlotInPastMST = (slotTime: string, dateString: string): boolean => {
+    if (!dateString || !slotTime) return false;
+    
+    // Get current time in local timezone
+    const now = new Date();
+    
+    // Parse the date string (YYYY-MM-DD format) from API
+    const [year, month, day] = dateString.split('-').map(Number);
+    const slotDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+    
+    // Parse slot time (e.g., "2:30 PM" or "02:30 PM")
+    const timeMatch = slotTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (!timeMatch) return false;
+    
+    let hour = parseInt(timeMatch[1]);
+    const minute = parseInt(timeMatch[2]);
+    const period = timeMatch[3].toUpperCase();
+    
+    if (period === 'PM' && hour !== 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+    
+    slotDate.setHours(hour, minute, 0, 0);
+    
+    // Compare with current time (both in local timezone)
+    return slotDate < now;
+  };
+
   const formatDurationMins = (mins: number): string => {
     const m = Number(mins || 0);
     const h = Math.floor(m / 60);
@@ -424,19 +493,25 @@ export default function BookingWidget() {
 
   const handleServiceSubmit = () => {
     if (selectedService) {
-      setCurrentStep("staff");
+      setTimeout(() => {
+        setCurrentStep("staff");
+      }, 300);
     }
   };
 
   const handleStaffSubmit = () => {
     if (selectedStaff) {
-      setCurrentStep("datetime");
+      setTimeout(() => {
+        setCurrentStep("datetime");
+      }, 300);
     }
   };
 
   const handleDateTimeSubmit = () => {
     if (selectedTimeSlot) {
-      setCurrentStep("information");
+      setTimeout(() => {
+        setCurrentStep("information");
+      }, 300);
     }
   };
 
@@ -588,11 +663,13 @@ export default function BookingWidget() {
       <div className="flex flex-col items-center gap-6 pb-16 px-4">
         <div className="w-full max-w-4xl overflow-hidden">
           <div className="p-8">
-            <Stepper 
-              steps={STEPS} 
-              currentStep={currentStep} 
-              className="mb-8"
-            />
+            <div className="stepper-container">
+              <Stepper 
+                steps={STEPS} 
+                currentStep={currentStep} 
+                className="mb-0"
+              />
+            </div>
             {renderCurrentStep()}
           </div>
         </div>

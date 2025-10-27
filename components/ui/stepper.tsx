@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, Scissors, UserCheck, CalendarDays, Info, CheckCircle } from "lucide-react";
 
 interface StepperProps {
   steps: Array<{
@@ -10,6 +10,17 @@ interface StepperProps {
   currentStep: string;
   className?: string;
 }
+
+const getIcon = (iconName: string) => {
+  switch (iconName) {
+    case 'scissors': return Scissors;
+    case 'user-check': return UserCheck;
+    case 'calendar-days': return CalendarDays;
+    case 'info': return Info;
+    case 'check-circle': return CheckCircle;
+    default: return Scissors;
+  }
+};
 
 export function Stepper({ steps, currentStep, className }: StepperProps) {
   const currentIndex = steps.findIndex(step => step.value === currentStep);
@@ -35,7 +46,10 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
                 {isCompleted ? (
                   <Check className="h-5 w-5" />
                 ) : (
-                  <span className="text-sm font-medium">{index + 1}</span>
+                  (() => {
+                    const IconComponent = getIcon(step.icon);
+                    return <IconComponent className="h-5 w-5" />;
+                  })()
                 )}
               </div>
               <span

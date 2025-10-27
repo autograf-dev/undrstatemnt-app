@@ -181,22 +181,59 @@ export function ServiceSelectionStep({
         {selectedDepartment && (
           <div>
             {loadingServices ? (
-              <div className="space-y-2 mb-6">
-                <Skeleton className="h-20 rounded-2xl bg-gray-100" />
-                <Skeleton className="h-20 rounded-2xl bg-gray-100" />
-                <Skeleton className="h-20 rounded-2xl bg-gray-100" />
+              <div className="space-y-2 mb-6 stagger-animation">
+                <div className="service-skeleton">
+                  <div className="flex items-center gap-3.5 w-full">
+                    <div className="skeleton-icon"></div>
+                    <div className="flex-1">
+                      <div className="skeleton-text medium"></div>
+                      <div className="flex items-center gap-4 flex-wrap mt-1.5">
+                        <div className="skeleton-text short"></div>
+                        <div className="skeleton-text short"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="service-skeleton">
+                  <div className="flex items-center gap-3.5 w-full">
+                    <div className="skeleton-icon"></div>
+                    <div className="flex-1">
+                      <div className="skeleton-text medium"></div>
+                      <div className="flex items-center gap-4 flex-wrap mt-1.5">
+                        <div className="skeleton-text short"></div>
+                        <div className="skeleton-text short"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="service-skeleton">
+                  <div className="flex items-center gap-3.5 w-full">
+                    <div className="skeleton-icon"></div>
+                    <div className="flex-1">
+                      <div className="skeleton-text medium"></div>
+                      <div className="flex items-center gap-4 flex-wrap mt-1.5">
+                        <div className="skeleton-text short"></div>
+                        <div className="skeleton-text short"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 stagger-animation">
                 {services.map((item) => (
                   <div
                     key={item.id}
-                    onClick={() => onServiceSelect(item.id)}
+                    onClick={() => {
+                      onServiceSelect(item.id);
+                      // Auto-advance after selection
+                      setTimeout(() => {
+                        onSubmit();
+                      }, 500);
+                    }}
                     className={cn(
-                      "cursor-pointer p-4 border-2 rounded-2xl flex items-center justify-between transition-all duration-200 hover:shadow-sm",
-                      selectedService === item.id
-                        ? "bg-red-50 text-black border-red-700 shadow-sm"
-                        : "bg-white text-black border-gray-200 hover:border-red-300"
+                      "service-card smooth-transition flex items-center justify-between",
+                      selectedService === item.id && "selected"
                     )}
                   >
                     <div className="flex items-center gap-3.5 w-full">
@@ -229,6 +266,14 @@ export function ServiceSelectionStep({
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {selectedService && (
+          <div className="text-center">
+            <div className="text-sm text-gray-600 mb-4">
+              ✓ Service selected! Moving to staff selection...
+            </div>
           </div>
         )}
 

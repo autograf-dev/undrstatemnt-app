@@ -135,22 +135,50 @@ export function StaffSelectionStep({
 
       <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
         {loadingStaff ? (
-          <div className="space-y-4">
-            <Skeleton className="h-20 rounded-xl bg-gray-100" />
-            <Skeleton className="h-20 rounded-xl bg-gray-100" />
-            <Skeleton className="h-20 rounded-xl bg-gray-100" />
+          <div className="space-y-4 stagger-animation">
+            <div className="service-skeleton">
+              <div className="flex items-center gap-3.5 w-full">
+                <div className="skeleton-icon"></div>
+                <div className="flex-1">
+                  <div className="skeleton-text medium"></div>
+                  <div className="skeleton-text short"></div>
+                </div>
+              </div>
+            </div>
+            <div className="service-skeleton">
+              <div className="flex items-center gap-3.5 w-full">
+                <div className="skeleton-icon"></div>
+                <div className="flex-1">
+                  <div className="skeleton-text medium"></div>
+                  <div className="skeleton-text short"></div>
+                </div>
+              </div>
+            </div>
+            <div className="service-skeleton">
+              <div className="flex items-center gap-3.5 w-full">
+                <div className="skeleton-icon"></div>
+                <div className="flex-1">
+                  <div className="skeleton-text medium"></div>
+                  <div className="skeleton-text short"></div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-8 stagger-animation">
             {staff.map((item) => (
               <div
                 key={item.id}
-                onClick={() => onStaffSelect(item.id)}
+                onClick={() => {
+                  onStaffSelect(item.id);
+                  // Auto-advance after selection
+                  setTimeout(() => {
+                    onSubmit();
+                  }, 500);
+                }}
                 className={cn(
-                  "cursor-pointer p-4 border-2 rounded-2xl flex items-center justify-between transition-all duration-200 hover:shadow-sm",
-                  selectedStaff === item.id
-                    ? "bg-red-50 text-black border-red-700 shadow-sm"
-                    : "bg-white text-black border-gray-200 hover:border-red-300"
+                  "staff-card smooth-transition flex items-center justify-between",
+                  selectedStaff === item.id && "selected"
                 )}
               >
                 <div className="flex items-center gap-3.5 w-full">
@@ -176,6 +204,14 @@ export function StaffSelectionStep({
                 )}
               </div>
             ))}
+          </div>
+        )}
+        
+        {selectedStaff && (
+          <div className="text-center">
+            <div className="text-sm text-gray-600 mb-4">
+              ✓ Staff selected! Moving to date & time selection...
+            </div>
           </div>
         )}
         

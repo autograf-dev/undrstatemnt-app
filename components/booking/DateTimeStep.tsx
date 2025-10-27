@@ -108,29 +108,31 @@ export function DateTimeStep({
       <div className="space-y-4">
         {/* Date Slider - Only show when slots are loaded */}
         {workingSlotsLoaded && availableDates.length > 0 ? (
-          <Card className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <Card className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm smooth-transition">
             <div className="flex items-center justify-between mb-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigateDate(-1)}
                 disabled={currentDateIndex <= 0}
-                className="p-2"
+                className="p-2 smooth-transition"
               >
                 <ChevronLeft className="text-xl" />
               </Button>
               
               {/* Show 2 dates on mobile, 3 on larger screens */}
-              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:mx-4">
+              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:mx-4 stagger-animation">
                 {visibleDates.map((dateInfo) => (
                   <div
                     key={dateInfo.dateString}
-                    onClick={() => onDateSelect(dateInfo)}
+                    onClick={() => {
+                      onDateSelect(dateInfo);
+                      // Clear current time slot when date changes
+                      onTimeSlotSelect("");
+                    }}
                     className={cn(
-                      "p-4 rounded-lg border-2 transition-all duration-200 text-center cursor-pointer hover:shadow-md",
-                      selectedDate?.dateString === dateInfo.dateString
-                        ? "border-red-700 bg-red-50"
-                        : "border-gray-200 bg-gray-50 hover:border-red-300"
+                      "date-card smooth-transition",
+                      selectedDate?.dateString === dateInfo.dateString && "selected"
                     )}
                   >
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
@@ -151,21 +153,36 @@ export function DateTimeStep({
                 size="sm"
                 onClick={() => navigateDate(1)}
                 disabled={currentDateIndex >= availableDates.length - (typeof window !== 'undefined' && window.innerWidth < 640 ? 2 : 3)}
-                className="p-2"
+                className="p-2 smooth-transition"
               >
                 <ChevronRight className="text-xl" />
               </Button>
             </div>
           </Card>
         ) : (
-          /* Loading state for dates */
+          /* Premium loading state for dates */
           <Card className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
             <div className="text-center py-8">
-              <div className="text-gray-500 text-lg mb-4">Loading available dates...</div>
-              <div className="flex justify-center space-x-4">
-                <Skeleton className="h-20 w-24 rounded-lg bg-gray-100" />
-                <Skeleton className="h-20 w-24 rounded-lg bg-gray-100" />
-                <Skeleton className="h-20 w-24 rounded-lg bg-gray-100" />
+              <div className="flex items-center justify-center mb-6">
+                <div className="loading-spinner mr-3"></div>
+                <div className="text-gray-500 text-lg font-medium">Loading available dates...</div>
+              </div>
+              <div className="flex justify-center space-x-4 stagger-animation">
+                <div className="date-skeleton">
+                  <div className="skeleton-label"></div>
+                  <div className="skeleton-day"></div>
+                  <div className="skeleton-date"></div>
+                </div>
+                <div className="date-skeleton">
+                  <div className="skeleton-label"></div>
+                  <div className="skeleton-day"></div>
+                  <div className="skeleton-date"></div>
+                </div>
+                <div className="date-skeleton">
+                  <div className="skeleton-label"></div>
+                  <div className="skeleton-day"></div>
+                  <div className="skeleton-date"></div>
+                </div>
               </div>
             </div>
           </Card>
@@ -173,51 +190,67 @@ export function DateTimeStep({
         
         {/* Time slots section */}
         <div className="space-y-4">
-          <Card className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm min-h-[400px]">
+          <Card className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm min-h-[400px] smooth-transition">
             {/* Show slots immediately if available */}
             {timeSlots.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid sm:grid-cols-4 sm:gap-4 grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-2">
+              <div className="space-y-4 fade-in">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="text-sm text-gray-600 font-medium">
+                    Available time slots for {selectedDate?.dayName}
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-4 sm:gap-4 grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-2 stagger-animation">
                   {timeSlots.map((slot) => (
-                    <Button
+                    <button
                       key={slot.time}
-                      variant={selectedTimeSlot === slot.time ? "default" : "outline"}
-                      size="sm"
                       className={cn(
-                        "py-3 transition-all duration-200 text-black border border-gray-300 rounded-lg justify-center hover:shadow-sm",
-                        selectedTimeSlot === slot.time 
-                          ? "bg-red-700 hover:bg-red-700 text-white border-red-700 shadow-sm" 
-                          : "hover:border-red-300"
+                        "time-slot-button smooth-transition",
+                        selectedTimeSlot === slot.time && "selected"
                       )}
-                      onClick={() => onTimeSlotSelect(slot.time)}
+                      onClick={() => {
+                        onTimeSlotSelect(slot.time);
+                        // Auto-advance after selection
+                        setTimeout(() => {
+                          onSubmit();
+                        }, 500);
+                      }}
                     >
                       {slot.time}
-                    </Button>
+                    </button>
                   ))}
                 </div>
               </div>
             ) : loadingSlots || !workingSlotsLoaded ? (
-              /* Show skeleton loading while fetching slots */
+              /* Premium skeleton loading while fetching slots */
               <div className="space-y-4">
-                <div className="text-sm text-gray-600 mb-3">
-                  Loading available slots...
+                <div className="flex items-center justify-center mb-6">
+                  <div className="loading-spinner mr-3"></div>
+                  <div className="text-sm text-gray-600 font-medium">
+                    Loading available slots...
+                  </div>
                 </div>
-                <div className="grid sm:grid-cols-4 sm:gap-4 grid-cols-2 gap-3">
-                  <Skeleton className="h-12 rounded-lg bg-gray-100" />
-                  <Skeleton className="h-12 rounded-lg bg-gray-100" />
-                  <Skeleton className="h-12 rounded-lg bg-gray-100" />
-                  <Skeleton className="h-12 rounded-lg bg-gray-100" />
-                  <Skeleton className="h-12 rounded-lg bg-gray-100" />
-                  <Skeleton className="h-12 rounded-lg bg-gray-100" />
-                  <Skeleton className="h-12 rounded-lg bg-gray-100" />
-                  <Skeleton className="h-12 rounded-lg bg-gray-100" />
+                <div className="grid sm:grid-cols-4 sm:gap-4 grid-cols-2 gap-3 stagger-animation">
+                  <div className="time-slot-skeleton"></div>
+                  <div className="time-slot-skeleton"></div>
+                  <div className="time-slot-skeleton"></div>
+                  <div className="time-slot-skeleton"></div>
+                  <div className="time-slot-skeleton"></div>
+                  <div className="time-slot-skeleton"></div>
+                  <div className="time-slot-skeleton"></div>
+                  <div className="time-slot-skeleton"></div>
                 </div>
               </div>
             ) : selectedDate && workingSlotsLoaded && timeSlots.length === 0 ? (
               /* Show message only after slots are loaded and confirmed empty */
-              <div className="text-center py-8">
-                <div className="text-gray-500 text-lg">No available slots for this date</div>
+              <div className="text-center py-8 fade-in">
+                <div className="text-gray-500 text-lg font-medium">No available slots for this date</div>
                 <div className="text-sm text-gray-400 mt-2">Please select another date</div>
+              </div>
+            ) : !selectedDate ? (
+              /* Show message when no date is selected */
+              <div className="text-center py-8 fade-in">
+                <div className="text-gray-500 text-lg font-medium">Please select a date to view available time slots</div>
+                <div className="text-sm text-gray-400 mt-2">Choose from the dates above</div>
               </div>
             ) : null}
           </Card>
@@ -235,6 +268,15 @@ export function DateTimeStep({
           )}
         </div>
       </div>
+      
+      {/* Auto-advance feedback */}
+      {selectedTimeSlot && (
+        <div className="text-center pt-6">
+          <div className="text-sm text-gray-600 mb-4">
+            ✓ Time slot selected! Moving to contact information...
+          </div>
+        </div>
+      )}
       
       {/* Navigation */}
       <div className="flex gap-4 pt-6">

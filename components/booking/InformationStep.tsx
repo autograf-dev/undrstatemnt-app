@@ -191,14 +191,13 @@ export function InformationStep({
               className="text-sm"
             />
            
-            <Button
+            <button
               type="submit"
-              size="lg"
               disabled={!isFormValid || bookingLoading}
-              className="w-full font-bold bg-red-700 hover:bg-red-700 text-white justify-center"
+              className="booking-button w-full font-bold text-white justify-center"
             >
               {bookingLoading ? 'Booking Your Appointment...' : 'Book Appointment'}
-            </Button>
+            </button>
           </form>
         </div>
         
