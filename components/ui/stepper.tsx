@@ -32,10 +32,10 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
         const isCompleted = index < currentIndex;
 
         return (
-          <div key={step.value} className="flex flex-col items-center flex-1">
+          <div key={step.value} className="flex flex-col items-center flex-1 relative">
             <div
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors",
+                "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors relative z-10",
                 isActive && "border-orange-primary bg-orange-primary text-white",
                 isCompleted && "border-orange-primary bg-orange-primary text-white",
                 !isActive && !isCompleted && "border-gray-300 bg-gray-100 text-orange-primary"
@@ -50,6 +50,18 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
                 })()
               )}
             </div>
+            
+            {/* Connecting line to the right */}
+            {index < steps.length - 1 && (
+              <div 
+                className={cn(
+                  "absolute top-5 left-1/2 w-full h-0.5 transform translate-x-5",
+                  index < currentIndex ? "bg-orange-primary" : "bg-gray-300"
+                )}
+                style={{ width: 'calc(100% - 2.5rem)' }}
+              />
+            )}
+            
             <span
               className={cn(
                 "mt-2 text-xs font-medium text-center",
