@@ -56,17 +56,21 @@ export default function BookingWidget() {
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [guestCount, setGuestCount] = useState(1);
   const [showGuestInput, setShowGuestInput] = useState(false);
-  
-  // Date/Time selection state
+
+  // URL parameters / preselection
+  const [preselectedDepartmentId, setPreselectedDepartmentId] = useState<string>("");
+  const [cameFromUrlParam, setCameFromUrlParam] = useState(false);
+
+  // Date & Time selection state
   const [availableDates, setAvailableDates] = useState<DateInfo[]>([]);
   const [selectedDate, setSelectedDate] = useState<DateInfo | null>(null);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
   const [workingSlots, setWorkingSlots] = useState<WorkingSlots>({});
-  const [workingSlotsLoaded, setWorkingSlotsLoaded] = useState(false);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  
-  // Contact form state
+  const [workingSlotsLoaded, setWorkingSlotsLoaded] = useState<boolean>(false);
+  const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
+
+  // Contact form and booking state
   const [contactForm, setContactForm] = useState<ContactForm>({
     firstName: "",
     lastName: "",
@@ -78,48 +82,71 @@ export default function BookingWidget() {
     lastName: "",
     phone: "",
   });
-  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState<boolean>(false);
   
-  // URL parameters
-  const [preselectedDepartmentId, setPreselectedDepartmentId] = useState<string>("");
-  const [cameFromUrlParam, setCameFromUrlParam] = useState(false);
-
-  // Load departments on mount
-  // useEffect(() => {
-  //   const loadDepartments = async () => {
-  //     try {
-  //       const res = await fetch('https://modify.undrstatemnt.com/.netlify/functions/supabasegroups');
-  //       const data = await res.json();
-        
-  //       const groups = data.groups || [];
-  //       const departmentItems = groups.map((group: any) => ({
+  // Load departments on mount (needed to seed services flow)
   useEffect(() => {
-    if (!selectedDepartment) return;
-    
-  //         id: group.id,
-  //         name: group.name,
-  //         description: group.description || '',
-  //         icon: getGroupIcon(group.name)
-  //       }));
-        
-  //       setDepartments(departmentItems);
-        
-  //       // Check for URL parameters
-  //       if (typeof window !== 'undefined') {
-  //         const params = new URLSearchParams(window.location.search);
-  //         const groupFromQuery = params.get('group');
-  //         const idFromQuery = params.get('id');
-          
-  //         if (groupFromQuery) {
-  //           setPreselectedDepartmentId(groupFromQuery);
-  //           setCameFromUrlParam(true);
-  //         } else if (idFromQuery) {
-  //           setPreselectedDepartmentId(idFromQuery);
-  //         }
-  //       }
-        
-  //       // Auto-select first department on desktop if none preselected
-  //       if (!preselectedDepartmentId && departmentItems.length > 0) {
+    const loadDepartments = async () => {
+      try {
+        const res = await fetch('https://modify.undrstatemnt.com/.netlify/functions/supabasegroups');
+        const data = await res.json();
+
+        const groups = data.groups || [];
+        const departmentItems = groups.map((group: any) => ({
+          id: group.id,
+          name: group.name,
+          description: group.description || '',
+          icon: getGroupIcon(group.name)
+        }));
+
+        setDepartments(departmentItems);
+
+        // Check for URL parameters
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const groupFromQuery = params.get('group');
+          const idFromQuery = params.get('id');
+
+          if (groupFromQuery) {
+            setPreselectedDepartmentId(groupFromQuery);
+            setCameFromUrlParam(true);
+          } else if (idFromQuery) {
+            setPreselectedDepartmentId(idFromQuery);
+          }
+        }
+
+        // Auto-select first department on desktop if none preselected
+        if (!preselectedDepartmentId && departmentItems.length > 0) {
+          const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+          if (!isMobile) {
+            setSelectedDepartment(departmentItems[0].id);
+          }
+        } else if (preselectedDepartmentId) {
+          // Find department by name or ID
+          let foundGroup = departmentItems.find((group: Department) =>
+            group.name.toLowerCase() === preselectedDepartmentId.toLowerCase()
+          );
+
+          if (!foundGroup) {
+            foundGroup = departmentItems.find((group: Department) =>
+              group.id === preselectedDepartmentId
+            );
+          }
+
+          if (foundGroup) {
+            setSelectedDepartment(foundGroup.id);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading departments:', error);
+        setDepartments([]);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+
+    loadDepartments();
+  }, [preselectedDepartmentId]);
   //         const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   //         if (!isMobile) {
   //           setSelectedDepartment(departmentItems[0].id);
@@ -151,10 +178,10 @@ export default function BookingWidget() {
   //   loadDepartments();
   // }, [preselectedDepartmentId]);
 
-  // // Load services when department is selected
-  // useEffect(() => {
-  //   if (!selectedDepartment) return;
-    
+  // Load services when department is selected
+  useEffect(() => {
+    if (!selectedDepartment) return;
+
     const loadServices = async () => {
       setLoadingServices(true);
       setSelectedService("");
