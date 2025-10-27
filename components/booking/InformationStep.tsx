@@ -74,19 +74,19 @@ export function InformationStep({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="service-selection-container">
       <div className="flex items-center mb-6">
         <Button
           variant="ghost"
           size="sm"
           onClick={onPrevious}
-          className="mr-4"
+          className="mr-4 text-orange-primary hover:bg-orange-50"
         >
           <ArrowLeft className="text-xl" />
         </Button>
         <div className="text-left lg:text-center flex-1">
-          <h2 className="text-3xl font-bold text-gray-900 mb-3 lg:py-2.5">Contact Information</h2>
-          <p className="text-gray-700 text-lg font-medium hidden lg:block">Please provide your details to complete the booking</p>
+          <h2 className="text-3xl font-bold mb-3 lg:py-2.5">Contact Information</h2>
+          <p className="text-lg font-medium hidden lg:block">Please provide your details to complete the booking</p>
         </div>
       </div>
       
@@ -97,14 +97,14 @@ export function InformationStep({
           <div className="space-y-1">
             {/* Date */}
             <div className="flex items-center gap-1">
-              <Calendar className="text-sm text-red-700" />
+              <Calendar className="text-sm text-orange-primary" />
               <span className="text-sm font-semibold text-black">
                 {formatCalendarDate(selectedDate)}
               </span>
             </div>
             {/* Time and Duration combined */}
             <div className="flex items-center gap-1">
-              <Clock className="text-sm text-red-700" />
+              <Clock className="text-sm text-orange-primary" />
               <span className="text-sm font-semibold text-black">{selectedTimeSlot} MST</span>
               <span className="text-sm text-gray-700">
                 for {formatDurationMins(getServiceDuration(selectedService?.id || ""))}
@@ -112,13 +112,13 @@ export function InformationStep({
             </div>
             {/* Service and Staff combined */}
             <div className="flex items-center gap-1">
-              <Scissors className="text-sm text-red-700" />
+              <Scissors className="text-sm text-orange-primary" />
               <span className="text-sm font-semibold text-black">{selectedService?.name}</span>
               <span className="text-sm text-gray-700">with {selectedStaff?.name}</span>
             </div>
             {/* Guests */}
             <div className="flex items-center gap-1">
-              {guestCount > 1 ? <Users className="text-sm text-red-700" /> : <User className="text-sm text-red-700" />}
+              {guestCount > 1 ? <Users className="text-sm text-orange-primary" /> : <User className="text-sm text-orange-primary" />}
               <span className="text-sm text-gray-700">
                 {guestCount} {guestCount === 1 ? 'person' : 'people'}
               </span>
@@ -166,7 +166,7 @@ export function InformationStep({
               <div className="flex items-center phone-input-container">
                 {/* Canadian Flag and +1 Prefix */}
                 <div className="country-code">
-                  <img src="/canada.svg" alt="Canada" className="w-5 h-4 rounded-sm" />
+                  <img src="/image.png" alt="Canada" className="w-5 h-4 rounded-sm" />
                   <span className="text-gray-700 font-medium">+1</span>
                 </div>
                 {/* Phone Number Input */}
@@ -184,12 +184,6 @@ export function InformationStep({
               )}
             </div>
            
-            <Checkbox
-              checked={contactForm.optIn}
-              onCheckedChange={(checked) => onContactFormChange({ ...contactForm, optIn: checked as boolean })}
-              label="I would like to receive updates and promotional offers via SMS"
-              className="text-sm"
-            />
            
             <button
               type="submit"
@@ -209,17 +203,17 @@ export function InformationStep({
             <Card className="p-6 rounded-xl border border-gray-200 bg-white">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <Calendar className="text-xl text-red-700" />
+                  <Calendar className="text-xl text-orange-primary" />
                   <span className="font-semibold text-black">
                     {formatCalendarDate(selectedDate)}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Clock className="text-xl text-red-700" />
+                  <Clock className="text-xl text-orange-primary" />
                   <span className="font-semibold text-black">{selectedTimeSlot} MST</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Hourglass className="text-xl text-red-700" />
+                  <Hourglass className="text-xl text-orange-primary" />
                   <span className="text-gray-700">
                     {formatDurationMins(getServiceDuration(selectedService?.id || ""))}
                   </span>
@@ -231,11 +225,11 @@ export function InformationStep({
               <div className="space-y-3">
                 <div className="font-bold text-lg text-black">{selectedService?.name}</div>
                 <div className="flex items-center gap-3">
-                  <User className="text-xl text-red-700" />
+                  <User className="text-xl text-orange-primary" />
                   <span className="text-gray-700">with {selectedStaff?.name}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  {guestCount > 1 ? <Users className="text-xl text-red-700" /> : <User className="text-xl text-red-700" />}
+                  {guestCount > 1 ? <Users className="text-xl text-orange-primary" /> : <User className="text-xl text-orange-primary" />}
                   <span className="text-gray-700">
                     {guestCount} {guestCount === 1 ? 'person' : 'people'}
                   </span>

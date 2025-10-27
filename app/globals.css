@@ -132,7 +132,7 @@
 .phone-input-container {
   border-radius: 12px;
   overflow: hidden;
-  border: 2px solid #751A29;
+  border: 2px solid var(--color-orange-primary);
   display: flex;
   align-items: center;
   transition: all 0.2s ease;
@@ -140,8 +140,8 @@
 }
 
 .phone-input-container:hover {
-  border-color: #9f1239;
-  box-shadow: 0 2px 8px rgba(117, 26, 41, 0.1);
+  border-color: var(--color-orange-dark);
+  box-shadow: 0 2px 8px rgba(177, 86, 1, 0.1);
 }
 
 .phone-input-container .country-code {
@@ -156,6 +156,16 @@
   justify-content: center;
   color: #374151;
 }
+
+.phone-input-container .country-code img {
+  width: 24px;
+  height: 18px;
+  object-fit: contain;
+  border-radius: 2px;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
 
 .phone-input-container .phone-input {
   border: none !important;
@@ -184,8 +194,8 @@
 }
 
 .phone-input-container:focus-within {
-  border-color: #751A29;
-  box-shadow: 0 0 0 3px rgba(117, 26, 41, 0.1);
+  border-color: var(--color-orange-primary);
+  box-shadow: 0 0 0 3px rgba(177, 86, 1, 0.1);
   transform: translateY(-1px);
 }
 
@@ -591,9 +601,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .service-card.selected, .staff-card.selected {
-  background: rgba(177, 86, 1, 0.1);
+  background: var(--color-orange-primary);
   border-color: var(--color-orange-primary);
-  color: var(--color-orange-primary);
+  color: white;
   box-shadow: 0 4px 15px rgba(177, 86, 1, 0.2);
 }
 

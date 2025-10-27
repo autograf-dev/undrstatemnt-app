@@ -23,6 +23,7 @@ interface DateTimeStepProps {
   timeSlots: TimeSlot[];
   selectedTimeSlot: string;
   onTimeSlotSelect: (timeSlot: string) => void;
+  onTimeSlotClear: (timeSlot: string) => void;
   workingSlotsLoaded: boolean;
   loadingSlots: boolean;
   onSubmit: () => void;
@@ -40,6 +41,7 @@ export function DateTimeStep({
   timeSlots,
   selectedTimeSlot,
   onTimeSlotSelect,
+  onTimeSlotClear,
   workingSlotsLoaded,
   loadingSlots,
   onSubmit,
@@ -94,10 +96,10 @@ export function DateTimeStep({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="service-selection-container">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-3">Select Date & Time</h2>
-        <p className="text-gray-700 text-lg font-medium">Choose your preferred appointment slot</p>
+        <h2 className="text-3xl font-bold mb-3">Select Date & Time</h2>
+        <p className="text-lg font-medium">Choose your preferred appointment slot</p>
       </div>
 
       {/* MST timezone indicator */}
@@ -129,7 +131,7 @@ export function DateTimeStep({
                     key={dateInfo.dateString}
                     onClick={() => {
                       onDateSelect(dateInfo);
-                      onTimeSlotSelect(""); // Clear current time slot
+                      onTimeSlotClear(""); // Clear current time slot without moving step
                       onDateChange(dateInfo.dateString); // Trigger slot refresh
                     }}
                     className={cn(
@@ -211,10 +213,8 @@ export function DateTimeStep({
                       )}
                       onClick={() => {
                         onTimeSlotSelect(slot.time);
-                        // Auto-advance after selection
-                        setTimeout(() => {
-                          onSubmit();
-                        }, 500);
+                        // Direct move to next step
+                        onSubmit();
                       }}
                     >
                       {slot.time}
@@ -258,10 +258,10 @@ export function DateTimeStep({
           </Card>
           
           {selectedTimeSlot && (
-            <Card className="p-4 bg-red-50 rounded-xl border border-red-200">
+            <Card className="p-4 bg-orange-50 rounded-xl border border-orange-200">
               <div className="text-center">
                 <div className="font-bold text-black text-lg">Selected Time</div>
-                <div className="text-red-700 font-semibold">{selectedTimeSlot} MST</div>
+                <div className="text-orange-primary font-semibold">{selectedTimeSlot} MST</div>
                 <div className="text-sm text-gray-600 mt-1">
                   {selectedDate ? formatDateForDisplay(selectedDate.dateString) : ''}
                 </div>
@@ -271,14 +271,6 @@ export function DateTimeStep({
         </div>
       </div>
       
-      {/* Auto-advance feedback */}
-      {selectedTimeSlot && (
-        <div className="text-center pt-6">
-          <div className="text-sm text-gray-600 mb-4">
-            ✓ Time slot selected! Moving to contact information...
-          </div>
-        </div>
-      )}
       
       {/* Navigation */}
       <div className="flex gap-4 pt-6">
@@ -296,7 +288,7 @@ export function DateTimeStep({
           type="button"
           size="lg"
           disabled={!selectedTimeSlot}
-          className="flex-1 bg-red-700 hover:bg-red-700 text-white"
+          className="flex-1 bg-orange-primary hover:bg-orange-primary text-white"
           onClick={onSubmit}
         >
           Continue

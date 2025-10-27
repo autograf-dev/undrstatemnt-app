@@ -512,20 +512,36 @@ export default function BookingWidget() {
     }
   };
 
+  const handleServiceSelectAndSubmit = (serviceId: string) => {
+    setSelectedService(serviceId);
+    setCurrentStep("staff");
+  };
+
   const handleStaffSubmit = () => {
     if (selectedStaff) {
-      setTimeout(() => {
-        setCurrentStep("datetime");
-      }, 300);
+      setCurrentStep("datetime");
     }
+  };
+
+  const handleStaffSelectAndSubmit = (staffId: string) => {
+    setSelectedStaff(staffId);
+    setCurrentStep("datetime");
   };
 
   const handleDateTimeSubmit = () => {
     if (selectedTimeSlot) {
-      setTimeout(() => {
-        setCurrentStep("information");
-      }, 300);
+      setCurrentStep("information");
     }
+  };
+
+  const handleTimeSlotSelectAndSubmit = (timeSlot: string) => {
+    setSelectedTimeSlot(timeSlot);
+    setCurrentStep("information");
+  };
+
+  const handleTimeSlotClear = (timeSlot: string) => {
+    setSelectedTimeSlot(timeSlot);
+    // Don't move to next step when clearing
   };
 
   const handleInformationSubmit = async () => {
@@ -594,7 +610,7 @@ export default function BookingWidget() {
             onDepartmentSelect={setSelectedDepartment}
             services={services}
             selectedService={selectedService}
-            onServiceSelect={setSelectedService}
+            onServiceSelect={handleServiceSelectAndSubmit}
             loadingGroups={loadingGroups}
             loadingServices={loadingServices}
             onSubmit={handleServiceSubmit}
@@ -607,7 +623,7 @@ export default function BookingWidget() {
           <StaffSelectionStep
             staff={staff}
             selectedStaff={selectedStaff}
-            onStaffSelect={setSelectedStaff}
+            onStaffSelect={handleStaffSelectAndSubmit}
             loadingStaff={loadingStaff}
             guestCount={guestCount}
             onGuestCountChange={setGuestCount}
@@ -629,7 +645,8 @@ export default function BookingWidget() {
             onDateSelect={setSelectedDate}
             timeSlots={timeSlots}
             selectedTimeSlot={selectedTimeSlot}
-            onTimeSlotSelect={setSelectedTimeSlot}
+            onTimeSlotSelect={handleTimeSlotSelectAndSubmit}
+            onTimeSlotClear={handleTimeSlotClear}
             workingSlotsLoaded={workingSlotsLoaded}
             loadingSlots={loadingSlots}
             onSubmit={handleDateTimeSubmit}

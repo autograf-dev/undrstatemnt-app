@@ -216,8 +216,6 @@ export function ServiceSelectionStep({
                     key={item.id}
                         onClick={() => {
                           onServiceSelect(item.id);
-                          // Instant move to next step
-                          onSubmit();
                         }}
                     className={cn(
                       "service-card smooth-transition flex items-center justify-between",
