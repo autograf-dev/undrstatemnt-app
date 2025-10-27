@@ -85,72 +85,75 @@ export default function BookingWidget() {
   const [cameFromUrlParam, setCameFromUrlParam] = useState(false);
 
   // Load departments on mount
-  useEffect(() => {
-    const loadDepartments = async () => {
-      try {
-        const res = await fetch('https://modify.undrstatemnt.com/.netlify/functions/supabasegroups');
-        const data = await res.json();
+  // useEffect(() => {
+  //   const loadDepartments = async () => {
+  //     try {
+  //       const res = await fetch('https://modify.undrstatemnt.com/.netlify/functions/supabasegroups');
+  //       const data = await res.json();
         
-        const groups = data.groups || [];
-        const departmentItems = groups.map((group: any) => ({
-          id: group.id,
-          name: group.name,
-          description: group.description || '',
-          icon: getGroupIcon(group.name)
-        }));
-        
-        setDepartments(departmentItems);
-        
-        // Check for URL parameters
-        if (typeof window !== 'undefined') {
-          const params = new URLSearchParams(window.location.search);
-          const groupFromQuery = params.get('group');
-          const idFromQuery = params.get('id');
-          
-          if (groupFromQuery) {
-            setPreselectedDepartmentId(groupFromQuery);
-            setCameFromUrlParam(true);
-          } else if (idFromQuery) {
-            setPreselectedDepartmentId(idFromQuery);
-          }
-        }
-        
-        // Auto-select first department on desktop if none preselected
-        if (!preselectedDepartmentId && departmentItems.length > 0) {
-          const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-          if (!isMobile) {
-            setSelectedDepartment(departmentItems[0].id);
-          }
-        } else if (preselectedDepartmentId) {
-          // Find department by name or ID
-          let foundGroup = departmentItems.find((group: Department) => 
-            group.name.toLowerCase() === preselectedDepartmentId.toLowerCase()
-          );
-          
-          if (!foundGroup) {
-            foundGroup = departmentItems.find((group: Department) => 
-              group.id === preselectedDepartmentId
-            );
-          }
-          
-          if (foundGroup) {
-            setSelectedDepartment(foundGroup.id);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading departments:', error);
-        setDepartments([]);
-      } finally {
-        setLoadingGroups(false);
-      }
-    };
-
-    loadDepartments();
-  }, [preselectedDepartmentId]);
-
-  // Load services when department is selected
+  //       const groups = data.groups || [];
+  //       const departmentItems = groups.map((group: any) => ({
   useEffect(() => {
     if (!selectedDepartment) return;
+    
+  //         id: group.id,
+  //         name: group.name,
+  //         description: group.description || '',
+  //         icon: getGroupIcon(group.name)
+  //       }));
+        
+  //       setDepartments(departmentItems);
+        
+  //       // Check for URL parameters
+  //       if (typeof window !== 'undefined') {
+  //         const params = new URLSearchParams(window.location.search);
+  //         const groupFromQuery = params.get('group');
+  //         const idFromQuery = params.get('id');
+          
+  //         if (groupFromQuery) {
+  //           setPreselectedDepartmentId(groupFromQuery);
+  //           setCameFromUrlParam(true);
+  //         } else if (idFromQuery) {
+  //           setPreselectedDepartmentId(idFromQuery);
+  //         }
+  //       }
+        
+  //       // Auto-select first department on desktop if none preselected
+  //       if (!preselectedDepartmentId && departmentItems.length > 0) {
+  //         const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  //         if (!isMobile) {
+  //           setSelectedDepartment(departmentItems[0].id);
+  //         }
+  //       } else if (preselectedDepartmentId) {
+  //         // Find department by name or ID
+  //         let foundGroup = departmentItems.find((group: Department) => 
+  //           group.name.toLowerCase() === preselectedDepartmentId.toLowerCase()
+  //         );
+          
+  //         if (!foundGroup) {
+  //           foundGroup = departmentItems.find((group: Department) => 
+  //             group.id === preselectedDepartmentId
+  //           );
+  //         }
+          
+  //         if (foundGroup) {
+  //           setSelectedDepartment(foundGroup.id);
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error('Error loading departments:', error);
+  //       setDepartments([]);
+  //     } finally {
+  //       setLoadingGroups(false);
+  //     }
+  //   };
+
+  //   loadDepartments();
+  // }, [preselectedDepartmentId]);
+
+  // // Load services when department is selected
+  // useEffect(() => {
+  //   if (!selectedDepartment) return;
     
     const loadServices = async () => {
       setLoadingServices(true);
