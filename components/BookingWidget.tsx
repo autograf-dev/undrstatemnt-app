@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type CSSProperties } from "react";
 import { Stepper } from "@/components/ui/stepper";
 import { ServiceSelectionStep } from "./booking/ServiceSelectionStep";
 import { StaffSelectionStep } from "./booking/StaffSelectionStep";
@@ -19,6 +19,7 @@ import {
   ValidationErrors,
   WorkingSlots 
 } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 const STEPS = [
   { title: "Service", icon: "scissors", value: "service" },
@@ -39,7 +40,7 @@ const getStepIcon = (stepValue: string) => {
   }
 };
 
-export default function BookingWidget() {
+export default function BookingWidget({ className, style }: { className?: string; style?: CSSProperties }) {
   const [currentStep, setCurrentStep] = useState<BookingStep>("service");
   
   // Service selection state
@@ -743,7 +744,7 @@ export default function BookingWidget() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className={cn("min-h-screen bg-white", className)} style={style}>
       <div className="flex flex-col items-center gap-6 pb-16 px-2 sm:px-4">
         <div className="w-full max-w-5xl overflow-hidden">
           <div className="p-4 sm:p-8">
