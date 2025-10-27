@@ -11,3 +11,10 @@ export const PLASMIC = initPlasmicLoader({
   // Disable for production to ensure you render only published changes.
   preview: true,
 });
+import BookingWidget from "./components/BookingWidget"; // Import the BookingWidget component
+
+// Register code components used by Plasmic pages so Studio and runtime can render them
+PLASMIC.registerComponent(BookingWidget, {
+  name: "BookingWidget",
+  props: {},
+});
