@@ -1,8 +1,7 @@
 "use client";
 
 import { CSSProperties, ReactNode } from "react";
-import MainSidebarShadcn, { SidebarNavItem } from "./MainSidebarShadcn";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import MainSidebar, { SidebarNavItem } from "./MainSidebar";
 import { cn } from "@/lib/utils";
 
 export interface PageShellShadcnProps {
@@ -38,8 +37,6 @@ export interface PageShellShadcnProps {
   buttonBgColor?: string;
   /** Sign-in button text color */
   buttonTextColor?: string;
-  /** Show mobile menu trigger */
-  showTrigger?: boolean;
   /** Main page content (slot from Plasmic) */
   children?: ReactNode;
 }
@@ -62,12 +59,11 @@ export default function PageShellShadcn({
   sidebarHoverBgColor,
   buttonBgColor,
   buttonTextColor,
-  showTrigger = true,
   children,
 }: PageShellShadcnProps) {
   return (
-    <SidebarProvider>
-      <MainSidebarShadcn
+    <div className="flex h-screen overflow-hidden">
+      <MainSidebar
         logoSrc={logoSrc}
         logoWidth={logoWidth}
         logoHeight={logoHeight}
@@ -84,17 +80,10 @@ export default function PageShellShadcn({
         buttonBgColor={buttonBgColor}
         buttonTextColor={buttonTextColor}
       />
-      <SidebarInset className={cn("flex-1", className)} style={style}>
-        {showTrigger && (
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-          </header>
-        )}
-        <div className="flex-1 overflow-y-auto">
-          {children}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      <main className={cn("flex-1 overflow-y-auto bg-gray-50", className)} style={style}>
+        {children}
+      </main>
+    </div>
   );
 }
 

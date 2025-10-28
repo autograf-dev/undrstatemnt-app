@@ -6,7 +6,7 @@ import Image from "next/image";
 import { MapPin, Users, Scissors } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export interface SidebarItem {
+export interface SidebarNavItem {
   id: string;
   label: string;
   href: string;
@@ -16,21 +16,24 @@ export interface SidebarItem {
 export interface MainSidebarProps {
   className?: string;
   style?: CSSProperties;
-  /** Business logo URL */
   logoSrc?: string;
-  /** Business name */
+  logoWidth?: number;
+  logoHeight?: number;
   title?: string;
-  /** Address line */
   subtitle?: string;
-  /** Menu items */
-  items?: SidebarItem[];
-  /** Active href to highlight */
+  items?: SidebarNavItem[];
   activeHref?: string;
-  /** Sign-in URL */
+  signInLabel?: string;
   signInHref?: string;
+  bgColor?: string;
+  textColor?: string;
+  activeBgColor?: string;
+  hoverBgColor?: string;
+  buttonBgColor?: string;
+  buttonTextColor?: string;
 }
 
-const iconFor = (key?: SidebarItem["icon"]) => {
+const iconFor = (key?: SidebarNavItem["icon"]) => {
   switch (key) {
     case "barbers":
       return Users;
@@ -46,7 +49,9 @@ export default function MainSidebar({
   className,
   style,
   logoSrc = "/next.svg",
-  title = "UND RSTATEMNT CO.",
+  logoWidth = 80,
+  logoHeight = 80,
+  title = "Undrstatemnt",
   subtitle = "1309 Edmonton Trl, Calgary, AB T2E 4Y8",
   items = [
     { id: "home", label: "Home", href: "/", icon: "home" },
@@ -54,58 +59,101 @@ export default function MainSidebar({
     { id: "services", label: "Services", href: "/services", icon: "services" },
   ],
   activeHref,
+  signInLabel = "Sign In",
   signInHref = "/login",
+  bgColor = "#391709",
+  textColor = "white",
+  activeBgColor = "rgba(255, 255, 255, 0.15)",
+  hoverBgColor = "rgba(255, 255, 255, 0.1)",
+  buttonBgColor = "white",
+  buttonTextColor = "#391709",
 }: MainSidebarProps) {
   return (
     <aside
-      className={cn(
-        "h-screen w-[220px] shrink-0 bg-[color:var(--color-orange-primary)] text-white p-4 flex flex-col justify-between",
-        className
-      )}
-      style={style}
+      className={cn("h-screen w-[220px] shrink-0 flex flex-col border-r-0", className)}
+      style={{
+        ...style,
+        backgroundColor: bgColor,
+        color: textColor,
+      }}
     >
-      <div>
-        <div className="flex flex-col items-center gap-2 py-4">
-          <div className="relative w-16 h-16 rounded-full ring-2 ring-white/40 overflow-hidden">
-            <Image src={logoSrc} alt="logo" fill className="object-contain" />
+      {/* Header */}
+      <div className="border-b pb-4 px-2 pt-4" style={{ borderColor: `${textColor}20` }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative w-20 h-20 rounded-full ring-2 overflow-hidden flex items-center justify-center"
+            style={{ 
+              ringColor: `${textColor}40`,
+              backgroundColor: `${textColor}10`
+            }}
+          >
+            <Image
+              src={logoSrc}
+              alt="logo"
+              width={logoWidth}
+              height={logoHeight}
+              className="object-contain p-2"
+            />
           </div>
-          <div className="text-center">
-            <div className="text-sm font-extrabold tracking-wide">{title}</div>
-            <div className="text-xs opacity-80">{subtitle}</div>
+          <div className="text-center w-full">
+            <h2 className="text-sm font-extrabold tracking-wider uppercase" style={{ color: textColor }}>
+              {title}
+            </h2>
+            <p className="text-[11px] mt-1 leading-tight" style={{ color: textColor, opacity: 0.7 }}>
+              {subtitle}
+            </p>
           </div>
         </div>
+      </div>
 
-        <nav className="mt-6 flex flex-col gap-1">
+      {/* Nav Menu */}
+      <nav className="flex-1 py-4 px-2">
+        <ul className="space-y-1">
           {items.map((item) => {
             const Icon = iconFor(item.icon);
             const active = activeHref ? activeHref === item.href : false;
             return (
-              <Link
-                href={item.href}
-                key={item.id}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold",
-                  active ? "bg-white/15" : "hover:bg-white/10"
-                )}
-              >
-                <Icon className="w-4 h-4" />
-                {item.label}
-              </Link>
+              <li key={item.id}>
+                <Link
+                  href={item.href}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all"
+                  style={{
+                    color: textColor,
+                    backgroundColor: active ? activeBgColor : "transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.backgroundColor = hoverBgColor;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }
+                  }}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
             );
           })}
-        </nav>
-      </div>
+        </ul>
+      </nav>
 
-      <div className="pt-4">
+      {/* Footer Sign In Button */}
+      <div className="border-t pt-4 px-2 pb-4" style={{ borderColor: `${textColor}20` }}>
         <Link
           href={signInHref}
-          className="w-full inline-flex items-center justify-center rounded-lg bg-white text-[color:var(--color-orange-primary)] font-semibold text-sm py-2"
+          className="w-full inline-flex items-center justify-center rounded-lg font-semibold text-sm py-2.5 px-4 transition-opacity hover:opacity-90"
+          style={{
+            backgroundColor: buttonBgColor,
+            color: buttonTextColor,
+          }}
         >
-          Sign In
+          {signInLabel}
         </Link>
       </div>
     </aside>
   );
 }
-
 

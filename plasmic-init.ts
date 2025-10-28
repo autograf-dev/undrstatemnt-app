@@ -101,8 +101,6 @@ PLASMIC.registerComponent(ServicesExplorer, {
 
 import ServicesCatalog from "./components/ServicesCatalog";
 import MainSidebar from "./components/MainSidebar";
-import PageShell from "./components/PageShell";
-import MainSidebarShadcn from "./components/MainSidebarShadcn";
 import PageShellShadcn from "./components/PageShellShadcn";
 
 PLASMIC.registerComponent(ServicesCatalog, {
@@ -165,9 +163,9 @@ PLASMIC.registerComponent(PageShell, {
   },
 });
 
-PLASMIC.registerComponent(MainSidebarShadcn, {
-  name: "MainSidebarShadcn",
-  importPath: "@/components/MainSidebarShadcn",
+PLASMIC.registerComponent(MainSidebar, {
+  name: "MainSidebar",
+  importPath: "@/components/MainSidebar",
   props: {
     logoSrc: { type: "string", description: "Logo URL", defaultValue: "/next.svg" },
     logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 80 },
@@ -222,7 +220,6 @@ PLASMIC.registerComponent(PageShellShadcn, {
     sidebarHoverBgColor: { type: "string", description: "Hover background (hex/rgba)", defaultValue: "rgba(255, 255, 255, 0.1)" },
     buttonBgColor: { type: "string", description: "Sign-in button background (hex/rgba)", defaultValue: "white" },
     buttonTextColor: { type: "string", description: "Sign-in button text (hex/rgba)", defaultValue: "#391709" },
-    showTrigger: { type: "boolean", description: "Show mobile menu trigger", defaultValue: true },
     children: { type: "slot", defaultValue: { type: "text", value: "Page content here" } },
   },
 });
