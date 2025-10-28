@@ -107,7 +107,7 @@ export default function MainSidebar({
   return (
     <aside
       className={cn(
-        "h-screen shrink-0 flex flex-col border-r-0 transition-all duration-300 relative group",
+        "sticky top-0 h-screen shrink-0 flex flex-col border-r-0 transition-all duration-300 relative group",
         isCollapsed ? "w-[70px]" : "w-[220px]",
         className
       )}
