@@ -47,6 +47,8 @@ export interface HeroSectionProps {
   paddingTop?: string;
   /** Container padding bottom */
   paddingBottom?: string;
+  /** Minimum height */
+  minHeight?: string;
 }
 
 // Convert icon name to PascalCase for Lucide icon lookup
@@ -86,8 +88,9 @@ export default function HeroSection({
   buttonTextColor = "white",
   buttonHoverColor = "#C06020",
   bgColor = "#f5f5f5",
-  paddingTop = "6rem",
-  paddingBottom = "6rem",
+  paddingTop = "4rem",
+  paddingBottom = "4rem",
+  minHeight = "auto",
 }: HeroSectionProps) {
   const ButtonIcon = getIcon(buttonIcon);
 
@@ -99,11 +102,12 @@ export default function HeroSection({
         backgroundColor: bgColor,
         paddingTop,
         paddingBottom,
+        minHeight,
       }}
     >
       <div className="max-w-4xl mx-auto px-4 text-center">
         {/* Logo */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-6">
           <div
             className="rounded-full flex items-center justify-center overflow-hidden"
             style={{
@@ -138,7 +142,7 @@ export default function HeroSection({
 
         {/* Subtitle */}
         <p
-          className="text-lg mb-8"
+          className="text-base mb-6"
           style={{
             color: subtitleColor,
           }}
