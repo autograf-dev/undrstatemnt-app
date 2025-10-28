@@ -62,7 +62,7 @@ export default function PageShellShadcn({
   children,
 }: PageShellShadcnProps) {
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className={cn("flex h-screen overflow-hidden", className)} style={style}>
       <MainSidebar
         logoSrc={logoSrc}
         logoWidth={logoWidth}
@@ -80,7 +80,7 @@ export default function PageShellShadcn({
         buttonBgColor={buttonBgColor}
         buttonTextColor={buttonTextColor}
       />
-      <main className={cn("flex-1 overflow-y-auto bg-gray-50", className)} style={style}>
+      <main className="flex-1 overflow-y-auto bg-gray-50">
         {children}
       </main>
     </div>
