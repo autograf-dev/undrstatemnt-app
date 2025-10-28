@@ -3,14 +3,15 @@
 import { CSSProperties, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Users, Scissors, ChevronLeft, ChevronRight } from "lucide-react";
+import * as LucideIcons from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SidebarNavItem {
   id: string;
   label: string;
   href: string;
-  icon?: "home" | "barbers" | "services" | "custom";
+  icon?: string;
 }
 
 export interface MainSidebarProps {
@@ -35,16 +36,27 @@ export interface MainSidebarProps {
   defaultCollapsed?: boolean;
 }
 
-const iconFor = (key?: SidebarNavItem["icon"]) => {
-  switch (key) {
-    case "barbers":
-      return Users;
-    case "services":
-      return Scissors;
-    case "home":
-    default:
-      return MapPin;
-  }
+// Convert icon name to PascalCase for Lucide icon lookup
+const toPascalCase = (str: string) => {
+  return str
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('');
+};
+
+const iconFor = (iconName?: string) => {
+  if (!iconName) return LucideIcons.MapPin;
+  
+  // Handle special cases
+  if (iconName === "barbers") return LucideIcons.Users;
+  if (iconName === "services") return LucideIcons.Scissors;
+  
+  // Convert kebab-case to PascalCase (e.g., "map-pin" -> "MapPin")
+  const iconKey = toPascalCase(iconName) as keyof typeof LucideIcons;
+  const IconComponent = LucideIcons[iconKey];
+  
+  // Return the icon if it exists, otherwise return default
+  return IconComponent && typeof IconComponent !== 'string' ? IconComponent : LucideIcons.MapPin;
 };
 
 export default function MainSidebar({
@@ -248,7 +260,7 @@ export default function MainSidebar({
             }}
             title={signInLabel}
           >
-            <Users className="w-5 h-5" />
+            <LucideIcons.User className="w-5 h-5" />
           </Link>
         )}
       </div>

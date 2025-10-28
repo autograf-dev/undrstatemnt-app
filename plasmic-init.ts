@@ -167,8 +167,20 @@ PLASMIC.registerComponent(MainSidebar, {
           href: { type: "string", description: "Link path (e.g. /home)" },
           icon: {
             type: "choice",
-            description: "Icon",
-            options: ["home", "barbers", "services"],
+            description: "Icon from Lucide library",
+            options: [
+              "home", "barbers", "services", "calendar", "clock", "user", "users", 
+              "scissors", "star", "heart", "phone", "mail", "map-pin", "navigation",
+              "settings", "menu", "x", "check", "chevron-right", "chevron-left",
+              "chevron-down", "chevron-up", "arrow-right", "arrow-left", "plus",
+              "minus", "shopping-cart", "shopping-bag", "credit-card", "dollar-sign",
+              "gift", "tag", "bookmark", "bell", "message-circle", "send", "search",
+              "filter", "edit", "trash", "copy", "share", "download", "upload",
+              "image", "file", "folder", "lock", "unlock", "eye", "eye-off",
+              "thumbs-up", "thumbs-down", "smile", "frown", "coffee", "sun", "moon",
+              "cloud", "zap", "trending-up", "trending-down", "activity", "bar-chart",
+              "pie-chart", "help-circle", "info", "alert-circle", "alert-triangle"
+            ],
             defaultValue: "home"
           }
         }
@@ -218,8 +230,20 @@ PLASMIC.registerComponent(PageShellShadcn, {
           href: { type: "string", description: "Link path (e.g. /home)" },
           icon: {
             type: "choice",
-            description: "Icon",
-            options: ["home", "barbers", "services"],
+            description: "Icon from Lucide library",
+            options: [
+              "home", "barbers", "services", "calendar", "clock", "user", "users", 
+              "scissors", "star", "heart", "phone", "mail", "map-pin", "navigation",
+              "settings", "menu", "x", "check", "chevron-right", "chevron-left",
+              "chevron-down", "chevron-up", "arrow-right", "arrow-left", "plus",
+              "minus", "shopping-cart", "shopping-bag", "credit-card", "dollar-sign",
+              "gift", "tag", "bookmark", "bell", "message-circle", "send", "search",
+              "filter", "edit", "trash", "copy", "share", "download", "upload",
+              "image", "file", "folder", "lock", "unlock", "eye", "eye-off",
+              "thumbs-up", "thumbs-down", "smile", "frown", "coffee", "sun", "moon",
+              "cloud", "zap", "trending-up", "trending-down", "activity", "bar-chart",
+              "pie-chart", "help-circle", "info", "alert-circle", "alert-triangle"
+            ],
             defaultValue: "home"
           }
         }
