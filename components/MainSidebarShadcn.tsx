@@ -99,6 +99,8 @@ export default function MainSidebarShadcn({
       className={cn("border-r-0", className)}
       style={{
         ...style,
+        backgroundColor: bgColor,
+        color: textColor,
         "--sidebar-background": bgColor,
         "--sidebar-foreground": textColor,
         "--sidebar-primary": textColor,
@@ -108,7 +110,7 @@ export default function MainSidebarShadcn({
         "--sidebar-border": "rgba(255, 255, 255, 0.1)",
       } as CSSProperties}
     >
-      <SidebarHeader className="border-b border-white/10 pb-4">
+      <SidebarHeader className="border-b border-white/10 pb-4" style={{ backgroundColor: bgColor, color: textColor }}>
         <div className="flex flex-col items-center gap-3 px-2">
           <div className="relative w-20 h-20 rounded-full ring-2 ring-white/40 overflow-hidden bg-white/10 flex items-center justify-center">
             <Image
@@ -130,7 +132,7 @@ export default function MainSidebarShadcn({
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent style={{ backgroundColor: bgColor, color: textColor }}>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -163,7 +165,7 @@ export default function MainSidebarShadcn({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/10 pt-4">
+      <SidebarFooter className="border-t border-white/10 pt-4" style={{ backgroundColor: bgColor, color: textColor }}>
         <SidebarMenu>
           <SidebarMenuItem>
             <Link
