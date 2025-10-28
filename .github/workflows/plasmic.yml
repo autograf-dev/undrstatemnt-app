@@ -8,16 +8,6 @@ permissions:
 on:
   repository_dispatch:
     types: [plasmic]
-  workflow_dispatch:
-    inputs:
-      publish:
-        description: 'Build after sync'
-        default: 'true'
-        required: false
-      scheme:
-        description: 'Plasmic scheme (loader|codegen)'
-        default: 'loader'
-        required: false
 
 jobs:
   job:
