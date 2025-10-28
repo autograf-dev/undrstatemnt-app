@@ -10,6 +10,10 @@ export interface PageShellShadcnProps {
   style?: CSSProperties;
   /** Logo URL for sidebar */
   logoSrc?: string;
+  /** Logo width in pixels */
+  logoWidth?: number;
+  /** Logo height in pixels */
+  logoHeight?: number;
   /** Business name for sidebar */
   title?: string;
   /** Address for sidebar */
@@ -22,6 +26,18 @@ export interface PageShellShadcnProps {
   signInLabel?: string;
   /** Sign-in link */
   signInHref?: string;
+  /** Sidebar background color */
+  sidebarBgColor?: string;
+  /** Sidebar text color */
+  sidebarTextColor?: string;
+  /** Active item background color */
+  sidebarActiveBgColor?: string;
+  /** Hover background color */
+  sidebarHoverBgColor?: string;
+  /** Sign-in button background color */
+  buttonBgColor?: string;
+  /** Sign-in button text color */
+  buttonTextColor?: string;
   /** Show mobile menu trigger */
   showTrigger?: boolean;
   /** Main page content (slot from Plasmic) */
@@ -32,12 +48,20 @@ export default function PageShellShadcn({
   className,
   style,
   logoSrc,
+  logoWidth,
+  logoHeight,
   title,
   subtitle,
   sidebarItems,
   activeHref,
   signInLabel,
   signInHref,
+  sidebarBgColor,
+  sidebarTextColor,
+  sidebarActiveBgColor,
+  sidebarHoverBgColor,
+  buttonBgColor,
+  buttonTextColor,
   showTrigger = true,
   children,
 }: PageShellShadcnProps) {
@@ -45,12 +69,20 @@ export default function PageShellShadcn({
     <SidebarProvider>
       <MainSidebarShadcn
         logoSrc={logoSrc}
+        logoWidth={logoWidth}
+        logoHeight={logoHeight}
         title={title}
         subtitle={subtitle}
         items={sidebarItems}
         activeHref={activeHref}
         signInLabel={signInLabel}
         signInHref={signInHref}
+        bgColor={sidebarBgColor}
+        textColor={sidebarTextColor}
+        activeBgColor={sidebarActiveBgColor}
+        hoverBgColor={sidebarHoverBgColor}
+        buttonBgColor={buttonBgColor}
+        buttonTextColor={buttonTextColor}
       />
       <SidebarInset className={cn("flex-1", className)} style={style}>
         {showTrigger && (

@@ -114,16 +114,16 @@ export default function MainSidebarShadcn({
             <Image
               src={logoSrc}
               alt="logo"
-              width={80}
-              height={80}
+              width={logoWidth}
+              height={logoHeight}
               className="object-contain p-2"
             />
           </div>
           <div className="text-center w-full">
-            <h2 className="text-sm font-extrabold tracking-wider uppercase text-white">
+            <h2 className="text-sm font-extrabold tracking-wider uppercase" style={{ color: textColor }}>
               {title}
             </h2>
-            <p className="text-[11px] text-white/70 mt-1 leading-tight">
+            <p className="text-[11px] mt-1 leading-tight" style={{ color: textColor, opacity: 0.7 }}>
               {subtitle}
             </p>
           </div>
@@ -143,11 +143,14 @@ export default function MainSidebarShadcn({
                       asChild
                       isActive={active}
                       className={cn(
-                        "text-white hover:bg-white/10 hover:text-white",
-                        active && "bg-white/15 text-white font-semibold"
+                        "font-semibold transition-colors"
                       )}
+                      style={{
+                        color: textColor,
+                        backgroundColor: active ? activeBgColor : "transparent",
+                      }}
                     >
-                      <Link href={item.href}>
+                      <Link href={item.href} style={{ color: textColor }}>
                         <Icon className="w-4 h-4" />
                         <span>{item.label}</span>
                       </Link>
@@ -165,7 +168,11 @@ export default function MainSidebarShadcn({
           <SidebarMenuItem>
             <Link
               href={signInHref}
-              className="w-full inline-flex items-center justify-center rounded-lg bg-white text-[color:var(--color-orange-primary)] hover:bg-white/90 font-semibold text-sm py-2.5 px-4 transition-colors"
+              className="w-full inline-flex items-center justify-center rounded-lg font-semibold text-sm py-2.5 px-4 transition-colors hover:opacity-90"
+              style={{
+                backgroundColor: buttonBgColor,
+                color: buttonTextColor,
+              }}
             >
               {signInLabel}
             </Link>
