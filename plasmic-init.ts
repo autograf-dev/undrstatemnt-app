@@ -102,6 +102,8 @@ PLASMIC.registerComponent(ServicesExplorer, {
 import ServicesCatalog from "./components/ServicesCatalog";
 import MainSidebar from "./components/MainSidebar";
 import PageShellShadcn from "./components/PageShellShadcn";
+import HeroSection from "./components/HeroSection";
+import OurStory from "./components/OurStory";
 
 PLASMIC.registerComponent(ServicesCatalog, {
   name: "ServicesCatalog",
@@ -289,5 +291,68 @@ PLASMIC.registerComponent(PageShellShadcn, {
     buttonTextColor: { type: "color", description: "Sign-in button text", defaultValue: "#391709" },
     defaultCollapsed: { type: "boolean", description: "Start collapsed (icon-only mode)", defaultValue: false },
     children: { type: "slot", defaultValue: { type: "text", value: "Page content here" } },
+  },
+});
+
+PLASMIC.registerComponent(HeroSection, {
+  name: "HeroSection",
+  importPath: "@/components/HeroSection",
+  props: {
+    logoSrc: { type: "imageUrl", description: "Logo image", defaultValue: "/next.svg" },
+    logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 120 },
+    logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 120 },
+    logoBgColor: { type: "color", description: "Logo background", defaultValue: "white" },
+    logoBorderColor: { type: "color", description: "Logo border", defaultValue: "#D4A574" },
+    title: { type: "string", description: "Business name", defaultValue: "UNDRSTATEMNT CO." },
+    titleSize: { type: "string", description: "Title font size", defaultValue: "3rem" },
+    titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
+    subtitle: { type: "string", description: "Subtitle/address", defaultValue: "1309 Edmonton Trl, Calgary, AB T2E 4Y8" },
+    subtitleColor: { type: "color", description: "Subtitle color", defaultValue: "#666666" },
+    buttonText: { type: "string", description: "Button text", defaultValue: "Make a Booking" },
+    buttonHref: { type: "string", description: "Button link", defaultValue: "/booking" },
+    buttonIcon: {
+      type: "choice",
+      description: "Button icon",
+      options: [
+        "scissors", "calendar", "clock", "arrow-right", "chevron-right", "phone", 
+        "mail", "user", "star", "heart", "check", "plus", "shopping-cart"
+      ],
+      defaultValue: "scissors"
+    },
+    buttonBgColor: { type: "color", description: "Button background", defaultValue: "#D97639" },
+    buttonTextColor: { type: "color", description: "Button text color", defaultValue: "white" },
+    buttonHoverColor: { type: "color", description: "Button hover color", defaultValue: "#C06020" },
+    bgColor: { type: "color", description: "Background color", defaultValue: "#f5f5f5" },
+    paddingTop: { type: "string", description: "Padding top", defaultValue: "6rem" },
+    paddingBottom: { type: "string", description: "Padding bottom", defaultValue: "6rem" },
+  },
+});
+
+PLASMIC.registerComponent(OurStory, {
+  name: "OurStory",
+  importPath: "@/components/OurStory",
+  props: {
+    title: { type: "string", description: "Section title", defaultValue: "Our Story" },
+    titleSize: { type: "string", description: "Title font size", defaultValue: "2.5rem" },
+    titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
+    content: { 
+      type: "string", 
+      description: "Story content", 
+      defaultValue: "LOCATED IN DOWNTOWN CALGARY, UNDRSTATEMNT IS A PREMIER BARBERSHOP THAT PROVIDES A HIGH LEVEL OF CARE AND EXPERIENCE TO OUR CLIENTELE. DRIVEN BY OUR PASSION AND EXPERTISE, OUR CLIENTS ARE CONFIDENT THAT THEY CAN COUNT ON OUR PROFESSIONAL SERVICE. THEY KNOW THAT THEY WILL LEAVE OUR SALON FEELING AND LOOKING THEIR BEST. UNDRSTATEMNT'S GOAL IS TO HAVE A SHOP DEEPLY ROOTED IN THE FOUNDATION OF THE COMMUNITY, SOMEWHERE THEIR CLIENTELE CAN SURROUND THEMSELVES WITH AMAZING PEOPLE THROUGH THE YEARS." 
+    },
+    contentSize: { type: "string", description: "Content font size", defaultValue: "1rem" },
+    contentColor: { type: "color", description: "Content color", defaultValue: "#6b7280" },
+    imageSrc: { type: "imageUrl", description: "Story image", defaultValue: "/Understatement.jpg" },
+    imageWidth: { type: "number", description: "Image width", defaultValue: 600 },
+    imageHeight: { type: "number", description: "Image height", defaultValue: 400 },
+    imagePosition: {
+      type: "choice",
+      description: "Image position",
+      options: ["left", "right"],
+      defaultValue: "right"
+    },
+    bgColor: { type: "color", description: "Background color", defaultValue: "white" },
+    padding: { type: "string", description: "Section padding", defaultValue: "4rem 2rem" },
+    maxWidth: { type: "string", description: "Max container width", defaultValue: "1200px" },
   },
 });
