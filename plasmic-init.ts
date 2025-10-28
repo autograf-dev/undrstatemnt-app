@@ -169,7 +169,9 @@ PLASMIC.registerComponent(MainSidebarShadcn, {
   name: "MainSidebarShadcn",
   importPath: "@/components/MainSidebarShadcn",
   props: {
-    logoSrc: { type: "string", description: "Logo URL", defaultValue: "/next.svg" },
+    logoSrc: { type: "imageUrl", description: "Logo URL", defaultValue: "/next.svg" },
+    logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 80 },
+    logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 80 },
     title: { type: "string", description: "Business name", defaultValue: "Undrstatemnt" },
     subtitle: { type: "string", description: "Address", defaultValue: "1309 Edmonton Trl, Calgary, AB T2E 4Y8" },
     items: {
@@ -184,6 +186,12 @@ PLASMIC.registerComponent(MainSidebarShadcn, {
     activeHref: { type: "string", description: "Active item href" },
     signInLabel: { type: "string", description: "Sign in button text", defaultValue: "Sign In" },
     signInHref: { type: "string", description: "Sign-in link", defaultValue: "/login" },
+    bgColor: { type: "color", description: "Sidebar background color", defaultValue: "#391709" },
+    textColor: { type: "color", description: "Text color", defaultValue: "white" },
+    activeBgColor: { type: "color", description: "Active item background", defaultValue: "rgba(255, 255, 255, 0.15)" },
+    hoverBgColor: { type: "color", description: "Hover background", defaultValue: "rgba(255, 255, 255, 0.1)" },
+    buttonBgColor: { type: "color", description: "Sign-in button background", defaultValue: "white" },
+    buttonTextColor: { type: "color", description: "Sign-in button text", defaultValue: "#391709" },
   },
 });
 
@@ -191,7 +199,9 @@ PLASMIC.registerComponent(PageShellShadcn, {
   name: "PageShellShadcn",
   importPath: "@/components/PageShellShadcn",
   props: {
-    logoSrc: { type: "string", description: "Logo URL", defaultValue: "/next.svg" },
+    logoSrc: { type: "imageUrl", description: "Logo URL", defaultValue: "/next.svg" },
+    logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 80 },
+    logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 80 },
     title: { type: "string", description: "Business name", defaultValue: "Undrstatemnt" },
     subtitle: { type: "string", description: "Address", defaultValue: "1309 Edmonton Trl, Calgary, AB T2E 4Y8" },
     sidebarItems: {
@@ -206,6 +216,12 @@ PLASMIC.registerComponent(PageShellShadcn, {
     activeHref: { type: "string", description: "Active href" },
     signInLabel: { type: "string", description: "Sign in button text", defaultValue: "Sign In" },
     signInHref: { type: "string", description: "Sign-in link", defaultValue: "/login" },
+    sidebarBgColor: { type: "color", description: "Sidebar background color", defaultValue: "#391709" },
+    sidebarTextColor: { type: "color", description: "Sidebar text color", defaultValue: "white" },
+    sidebarActiveBgColor: { type: "color", description: "Active item background", defaultValue: "rgba(255, 255, 255, 0.15)" },
+    sidebarHoverBgColor: { type: "color", description: "Hover background", defaultValue: "rgba(255, 255, 255, 0.1)" },
+    buttonBgColor: { type: "color", description: "Sign-in button background", defaultValue: "white" },
+    buttonTextColor: { type: "color", description: "Sign-in button text", defaultValue: "#391709" },
     showTrigger: { type: "boolean", description: "Show mobile menu trigger", defaultValue: true },
     children: { type: "slot", defaultValue: { type: "text", value: "Page content here" } },
   },
