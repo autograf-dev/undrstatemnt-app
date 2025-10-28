@@ -104,6 +104,8 @@ import MainSidebar from "./components/MainSidebar";
 import PageShellShadcn from "./components/PageShellShadcn";
 import HeroSection from "./components/HeroSection";
 import OurStory from "./components/OurStory";
+import CTASection from "./components/CTASection";
+import Footer from "./components/Footer";
 
 PLASMIC.registerComponent(ServicesCatalog, {
   name: "ServicesCatalog",
@@ -355,5 +357,83 @@ PLASMIC.registerComponent(OurStory, {
     bgColor: { type: "color", description: "Background color", defaultValue: "white" },
     padding: { type: "string", description: "Section padding", defaultValue: "3rem 2rem" },
     maxWidth: { type: "string", description: "Max container width", defaultValue: "1200px" },
+  },
+});
+
+PLASMIC.registerComponent(CTASection, {
+  name: "CTASection",
+  importPath: "@/components/CTASection",
+  props: {
+    heading: { type: "string", description: "Main heading", defaultValue: "Have a question? Contact us!" },
+    headingColor: { type: "color", description: "Heading color", defaultValue: "#1a1a1a" },
+    headingSize: { type: "string", description: "Heading font size", defaultValue: "1.75rem" },
+    subtext: { type: "string", description: "Subtext/description", defaultValue: "Call by clicking the button on the right →" },
+    subtextColor: { type: "color", description: "Subtext color", defaultValue: "#666666" },
+    subtextSize: { type: "string", description: "Subtext font size", defaultValue: "1.125rem" },
+    buttonText: { type: "string", description: "Button text", defaultValue: "Call us" },
+    buttonHref: { type: "string", description: "Button link (tel: or URL)", defaultValue: "tel:+14031234567" },
+    buttonIcon: {
+      type: "choice",
+      description: "Button icon",
+      options: [
+        "phone", "mail", "message-circle", "headphones", "help-circle",
+        "arrow-right", "chevron-right", "external-link"
+      ],
+      defaultValue: "phone"
+    },
+    buttonBgColor: { type: "color", description: "Button background", defaultValue: "#D97639" },
+    buttonTextColor: { type: "color", description: "Button text color", defaultValue: "white" },
+    buttonHoverColor: { type: "color", description: "Button hover color", defaultValue: "#C06020" },
+    bgColor: { type: "color", description: "Background color", defaultValue: "white" },
+    borderColor: { type: "color", description: "Border color", defaultValue: "#e5e7eb" },
+    padding: { type: "string", description: "Section padding", defaultValue: "2.5rem 3rem" },
+  },
+});
+
+PLASMIC.registerComponent(Footer, {
+  name: "Footer",
+  importPath: "@/components/Footer",
+  props: {
+    logoSrc: { type: "imageUrl", description: "Logo image", defaultValue: "/next.svg" },
+    logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 60 },
+    logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 60 },
+    businessName: { type: "string", description: "Business name", defaultValue: "UNDRSTATEMNT CO." },
+    businessNameColor: { type: "color", description: "Business name color", defaultValue: "#1a1a1a" },
+    businessNameSize: { type: "string", description: "Business name size", defaultValue: "1.5rem" },
+    address: { type: "string", description: "Address", defaultValue: "1309 EDMONTON TRL, CALGARY, AB T2E 4Y8" },
+    addressColor: { type: "color", description: "Address color", defaultValue: "#D97639" },
+    addressSize: { type: "string", description: "Address font size", defaultValue: "0.875rem" },
+    socialLinks: {
+      type: "array",
+      description: "Social media links",
+      itemType: {
+        type: "object",
+        nameFunc: (item: any) => item?.platform || "Social Link",
+        fields: {
+          id: { type: "string", description: "Unique ID", defaultValue: "social" },
+          platform: { type: "string", description: "Platform name", defaultValue: "Instagram" },
+          url: { type: "string", description: "Social media URL", defaultValue: "https://instagram.com" },
+          icon: {
+            type: "choice",
+            description: "Icon",
+            options: [
+              "instagram", "facebook", "twitter", "linkedin", "youtube",
+              "github", "tiktok", "pinterest", "snapchat", "whatsapp"
+            ],
+            defaultValue: "instagram"
+          }
+        }
+      },
+      defaultValue: [
+        { id: "instagram", platform: "Instagram", url: "https://instagram.com", icon: "instagram" },
+        { id: "facebook", platform: "Facebook", url: "https://facebook.com", icon: "facebook" },
+      ],
+    },
+    socialIconSize: { type: "number", description: "Social icon size", defaultValue: 24 },
+    socialIconColor: { type: "color", description: "Social icon color", defaultValue: "#D97639" },
+    socialBgColor: { type: "color", description: "Social button background", defaultValue: "#FEF3EE" },
+    socialHoverColor: { type: "color", description: "Social button hover", defaultValue: "#FED7C3" },
+    bgColor: { type: "color", description: "Background color", defaultValue: "#FAFAFA" },
+    padding: { type: "string", description: "Section padding", defaultValue: "3rem 2rem" },
   },
 });
