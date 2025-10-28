@@ -323,8 +323,9 @@ PLASMIC.registerComponent(HeroSection, {
     buttonTextColor: { type: "color", description: "Button text color", defaultValue: "white" },
     buttonHoverColor: { type: "color", description: "Button hover color", defaultValue: "#C06020" },
     bgColor: { type: "color", description: "Background color", defaultValue: "#f5f5f5" },
-    paddingTop: { type: "string", description: "Padding top", defaultValue: "6rem" },
-    paddingBottom: { type: "string", description: "Padding bottom", defaultValue: "6rem" },
+    paddingTop: { type: "string", description: "Padding top", defaultValue: "4rem" },
+    paddingBottom: { type: "string", description: "Padding bottom", defaultValue: "4rem" },
+    minHeight: { type: "string", description: "Minimum height", defaultValue: "auto" },
   },
 });
 
@@ -352,7 +353,7 @@ PLASMIC.registerComponent(OurStory, {
       defaultValue: "right"
     },
     bgColor: { type: "color", description: "Background color", defaultValue: "white" },
-    padding: { type: "string", description: "Section padding", defaultValue: "4rem 2rem" },
+    padding: { type: "string", description: "Section padding", defaultValue: "3rem 2rem" },
     maxWidth: { type: "string", description: "Max container width", defaultValue: "1200px" },
   },
 });

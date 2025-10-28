@@ -49,7 +49,7 @@ export default function OurStory({
   imageHeight = 400,
   imagePosition = "right",
   bgColor = "white",
-  padding = "4rem 2rem",
+  padding = "3rem 2rem",
   maxWidth = "1200px",
 }: OurStoryProps) {
   const isImageRight = imagePosition === "right";
@@ -81,7 +81,7 @@ export default function OurStory({
           {/* Text Content */}
           <div className="flex-1">
             <h2
-              className="font-bold mb-6"
+              className="font-bold mb-4"
               style={{
                 fontSize: titleSize,
                 color: titleColor,
