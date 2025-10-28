@@ -141,28 +141,6 @@ PLASMIC.registerComponent(MainSidebar, {
   },
 });
 
-PLASMIC.registerComponent(PageShell, {
-  name: "PageShell",
-  importPath: "@/components/PageShell",
-  props: {
-    logoSrc: { type: "string", description: "Logo URL", defaultValue: "/next.svg" },
-    title: { type: "string", description: "Business name", defaultValue: "UNDERSTATEMNT CO." },
-    subtitle: { type: "string", description: "Address", defaultValue: "1309 Edmonton Trl, Calgary, AB" },
-    sidebarItems: {
-      type: "object",
-      description: "Sidebar nav items",
-      defaultValue: [
-        { id: "home", label: "Home", href: "/", icon: "home" },
-        { id: "barbers", label: "Barbers", href: "/barbers", icon: "barbers" },
-        { id: "services", label: "Services", href: "/services", icon: "services" },
-      ],
-    },
-    activeHref: { type: "string", description: "Active href" },
-    signInHref: { type: "string", description: "Sign-in link", defaultValue: "/login" },
-    children: { type: "slot", defaultValue: { type: "text", value: "Page content here" } },
-  },
-});
-
 PLASMIC.registerComponent(MainSidebar, {
   name: "MainSidebar",
   importPath: "@/components/MainSidebar",

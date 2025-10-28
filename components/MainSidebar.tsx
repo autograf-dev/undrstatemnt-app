@@ -82,8 +82,8 @@ export default function MainSidebar({
         <div className="flex flex-col items-center gap-3">
           <div className="relative w-20 h-20 rounded-full ring-2 overflow-hidden flex items-center justify-center"
             style={{ 
-              ringColor: `${textColor}40`,
-              backgroundColor: `${textColor}10`
+              backgroundColor: `${textColor}10`,
+              borderColor: `${textColor}40`
             }}
           >
             <Image
