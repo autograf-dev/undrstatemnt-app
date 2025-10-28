@@ -102,6 +102,9 @@ PLASMIC.registerComponent(ServicesExplorer, {
 import ServicesCatalog from "./components/ServicesCatalog";
 import MainSidebar from "./components/MainSidebar";
 import PageShell from "./components/PageShell";
+import MainSidebarShadcn from "./components/MainSidebarShadcn";
+import PageShellShadcn from "./components/PageShellShadcn";
+
 PLASMIC.registerComponent(ServicesCatalog, {
   name: "ServicesCatalog",
   importPath: "@/components/ServicesCatalog",
@@ -158,6 +161,52 @@ PLASMIC.registerComponent(PageShell, {
     },
     activeHref: { type: "string", description: "Active href" },
     signInHref: { type: "string", description: "Sign-in link", defaultValue: "/login" },
+    children: { type: "slot", defaultValue: { type: "text", value: "Page content here" } },
+  },
+});
+
+PLASMIC.registerComponent(MainSidebarShadcn, {
+  name: "MainSidebarShadcn",
+  importPath: "@/components/MainSidebarShadcn",
+  props: {
+    logoSrc: { type: "string", description: "Logo URL", defaultValue: "/next.svg" },
+    title: { type: "string", description: "Business name", defaultValue: "Undrstatemnt" },
+    subtitle: { type: "string", description: "Address", defaultValue: "1309 Edmonton Trl, Calgary, AB T2E 4Y8" },
+    items: {
+      type: "object",
+      description: "Nav items: array of {id, label, href, icon}",
+      defaultValue: [
+        { id: "home", label: "Home", href: "/", icon: "home" },
+        { id: "barbers", label: "Barbers", href: "/barbers", icon: "barbers" },
+        { id: "services", label: "Services", href: "/services", icon: "services" },
+      ],
+    },
+    activeHref: { type: "string", description: "Active item href" },
+    signInLabel: { type: "string", description: "Sign in button text", defaultValue: "Sign In" },
+    signInHref: { type: "string", description: "Sign-in link", defaultValue: "/login" },
+  },
+});
+
+PLASMIC.registerComponent(PageShellShadcn, {
+  name: "PageShellShadcn",
+  importPath: "@/components/PageShellShadcn",
+  props: {
+    logoSrc: { type: "string", description: "Logo URL", defaultValue: "/next.svg" },
+    title: { type: "string", description: "Business name", defaultValue: "Undrstatemnt" },
+    subtitle: { type: "string", description: "Address", defaultValue: "1309 Edmonton Trl, Calgary, AB T2E 4Y8" },
+    sidebarItems: {
+      type: "object",
+      description: "Sidebar nav items",
+      defaultValue: [
+        { id: "home", label: "Home", href: "/", icon: "home" },
+        { id: "barbers", label: "Barbers", href: "/barbers", icon: "barbers" },
+        { id: "services", label: "Services", href: "/services", icon: "services" },
+      ],
+    },
+    activeHref: { type: "string", description: "Active href" },
+    signInLabel: { type: "string", description: "Sign in button text", defaultValue: "Sign In" },
+    signInHref: { type: "string", description: "Sign-in link", defaultValue: "/login" },
+    showTrigger: { type: "boolean", description: "Show mobile menu trigger", defaultValue: true },
     children: { type: "slot", defaultValue: { type: "text", value: "Page content here" } },
   },
 });

@@ -1,0 +1,154 @@
+"use client";
+
+import { CSSProperties } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { MapPin, Users, Scissors, ChevronUp, User2 } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
+
+export interface SidebarNavItem {
+  id: string;
+  label: string;
+  href: string;
+  icon?: "home" | "barbers" | "services" | "custom";
+}
+
+export interface MainSidebarShadcnProps {
+  className?: string;
+  style?: CSSProperties;
+  /** Business logo URL */
+  logoSrc?: string;
+  /** Business name */
+  title?: string;
+  /** Address line */
+  subtitle?: string;
+  /** Menu items */
+  items?: SidebarNavItem[];
+  /** Active href to highlight */
+  activeHref?: string;
+  /** Sign-in button label */
+  signInLabel?: string;
+  /** Sign-in URL */
+  signInHref?: string;
+}
+
+const iconFor = (key?: SidebarNavItem["icon"]) => {
+  switch (key) {
+    case "barbers":
+      return Users;
+    case "services":
+      return Scissors;
+    case "home":
+    default:
+      return MapPin;
+  }
+};
+
+export default function MainSidebarShadcn({
+  className,
+  style,
+  logoSrc = "/next.svg",
+  title = "Undrstatemnt",
+  subtitle = "1309 Edmonton Trl, Calgary, AB T2E 4Y8",
+  items = [
+    { id: "home", label: "Home", href: "/", icon: "home" },
+    { id: "barbers", label: "Barbers", href: "/barbers", icon: "barbers" },
+    { id: "services", label: "Services", href: "/services", icon: "services" },
+  ],
+  activeHref,
+  signInLabel = "Sign In",
+  signInHref = "/login",
+}: MainSidebarShadcnProps) {
+  return (
+    <Sidebar
+      className={cn("border-r-0", className)}
+      style={{
+        ...style,
+        "--sidebar-background": "var(--color-orange-primary)",
+        "--sidebar-foreground": "white",
+        "--sidebar-primary": "white",
+        "--sidebar-primary-foreground": "var(--color-orange-primary)",
+        "--sidebar-accent": "rgba(255, 255, 255, 0.1)",
+        "--sidebar-accent-foreground": "white",
+        "--sidebar-border": "rgba(255, 255, 255, 0.1)",
+      } as CSSProperties}
+    >
+      <SidebarHeader className="border-b border-white/10 pb-4">
+        <div className="flex flex-col items-center gap-3 px-2">
+          <div className="relative w-20 h-20 rounded-full ring-2 ring-white/40 overflow-hidden bg-white/10 flex items-center justify-center">
+            <Image
+              src={logoSrc}
+              alt="logo"
+              width={80}
+              height={80}
+              className="object-contain p-2"
+            />
+          </div>
+          <div className="text-center w-full">
+            <h2 className="text-sm font-extrabold tracking-wider uppercase text-white">
+              {title}
+            </h2>
+            <p className="text-[11px] text-white/70 mt-1 leading-tight">
+              {subtitle}
+            </p>
+          </div>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map((item) => {
+                const Icon = iconFor(item.icon);
+                const active = activeHref ? activeHref === item.href : false;
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={active}
+                      className={cn(
+                        "text-white hover:bg-white/10 hover:text-white",
+                        active && "bg-white/15 text-white font-semibold"
+                      )}
+                    >
+                      <Link href={item.href}>
+                        <Icon className="w-4 h-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-white/10 pt-4">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <Link
+              href={signInHref}
+              className="w-full inline-flex items-center justify-center rounded-lg bg-white text-[color:var(--color-orange-primary)] hover:bg-white/90 font-semibold text-sm py-2.5 px-4 transition-colors"
+            >
+              {signInLabel}
+            </Link>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+

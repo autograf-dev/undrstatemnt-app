@@ -34,7 +34,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
-  
+
   /* Primary color (custom brown) */
   --color-orange-primary: #391709; /* renamed usage kept for compatibility */
   --color-orange-text: #FCF8F5;
@@ -165,7 +165,6 @@
   background-repeat: no-repeat;
   background-size: contain;
 }
-
 
 .phone-input-container .phone-input {
   border: none !important;
@@ -783,38 +782,38 @@ h1, h2, h3, h4, h5, h6 {
     padding: 10px 12px !important;
     font-size: 14px !important;
   }
-  
+
   .phone-input-container .country-code {
     padding: 10px 12px !important;
     min-width: 75px !important;
   }
-  
+
   .phone-input-container .country-code img {
     width: 16px !important;
     height: 12px !important;
   }
-  
+
   .phone-input-container .country-code span {
     font-size: 14px !important;
   }
-  
+
   .service-card, .staff-card {
     padding: 16px;
   }
-  
+
   .date-card {
     padding: 12px;
   }
-  
+
   .time-slot-button {
     padding: 10px 12px;
     font-size: 14px;
   }
-  
+
   .service-skeleton {
     padding: 16px;
   }
-  
+
   .date-skeleton {
     padding: 12px;
   }
