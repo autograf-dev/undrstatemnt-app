@@ -20,7 +20,13 @@ PLASMIC.registerComponent(BookingWidget, {
   name: "BookingWidget",
   importPath: "@/components/BookingWidget",
   isDefaultExport: true,
-  props: {},
+  props: {
+    fullHeight: {
+      type: "boolean",
+      description: "Use full viewport height (min-h-screen)",
+      defaultValue: false,
+    },
+  },
 });
 
 PLASMIC.registerComponent(ServiceListWidget, {
