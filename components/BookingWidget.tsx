@@ -129,7 +129,7 @@ export default function BookingWidget({ className, style, fullHeight = false }: 
       try {
         const start = Date.now();
         // If selectedDepartment is 'all', load all services; otherwise, filter by department
-        const base = 'https://modify.undrstatemnt.com/.netlify/functions/Services';
+  const base = '/api/services';
         const url = selectedDepartment && selectedDepartment !== 'all'
           ? `${base}?id=${selectedDepartment}`
           : base;
@@ -183,7 +183,7 @@ export default function BookingWidget({ className, style, fullHeight = false }: 
       setStaff([]);
       
       try {
-        const base = 'https://modify.undrstatemnt.com/.netlify/functions/Services';
+  const base = '/api/services';
         // When using 'all', fetch from the base services endpoint; else filter by department
         const url = selectedDepartment && selectedDepartment !== 'all'
           ? `${base}?id=${selectedDepartment}`
@@ -207,7 +207,7 @@ export default function BookingWidget({ className, style, fullHeight = false }: 
 
         const staffPromises = teamMembers.map(async (member: any) => {
           try {
-            const staffRes = await fetch(`https://modify.undrstatemnt.com/.netlify/functions/Staff?id=${member.userId}`);
+            const staffRes = await fetch(`/api/staff?id=${member.userId}`);
             const staffData = await staffRes.json();
 
             const derivedName =
@@ -264,7 +264,7 @@ export default function BookingWidget({ className, style, fullHeight = false }: 
       try {
         const serviceDurationMinutes = getServiceDuration(serviceId);
         
-        let apiUrl = `https://modify.undrstatemnt.com/.netlify/functions/staffSlots?calendarId=${serviceId}`;
+  let apiUrl = `/api/staff-slots?calendarId=${serviceId}`;
         if (userId && selectedStaff !== 'any') {
           apiUrl += `&userId=${userId}`;
         }
@@ -550,7 +550,7 @@ export default function BookingWidget({ className, style, fullHeight = false }: 
 
     try {
       // 1) Upsert/find customer to get contactId
-      const customerUrl = new URL("https://modify.undrstatemnt.com/.netlify/functions/customer");
+  const customerUrl = new URL("/api/customer", window.location.origin);
       customerUrl.searchParams.set("firstName", contactForm.firstName.trim());
       customerUrl.searchParams.set("lastName", contactForm.lastName.trim());
       customerUrl.searchParams.set("phone", contactForm.phone.replace(/\D/g, ""));
@@ -565,7 +565,7 @@ export default function BookingWidget({ className, style, fullHeight = false }: 
       const endIsoUtc = addMinutesIso(startIsoUtc, durationMins);
 
       // 3) Book appointment (send camelCase and snake_case params for compatibility)
-      const apptUrl = new URL("https://modify.undrstatemnt.com/.netlify/functions/Apointment");
+  const apptUrl = new URL("/api/appointment", window.location.origin);
       const params: Record<string, string> = {
         // identifiers
         calendarId: selectedService,
