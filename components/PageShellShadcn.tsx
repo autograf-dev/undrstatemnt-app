@@ -39,6 +39,8 @@ export interface PageShellShadcnProps {
   buttonBgColor?: string;
   /** Sign-in button text color */
   buttonTextColor?: string;
+  /** Start sidebar collapsed */
+  defaultCollapsed?: boolean;
   /** Main page content (slot from Plasmic) */
   children?: ReactNode;
 }
@@ -62,6 +64,7 @@ export default function PageShellShadcn({
   sidebarHoverBgColor,
   buttonBgColor,
   buttonTextColor,
+  defaultCollapsed,
   children,
 }: PageShellShadcnProps) {
   return (
@@ -83,6 +86,7 @@ export default function PageShellShadcn({
         hoverBgColor={sidebarHoverBgColor}
         buttonBgColor={buttonBgColor}
         buttonTextColor={buttonTextColor}
+        defaultCollapsed={defaultCollapsed}
       />
       <main className="flex-1 overflow-y-auto bg-gray-50">
         {children}

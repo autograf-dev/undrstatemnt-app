@@ -173,6 +173,7 @@ PLASMIC.registerComponent(MainSidebar, {
     hoverBgColor: { type: "color", description: "Hover background", defaultValue: "rgba(255, 255, 255, 0.1)" },
     buttonBgColor: { type: "color", description: "Sign-in button background", defaultValue: "white" },
     buttonTextColor: { type: "color", description: "Sign-in button text", defaultValue: "#391709" },
+    defaultCollapsed: { type: "boolean", description: "Start collapsed (icon-only mode)", defaultValue: false },
   },
 });
 
@@ -208,6 +209,7 @@ PLASMIC.registerComponent(PageShellShadcn, {
     sidebarHoverBgColor: { type: "color", description: "Hover background", defaultValue: "rgba(255, 255, 255, 0.1)" },
     buttonBgColor: { type: "color", description: "Sign-in button background", defaultValue: "white" },
     buttonTextColor: { type: "color", description: "Sign-in button text", defaultValue: "#391709" },
+    defaultCollapsed: { type: "boolean", description: "Start collapsed (icon-only mode)", defaultValue: false },
     children: { type: "slot", defaultValue: { type: "text", value: "Page content here" } },
   },
 });
