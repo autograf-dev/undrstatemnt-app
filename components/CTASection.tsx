@@ -38,6 +38,10 @@ export interface CTASectionProps {
   borderColor?: string;
   /** Section padding */
   padding?: string;
+  /** Section margin (top and bottom) */
+  margin?: string;
+  /** Maximum width */
+  maxWidth?: string;
 }
 
 // Convert icon name to PascalCase for Lucide icon lookup
@@ -75,22 +79,26 @@ export default function CTASection({
   bgColor = "white",
   borderColor = "#e5e7eb",
   padding = "2.5rem 3rem",
+  margin = "3rem 0",
+  maxWidth = "1280px",
 }: CTASectionProps) {
   const ButtonIcon = getIcon(buttonIcon);
 
   return (
     <section
-      className={cn("w-full", className)}
+      className={cn("w-full px-4", className)}
       style={{
         ...style,
         backgroundColor: bgColor,
+        margin,
       }}
     >
       <div
-        className="max-w-7xl mx-auto rounded-2xl border flex items-center justify-between gap-8 flex-wrap lg:flex-nowrap"
+        className="mx-auto rounded-2xl border flex items-center justify-between gap-8 flex-wrap lg:flex-nowrap"
         style={{
           padding,
           borderColor,
+          maxWidth,
         }}
       >
         {/* Text Content */}

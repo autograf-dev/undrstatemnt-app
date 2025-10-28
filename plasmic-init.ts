@@ -387,6 +387,8 @@ PLASMIC.registerComponent(CTASection, {
     bgColor: { type: "color", description: "Background color", defaultValue: "white" },
     borderColor: { type: "color", description: "Border color", defaultValue: "#e5e7eb" },
     padding: { type: "string", description: "Section padding", defaultValue: "2.5rem 3rem" },
+    margin: { type: "string", description: "Section margin", defaultValue: "3rem 0" },
+    maxWidth: { type: "string", description: "Maximum width", defaultValue: "1280px" },
   },
 });
 
@@ -435,5 +437,6 @@ PLASMIC.registerComponent(Footer, {
     socialHoverColor: { type: "color", description: "Social button hover", defaultValue: "#FED7C3" },
     bgColor: { type: "color", description: "Background color", defaultValue: "#FAFAFA" },
     padding: { type: "string", description: "Section padding", defaultValue: "3rem 2rem" },
+    maxWidth: { type: "string", description: "Maximum width", defaultValue: "1280px" },
   },
 });

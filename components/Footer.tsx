@@ -48,6 +48,8 @@ export interface FooterProps {
   bgColor?: string;
   /** Section padding */
   padding?: string;
+  /** Maximum width */
+  maxWidth?: string;
 }
 
 // Convert icon name to PascalCase for Lucide icon lookup
@@ -96,6 +98,7 @@ export default function Footer({
   socialHoverColor = "#FED7C3",
   bgColor = "#FAFAFA",
   padding = "3rem 2rem",
+  maxWidth = "1280px",
 }: FooterProps) {
   return (
     <footer
@@ -107,9 +110,10 @@ export default function Footer({
       }}
     >
       <div
-        className="max-w-7xl mx-auto"
+        className="mx-auto px-4"
         style={{
           padding,
+          maxWidth,
         }}
       >
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
