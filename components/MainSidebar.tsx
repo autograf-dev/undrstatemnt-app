@@ -1,6 +1,6 @@
 "use client";
 
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Users, Scissors, ChevronLeft, ChevronRight } from "lucide-react";
@@ -73,11 +73,29 @@ export default function MainSidebar({
   defaultCollapsed = false,
 }: MainSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Keyboard shortcut: Ctrl+B (Windows/Linux) or Cmd+B (Mac)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        setIsCollapsed(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
   return (
     <aside
       className={cn(
-        "h-screen shrink-0 flex flex-col border-r-0 transition-all duration-300",
+        "h-screen shrink-0 flex flex-col border-r-0 transition-all duration-300 relative group",
         isCollapsed ? "w-[70px]" : "w-[220px]",
         className
       )}
@@ -86,28 +104,55 @@ export default function MainSidebar({
         backgroundColor: bgColor,
         color: textColor,
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Collapse Toggle Button */}
-      <div className="flex justify-end p-2">
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="rounded-lg p-1.5 transition-colors hover:bg-opacity-20"
-          style={{
-            color: textColor,
-            backgroundColor: hoverBgColor,
-          }}
-          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="w-5 h-5" />
-          ) : (
-            <ChevronLeft className="w-5 h-5" />
-          )}
-        </button>
+      {/* Collapse Toggle Button - Only show on hover */}
+      <div 
+        className={cn(
+          "absolute top-4 -right-3 z-50 transition-opacity duration-200",
+          isHovered ? "opacity-100" : "opacity-0"
+        )}
+      >
+        <div className="relative group/tooltip">
+          <button
+            onClick={toggleSidebar}
+            className="rounded-full p-1.5 shadow-lg transition-all hover:scale-110"
+            style={{
+              color: textColor,
+              backgroundColor: bgColor,
+              border: `2px solid ${textColor}40`
+            }}
+            aria-label={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </button>
+          
+          {/* Tooltip */}
+          <div 
+            className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-2 rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50"
+            style={{
+              backgroundColor: bgColor,
+              color: textColor,
+              border: `1px solid ${textColor}20`
+            }}
+          >
+            <div className="text-xs font-semibold">
+              {isCollapsed ? "Expand" : "Collapse"} Sidebar
+            </div>
+            <div className="text-[10px] opacity-70 mt-0.5">
+              {typeof navigator !== 'undefined' && navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} + B
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Header */}
-      <div className="border-b pb-4 px-2" style={{ borderColor: `${textColor}20` }}>
+      <div className="border-b pb-4 px-2 pt-4" style={{ borderColor: `${textColor}20` }}>
         <div className="flex flex-col items-center gap-3">
           <div 
             className={cn(
