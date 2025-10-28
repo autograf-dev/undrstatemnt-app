@@ -156,8 +156,23 @@ PLASMIC.registerComponent(MainSidebar, {
     title: { type: "string", description: "Business name", defaultValue: "Undrstatemnt" },
     subtitle: { type: "string", description: "Address", defaultValue: "1309 Edmonton Trl, Calgary, AB T2E 4Y8" },
     items: {
-      type: "object",
-      description: "Nav items: array of {id, label, href, icon}",
+      type: "array",
+      description: "Navigation menu items",
+      itemType: {
+        type: "object",
+        nameFunc: (item: any) => item.label || "Menu Item",
+        fields: {
+          id: { type: "string", description: "Unique ID" },
+          label: { type: "string", description: "Menu label" },
+          href: { type: "string", description: "Link path (e.g. /home)" },
+          icon: {
+            type: "choice",
+            description: "Icon",
+            options: ["home", "barbers", "services"],
+            defaultValue: "home"
+          }
+        }
+      },
       defaultValue: [
         { id: "home", label: "Home", href: "/", icon: "home" },
         { id: "barbers", label: "Barbers", href: "/barbers", icon: "barbers" },
@@ -192,8 +207,23 @@ PLASMIC.registerComponent(PageShellShadcn, {
     title: { type: "string", description: "Business name", defaultValue: "Undrstatemnt" },
     subtitle: { type: "string", description: "Address", defaultValue: "1309 Edmonton Trl, Calgary, AB T2E 4Y8" },
     sidebarItems: {
-      type: "object",
-      description: "Sidebar nav items",
+      type: "array",
+      description: "Navigation menu items",
+      itemType: {
+        type: "object",
+        nameFunc: (item: any) => item.label || "Menu Item",
+        fields: {
+          id: { type: "string", description: "Unique ID" },
+          label: { type: "string", description: "Menu label" },
+          href: { type: "string", description: "Link path (e.g. /home)" },
+          icon: {
+            type: "choice",
+            description: "Icon",
+            options: ["home", "barbers", "services"],
+            defaultValue: "home"
+          }
+        }
+      },
       defaultValue: [
         { id: "home", label: "Home", href: "/", icon: "home" },
         { id: "barbers", label: "Barbers", href: "/barbers", icon: "barbers" },
