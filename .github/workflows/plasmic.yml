@@ -23,9 +23,6 @@ jobs:
   job:
     name: Sync, build and deploy
     runs-on: ubuntu-latest
-    env:
-      # Set to 'true' in repo or workflow vars if you want to use Plasmic Codegen sync; keep 'false' for Loader-only.
-      USE_PLASMIC_CODEGEN: 'false'
     steps:
       - id: checkout
         name: Checking out repository...
@@ -34,16 +31,16 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - id: node
-        name: Setting up Node.js v20.10...
-        uses: actions/setup-node@v4
+        name: Setting up node v18...
+        uses: actions/setup-node@v3
         with:
-          node-version: "20.10.0"
+          node-version: "18"
       - id: cache
         name: Recovering cache...
         uses: actions/cache@v4
         with:
           key: lock-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}
-          path: node_modules
+          path: ${{ github.event.client_payload.data.directory }}/node_modules
       - id: init
         name: Initializing Plasmic app...
         uses: plasmicapp/plasmic-action@master
@@ -51,7 +48,7 @@ jobs:
           run: init
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.event.client_payload.data.branch }}
-          directory: .
+          directory: ${{ github.event.client_payload.data.directory }}
           project_id: ${{ github.event.client_payload.data.projectId }}
           project_api_token: ${{ github.event.client_payload.data.projectApiToken }}
           platform: ${{ github.event.client_payload.data.platform }}
@@ -60,14 +57,14 @@ jobs:
           title: ${{ github.event.client_payload.data.title }}
           description: ${{ github.event.client_payload.data.description }}
       - id: sync
-        name: Syncing Plasmic project (Codegen only)...
-        if: ${{ github.event.client_payload.data.scheme == 'codegen' && steps.init.outputs.synced != 'true' && env.USE_PLASMIC_CODEGEN == 'true' }}
+        name: Syncing Plasmic project...
+        if: ${{ github.event.client_payload.data.scheme == 'codegen' && steps.init.outputs.synced != 'true' }}
         uses: plasmicapp/plasmic-action@master
         with:
           run: sync
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.event.client_payload.data.branch }}
-          directory: .
+          directory: ${{ github.event.client_payload.data.directory }}
           project_id: ${{ github.event.client_payload.data.projectId }}
           project_api_token: ${{ github.event.client_payload.data.projectApiToken }}
           sync_action: ${{ github.event.client_payload.data.syncAction }}
@@ -80,7 +77,7 @@ jobs:
         with:
           run: build
           branch: ${{ github.event.client_payload.data.branch }}
-          directory: .
+          directory: ${{ github.event.client_payload.data.directory }}
           platform: ${{ github.event.client_payload.data.platform }}
       - id: pr
         name: Creating pull request...
