@@ -145,7 +145,11 @@ PLASMIC.registerComponent(MainSidebar, {
   name: "MainSidebar",
   importPath: "@/components/MainSidebar",
   props: {
-    logoSrc: { type: "string", description: "Logo URL", defaultValue: "/next.svg" },
+    logoSrc: { 
+      type: "imageUrl", 
+      description: "Logo image (upload or URL)", 
+      defaultValue: "/next.svg" 
+    },
     logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 80 },
     logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 80 },
     title: { type: "string", description: "Business name", defaultValue: "Undrstatemnt" },
@@ -175,7 +179,11 @@ PLASMIC.registerComponent(PageShellShadcn, {
   name: "PageShellShadcn",
   importPath: "@/components/PageShellShadcn",
   props: {
-    logoSrc: { type: "string", description: "Logo URL", defaultValue: "/next.svg" },
+    logoSrc: { 
+      type: "imageUrl", 
+      description: "Logo image (upload or URL)", 
+      defaultValue: "/next.svg" 
+    },
     logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 80 },
     logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 80 },
     title: { type: "string", description: "Business name", defaultValue: "Undrstatemnt" },
