@@ -35,11 +35,11 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   
-  /* Custom Orange Color Scheme */
-  --color-orange-primary: #B15601;
+  /* Primary color (custom brown) */
+  --color-orange-primary: #391709; /* renamed usage kept for compatibility */
   --color-orange-text: #FCF8F5;
-  --color-orange-dark: #8B4400;
-  --color-orange-light: #D46A01;
+  --color-orange-dark: #2e1207;
+  --color-orange-light: #4a1f0d;
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { Scissors, Users, Clock, CheckCircle } from "lucide-react";
-import { Service } from "@/lib/types";
+import { Department, Service } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export interface ServiceListWidgetProps {
@@ -14,6 +14,12 @@ export interface ServiceListWidgetProps {
   initialSelectedServiceId?: string;
   /** Show duration and staff count badges */
   showMeta?: boolean;
+  /** Show department tabs derived from API or passed via props */
+  showTabs?: boolean;
+  /** Optional departments list to drive tabs */
+  departments?: Department[];
+  /** Show search box */
+  showSearch?: boolean;
   /** Called when a service is selected */
   onServiceSelect?: (serviceId: string) => void;
 }
@@ -24,11 +30,17 @@ export default function ServiceListWidget({
   departmentId = "all",
   initialSelectedServiceId,
   showMeta = true,
+  showTabs = true,
+  departments: departmentsProp,
+  showSearch = true,
   onServiceSelect,
 }: ServiceListWidgetProps) {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedService, setSelectedService] = useState<string>(initialSelectedServiceId || "");
+  const [departments, setDepartments] = useState<Department[]>(departmentsProp || []);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>(departmentId || "all");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const loadServices = async () => {
@@ -36,7 +48,7 @@ export default function ServiceListWidget({
       try {
         const start = Date.now();
         const base = "https://modify.undrstatemnt.com/.netlify/functions/Services";
-        const url = departmentId && departmentId !== "all" ? `${base}?id=${departmentId}` : base;
+        const url = selectedDepartment && selectedDepartment !== "all" ? `${base}?id=${selectedDepartment}` : base;
         const res = await fetch(url);
         const data = await res.json();
         const rawServices = Array.isArray(data.services) && data.services.length > 0 ? data.services : (data.calendars || []);
@@ -54,6 +66,34 @@ export default function ServiceListWidget({
         });
         setServices(mapped);
 
+        // Derive departments from common fields if not provided
+        if (!departmentsProp || departmentsProp.length === 0) {
+          const groupNameKeys = [
+            'category', 'categoryName', 'group', 'groupName', 'department', 'departmentName', 'folder', 'folderName', 'calendarGroup'
+          ];
+          const groupIdKeys = ['categoryId', 'groupId', 'departmentId', 'folderId'];
+          const groupsMap = new Map<string, Department>();
+          rawServices.forEach((s: any) => {
+            let name = '';
+            for (const k of groupNameKeys) {
+              if (s && typeof s[k] === 'string' && s[k].trim()) { name = String(s[k]).trim(); break; }
+            }
+            if (!name) return;
+            let id = '';
+            for (const k of groupIdKeys) {
+              if (s && (typeof s[k] === 'string' || typeof s[k] === 'number')) { id = String(s[k]); break; }
+            }
+            const key = id || name.toLowerCase();
+            if (!groupsMap.has(key)) {
+              groupsMap.set(key, { id: id || name, name });
+            }
+          });
+          const groups = Array.from(groupsMap.values());
+          if (groups.length > 0) {
+            setDepartments(groups);
+          }
+        }
+
         const elapsed = Date.now() - start;
         const remaining = 300 - elapsed;
         if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
@@ -65,7 +105,7 @@ export default function ServiceListWidget({
       }
     };
     loadServices();
-  }, [departmentId]);
+  }, [selectedDepartment, departmentsProp]);
 
   const formatDurationMins = (mins: number): string => {
     const m = Number(mins || 0);
@@ -80,8 +120,46 @@ export default function ServiceListWidget({
     onServiceSelect?.(id);
   };
 
+  const filtered = services.filter((s) => {
+    const q = search.trim().toLowerCase();
+    if (q && !(s.name.toLowerCase().includes(q) || (s.description || '').toLowerCase().includes(q))) return false;
+    return true;
+  });
+
   return (
     <div className={cn("w-full", className)} style={style}>
+      {(showTabs || showSearch) && (
+        <div className="flex flex-col gap-3 mb-4">
+          {showSearch && (
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search services"
+              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-200"
+            />
+          )}
+          {showTabs && departments.length > 0 && (
+            <div className="hidden sm:flex gap-2 overflow-x-visible whitespace-nowrap justify-start">
+              <div
+                onClick={() => setSelectedDepartment('all')}
+                className={cn("group-button cursor-pointer", selectedDepartment === 'all' && "selected")}
+              >
+                All
+              </div>
+              {departments.map((d) => (
+                <div
+                  key={d.id}
+                  onClick={() => setSelectedDepartment(d.id)}
+                  className={cn("group-button cursor-pointer", selectedDepartment === d.id && "selected")}
+                >
+                  {d.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {loading ? (
         <div className="space-y-2 mb-6">
           <div className="service-skeleton">
@@ -109,14 +187,14 @@ export default function ServiceListWidget({
             </div>
           </div>
         </div>
-      ) : services.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-center py-8">
           <div className="text-gray-500 text-lg font-medium">No services available</div>
           <div className="text-sm text-gray-400 mt-2">Please try again later.</div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {services.map((item) => (
+          {filtered.map((item) => (
             <div
               key={item.id}
               onClick={() => handleSelect(item.id)}

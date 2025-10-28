@@ -14,6 +14,7 @@ export const PLASMIC = initPlasmicLoader({
 import BookingWidget from "./components/BookingWidget"; // Import the BookingWidget component
 import ServiceListWidget from "./components/ServiceListWidget";
 import StaffListWidget from "./components/StaffListWidget";
+import ServicesExplorer from "./components/ServicesExplorer";
 
 // Register code components used by Plasmic pages so Studio and runtime can render them
 PLASMIC.registerComponent(BookingWidget, {
@@ -47,6 +48,16 @@ PLASMIC.registerComponent(ServiceListWidget, {
       description: "Show duration and staff count",
       defaultValue: true,
     },
+    showTabs: {
+      type: "boolean",
+      description: "Show derived department tabs",
+      defaultValue: true,
+    },
+    showSearch: {
+      type: "boolean",
+      description: "Show search input",
+      defaultValue: true,
+    },
   },
 });
 
@@ -67,6 +78,41 @@ PLASMIC.registerComponent(StaffListWidget, {
     initialSelectedStaffId: {
       type: "string",
       description: "Preselect a staff id",
+    },
+  },
+});
+
+PLASMIC.registerComponent(ServicesExplorer, {
+  name: "ServicesExplorer",
+  importPath: "@/components/ServicesExplorer",
+  props: {
+    initialDepartmentId: {
+      type: "string",
+      description: "Initial department id or 'all'",
+      defaultValue: "all",
+    },
+    showSearch: {
+      type: "boolean",
+      description: "Show search input",
+      defaultValue: true,
+    },
+  },
+});
+
+import ServicesCatalog from "./components/ServicesCatalog";
+PLASMIC.registerComponent(ServicesCatalog, {
+  name: "ServicesCatalog",
+  importPath: "@/components/ServicesCatalog",
+  props: {
+    maxPerGroup: {
+      type: "number",
+      description: "Max cards to show per group",
+      defaultValue: 6,
+    },
+    showSearch: {
+      type: "boolean",
+      description: "Show search input",
+      defaultValue: true,
     },
   },
 });
