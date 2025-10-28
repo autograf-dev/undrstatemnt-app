@@ -13,6 +13,9 @@ jobs:
   job:
     name: Sync, build and deploy
     runs-on: ubuntu-latest
+    env:
+      # Set to 'true' in repo or workflow vars if you want to use Plasmic Codegen sync; keep 'false' for Loader-only.
+      USE_PLASMIC_CODEGEN: 'false'
     steps:
       - id: checkout
         name: Checking out repository...
@@ -21,10 +24,10 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - id: node
-        name: Setting up node v18...
-        uses: actions/setup-node@v3
+        name: Setting up Node.js v20.10...
+        uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20.10.0"
       - id: cache
         name: Recovering cache...
         uses: actions/cache@v4
@@ -47,8 +50,8 @@ jobs:
           title: ${{ github.event.client_payload.data.title }}
           description: ${{ github.event.client_payload.data.description }}
       - id: sync
-        name: Syncing Plasmic project...
-        if: ${{ github.event.client_payload.data.scheme == 'codegen' && steps.init.outputs.synced != 'true' }}
+        name: Syncing Plasmic project (Codegen only)...
+        if: ${{ github.event.client_payload.data.scheme == 'codegen' && steps.init.outputs.synced != 'true' && env.USE_PLASMIC_CODEGEN == 'true' }}
         uses: plasmicapp/plasmic-action@master
         with:
           run: sync

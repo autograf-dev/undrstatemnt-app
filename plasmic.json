@@ -1,0 +1,17 @@
+{
+  "configVersion": 1,
+  "platform": "nextjs",
+  "code": {
+    "scheme": "codegen",
+    "reactRuntime": "automatic",
+    "srcDir": "./components/plasmic",
+    "language": "ts",
+    "components": [
+      {
+        "name": "BookingWidget",
+        "importPath": "@/components/BookingWidget",
+        "isDefaultExport": true
+      }
+    ]
+  }
+}
