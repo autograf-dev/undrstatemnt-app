@@ -89,11 +89,12 @@ export default function MainSidebar({
             }}
           >
             <Image
-              src={logoSrc}
+              src={logoSrc || "/next.svg"}
               alt="logo"
               width={logoWidth}
               height={logoHeight}
               className="object-contain p-2"
+              unoptimized={logoSrc?.startsWith('http')}
             />
           </div>
           <div className="text-center w-full">
