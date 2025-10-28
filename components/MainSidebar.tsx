@@ -107,7 +107,7 @@ export default function MainSidebar({
   return (
     <aside
       className={cn(
-        "sticky top-0 h-screen shrink-0 flex flex-col border-r-0 transition-all duration-300 relative group",
+        "fixed left-0 top-0 h-screen shrink-0 flex flex-col border-r-0 transition-all duration-300 relative group z-40 overflow-hidden",
         isCollapsed ? "w-[70px]" : "w-[220px]",
         className
       )}
@@ -115,6 +115,7 @@ export default function MainSidebar({
         ...style,
         backgroundColor: bgColor,
         color: textColor,
+        position: 'fixed',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -199,7 +200,7 @@ export default function MainSidebar({
       </div>
 
       {/* Nav Menu */}
-      <nav className="flex-1 py-4 px-2">
+      <nav className="flex-1 py-4 px-2 overflow-y-auto">
         <ul className="space-y-1">
           {items.map((item) => {
             const Icon = iconFor(item.icon);

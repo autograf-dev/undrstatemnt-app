@@ -68,7 +68,7 @@ export default function PageShellShadcn({
   children,
 }: PageShellShadcnProps) {
   return (
-    <div className={cn("flex min-h-screen", className)} style={style}>
+    <div className={cn("min-h-screen", className)} style={style}>
       <MainSidebar
         logoSrc={logoSrc}
         logoWidth={logoWidth}
@@ -88,7 +88,7 @@ export default function PageShellShadcn({
         buttonTextColor={buttonTextColor}
         defaultCollapsed={defaultCollapsed}
       />
-      <main className="flex-1 bg-gray-50">
+      <main className="ml-[220px] bg-gray-50 min-h-screen">
         {children}
       </main>
     </div>
