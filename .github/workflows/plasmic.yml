@@ -33,7 +33,7 @@ jobs:
         uses: actions/cache@v4
         with:
           key: lock-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}
-          path: ${{ github.event.client_payload.data.directory }}/node_modules
+          path: node_modules
       - id: init
         name: Initializing Plasmic app...
         uses: plasmicapp/plasmic-action@master
@@ -41,7 +41,7 @@ jobs:
           run: init
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.event.client_payload.data.branch }}
-          directory: ${{ github.event.client_payload.data.directory }}
+          directory: .
           project_id: ${{ github.event.client_payload.data.projectId }}
           project_api_token: ${{ github.event.client_payload.data.projectApiToken }}
           platform: ${{ github.event.client_payload.data.platform }}
@@ -57,7 +57,7 @@ jobs:
           run: sync
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.event.client_payload.data.branch }}
-          directory: ${{ github.event.client_payload.data.directory }}
+          directory: .
           project_id: ${{ github.event.client_payload.data.projectId }}
           project_api_token: ${{ github.event.client_payload.data.projectApiToken }}
           sync_action: ${{ github.event.client_payload.data.syncAction }}
@@ -70,7 +70,7 @@ jobs:
         with:
           run: build
           branch: ${{ github.event.client_payload.data.branch }}
-          directory: ${{ github.event.client_payload.data.directory }}
+          directory: .
           platform: ${{ github.event.client_payload.data.platform }}
       - id: pr
         name: Creating pull request...
