@@ -160,11 +160,23 @@ PLASMIC.registerComponent(MainSidebar, {
       description: "Navigation menu items",
       itemType: {
         type: "object",
-        nameFunc: (item: any) => item.label || "Menu Item",
+        nameFunc: (item: any) => item?.label || "New Menu Item",
         fields: {
-          id: { type: "string", description: "Unique ID" },
-          label: { type: "string", description: "Menu label" },
-          href: { type: "string", description: "Link path (e.g. /home)" },
+          id: { 
+            type: "string", 
+            description: "Unique ID",
+            defaultValue: "menu-item"
+          },
+          label: { 
+            type: "string", 
+            description: "Menu label",
+            defaultValue: "New Item"
+          },
+          href: { 
+            type: "string", 
+            description: "Link path (e.g. /home)",
+            defaultValue: "/"
+          },
           icon: {
             type: "choice",
             description: "Icon from Lucide library",
@@ -223,11 +235,23 @@ PLASMIC.registerComponent(PageShellShadcn, {
       description: "Navigation menu items",
       itemType: {
         type: "object",
-        nameFunc: (item: any) => item.label || "Menu Item",
+        nameFunc: (item: any) => item?.label || "New Menu Item",
         fields: {
-          id: { type: "string", description: "Unique ID" },
-          label: { type: "string", description: "Menu label" },
-          href: { type: "string", description: "Link path (e.g. /home)" },
+          id: { 
+            type: "string", 
+            description: "Unique ID",
+            defaultValue: "menu-item"
+          },
+          label: { 
+            type: "string", 
+            description: "Menu label",
+            defaultValue: "New Item"
+          },
+          href: { 
+            type: "string", 
+            description: "Link path (e.g. /home)",
+            defaultValue: "/"
+          },
           icon: {
             type: "choice",
             description: "Icon from Lucide library",
