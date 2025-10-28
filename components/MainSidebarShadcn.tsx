@@ -29,6 +29,10 @@ export interface MainSidebarShadcnProps {
   style?: CSSProperties;
   /** Business logo URL */
   logoSrc?: string;
+  /** Logo width in pixels */
+  logoWidth?: number;
+  /** Logo height in pixels */
+  logoHeight?: number;
   /** Business name */
   title?: string;
   /** Address line */
@@ -41,6 +45,18 @@ export interface MainSidebarShadcnProps {
   signInLabel?: string;
   /** Sign-in URL */
   signInHref?: string;
+  /** Sidebar background color */
+  bgColor?: string;
+  /** Text color for all sidebar text */
+  textColor?: string;
+  /** Active item background color */
+  activeBgColor?: string;
+  /** Hover background color */
+  hoverBgColor?: string;
+  /** Sign-in button background color */
+  buttonBgColor?: string;
+  /** Sign-in button text color */
+  buttonTextColor?: string;
 }
 
 const iconFor = (key?: SidebarNavItem["icon"]) => {
@@ -59,6 +75,8 @@ export default function MainSidebarShadcn({
   className,
   style,
   logoSrc = "/next.svg",
+  logoWidth = 80,
+  logoHeight = 80,
   title = "Undrstatemnt",
   subtitle = "1309 Edmonton Trl, Calgary, AB T2E 4Y8",
   items = [
@@ -69,18 +87,24 @@ export default function MainSidebarShadcn({
   activeHref,
   signInLabel = "Sign In",
   signInHref = "/login",
+  bgColor = "#391709",
+  textColor = "white",
+  activeBgColor = "rgba(255, 255, 255, 0.15)",
+  hoverBgColor = "rgba(255, 255, 255, 0.1)",
+  buttonBgColor = "white",
+  buttonTextColor = "#391709",
 }: MainSidebarShadcnProps) {
   return (
     <Sidebar
       className={cn("border-r-0", className)}
       style={{
         ...style,
-        "--sidebar-background": "var(--color-orange-primary)",
-        "--sidebar-foreground": "white",
-        "--sidebar-primary": "white",
-        "--sidebar-primary-foreground": "var(--color-orange-primary)",
-        "--sidebar-accent": "rgba(255, 255, 255, 0.1)",
-        "--sidebar-accent-foreground": "white",
+        "--sidebar-background": bgColor,
+        "--sidebar-foreground": textColor,
+        "--sidebar-primary": textColor,
+        "--sidebar-primary-foreground": bgColor,
+        "--sidebar-accent": hoverBgColor,
+        "--sidebar-accent-foreground": textColor,
         "--sidebar-border": "rgba(255, 255, 255, 0.1)",
       } as CSSProperties}
     >
