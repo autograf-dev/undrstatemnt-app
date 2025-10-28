@@ -15,6 +15,7 @@ import BookingWidget from "./components/BookingWidget"; // Import the BookingWid
 import ServiceListWidget from "./components/ServiceListWidget";
 import StaffListWidget from "./components/StaffListWidget";
 import ServicesExplorer from "./components/ServicesExplorer";
+import ServicesShowcase from "./components/ServicesShowcase";
 
 // Register code components used by Plasmic pages so Studio and runtime can render them
 PLASMIC.registerComponent(BookingWidget, {
@@ -438,5 +439,27 @@ PLASMIC.registerComponent(Footer, {
     bgColor: { type: "color", description: "Background color", defaultValue: "#FAFAFA" },
     padding: { type: "string", description: "Section padding", defaultValue: "3rem 2rem" },
     maxWidth: { type: "string", description: "Maximum width", defaultValue: "1280px" },
+  },
+});
+
+PLASMIC.registerComponent(ServicesShowcase, {
+  name: "ServicesShowcase",
+  importPath: "@/components/ServicesShowcase",
+  isDefaultExport: true,
+  props: {
+    title: { type: "string", description: "Section title", defaultValue: "Our Services" },
+    titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
+    searchPlaceholder: { type: "string", description: "Search placeholder", defaultValue: "Search" },
+    showSearch: { type: "boolean", description: "Show search bar", defaultValue: true },
+    showFilter: { type: "boolean", description: "Show filter button", defaultValue: true },
+    cardBgColor: { type: "color", description: "Card background color", defaultValue: "white" },
+    cardHoverColor: { type: "color", description: "Card hover color", defaultValue: "#f9fafb" },
+    priceBadgeColor: { type: "color", description: "Price badge color", defaultValue: "#f3f4f6" },
+    priceTextColor: { type: "color", description: "Price text color", defaultValue: "#1f2937" },
+    seeAllBgColor: { type: "color", description: "See all button color", defaultValue: "#D97639" },
+    seeAllTextColor: { type: "color", description: "See all text color", defaultValue: "white" },
+    bgColor: { type: "color", description: "Background color", defaultValue: "white" },
+    padding: { type: "string", description: "Section padding", defaultValue: "3rem 2rem" },
+    cardImageHeight: { type: "string", description: "Card image height", defaultValue: "200px" },
   },
 });

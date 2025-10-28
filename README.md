@@ -37,12 +37,28 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Plasmic Code Components
 
-This repo registers three Plasmic code components:
+This repo registers multiple Plasmic code components for building your barbershop/salon website:
 
-- BookingWidget (`@/components/BookingWidget`): Full multi-step booking flow
-- ServiceListWidget (`@/components/ServiceListWidget`): Standalone services grid
+### Booking Components
+- **BookingWidget** (`@/components/BookingWidget`): Full multi-step booking flow
+- **ServiceListWidget** (`@/components/ServiceListWidget`): Standalone services grid
   - Props: `departmentId` (string, default `all`), `initialSelectedServiceId` (string), `showMeta` (boolean)
-- StaffListWidget (`@/components/StaffListWidget`): Standalone staff grid for a service
+- **StaffListWidget** (`@/components/StaffListWidget`): Standalone staff grid for a service
   - Props: `serviceId` (string, required), `includeAnyOption` (boolean, default true), `initialSelectedStaffId` (string)
+
+### Marketing Components
+- **ServicesShowcase** (`@/components/ServicesShowcase`): Modern services display with search, filters, and horizontal scrolling cards grouped by department
+  - Automatically fetches from your services API endpoint
+  - Features: Real-time search, filter button, grouped categories, horizontal scroll, "See All" links
+  - Fully customizable colors via Plasmic color pickers
+- **HeroSection** (`@/components/HeroSection`): Hero banner with image, title, subtitle, and CTA buttons
+- **OurStory** (`@/components/OurStory`): About section with image and content
+- **CTASection** (`@/components/CTASection`): Call-to-action section
+- **Footer** (`@/components/Footer`): Footer with logo, social links, and business info
+
+### Layout Components
+- **PageShellShadcn** (`@/components/PageShellShadcn`): Page wrapper with collapsible sidebar
+  - Features: Fixed sidebar, hover tooltips, keyboard shortcuts (Ctrl/Cmd+B)
+  - Fully customizable colors, logo, and menu items
 
 After `npm run dev`, open Plasmic Studio using the host page at `/plasmic-host`. These components will be available in the Studio under Code Components.
