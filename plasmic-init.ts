@@ -16,5 +16,7 @@ import BookingWidget from "./components/BookingWidget"; // Import the BookingWid
 // Register code components used by Plasmic pages so Studio and runtime can render them
 PLASMIC.registerComponent(BookingWidget, {
   name: "BookingWidget",
+  importPath: "@/components/BookingWidget",
+  isDefaultExport: true,
   props: {},
 });
