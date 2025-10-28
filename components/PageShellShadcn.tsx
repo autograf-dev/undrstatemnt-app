@@ -13,6 +13,8 @@ export interface PageShellShadcnProps {
   logoWidth?: number;
   /** Logo height in pixels */
   logoHeight?: number;
+  /** Logo background color */
+  logoBgColor?: string;
   /** Business name for sidebar */
   title?: string;
   /** Address for sidebar */
@@ -47,6 +49,7 @@ export default function PageShellShadcn({
   logoSrc,
   logoWidth,
   logoHeight,
+  logoBgColor,
   title,
   subtitle,
   sidebarItems,
@@ -67,6 +70,7 @@ export default function PageShellShadcn({
         logoSrc={logoSrc}
         logoWidth={logoWidth}
         logoHeight={logoHeight}
+        logoBgColor={logoBgColor}
         title={title}
         subtitle={subtitle}
         items={sidebarItems}

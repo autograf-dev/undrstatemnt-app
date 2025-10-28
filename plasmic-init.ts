@@ -147,11 +147,12 @@ PLASMIC.registerComponent(MainSidebar, {
   props: {
     logoSrc: { 
       type: "imageUrl", 
-      description: "Logo image (upload or URL)", 
+      description: "Logo image (can also paste URL path)", 
       defaultValue: "/next.svg" 
     },
     logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 80 },
     logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 80 },
+    logoBgColor: { type: "string", description: "Logo background color (hex/rgba)", defaultValue: "rgba(255, 255, 255, 0.1)" },
     title: { type: "string", description: "Business name", defaultValue: "Undrstatemnt" },
     subtitle: { type: "string", description: "Address", defaultValue: "1309 Edmonton Trl, Calgary, AB T2E 4Y8" },
     items: {
@@ -181,11 +182,12 @@ PLASMIC.registerComponent(PageShellShadcn, {
   props: {
     logoSrc: { 
       type: "imageUrl", 
-      description: "Logo image (upload or URL)", 
+      description: "Logo image (can also paste URL path)", 
       defaultValue: "/next.svg" 
     },
     logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 80 },
     logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 80 },
+    logoBgColor: { type: "string", description: "Logo background color (hex/rgba)", defaultValue: "rgba(255, 255, 255, 0.1)" },
     title: { type: "string", description: "Business name", defaultValue: "Undrstatemnt" },
     subtitle: { type: "string", description: "Address", defaultValue: "1309 Edmonton Trl, Calgary, AB T2E 4Y8" },
     sidebarItems: {

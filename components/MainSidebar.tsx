@@ -19,6 +19,7 @@ export interface MainSidebarProps {
   logoSrc?: string;
   logoWidth?: number;
   logoHeight?: number;
+  logoBgColor?: string;
   title?: string;
   subtitle?: string;
   items?: SidebarNavItem[];
@@ -51,6 +52,7 @@ export default function MainSidebar({
   logoSrc = "/next.svg",
   logoWidth = 80,
   logoHeight = 80,
+  logoBgColor = "rgba(255, 255, 255, 0.1)",
   title = "Undrstatemnt",
   subtitle = "1309 Edmonton Trl, Calgary, AB T2E 4Y8",
   items = [
@@ -82,7 +84,7 @@ export default function MainSidebar({
         <div className="flex flex-col items-center gap-3">
           <div className="relative w-20 h-20 rounded-full ring-2 overflow-hidden flex items-center justify-center"
             style={{ 
-              backgroundColor: `${textColor}10`,
+              backgroundColor: logoBgColor,
               borderColor: `${textColor}40`
             }}
           >
