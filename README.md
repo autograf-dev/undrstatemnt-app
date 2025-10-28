@@ -51,6 +51,14 @@ This repo registers multiple Plasmic code components for building your barbersho
   - Automatically fetches from your services API endpoint
   - Features: Real-time search, filter button, grouped categories, horizontal scroll, "See All" links
   - Fully customizable colors via Plasmic color pickers
+- **HomepageStaff** (`@/components/HomepageStaff`): Staff carousel/slider for homepage
+  - Fetches from Supabase `/api/staff` endpoint
+  - Features: Horizontal slider with navigation arrows, dot indicators, "See All" link
+  - Fully customizable: colors, cards per view, image height, navigation style
+- **StaffShowcase** (`@/components/StaffShowcase`): Full staff grid view page
+  - Fetches from Supabase `/api/staff` endpoint
+  - Features: Responsive grid layout, breadcrumb navigation, hover effects
+  - Customizable columns (2-5), image height, colors
 - **HeroSection** (`@/components/HeroSection`): Hero banner with image, title, subtitle, and CTA buttons
 - **OurStory** (`@/components/OurStory`): About section with image and content
 - **CTASection** (`@/components/CTASection`): Call-to-action section

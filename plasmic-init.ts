@@ -16,6 +16,8 @@ import ServiceListWidget from "./components/ServiceListWidget";
 import StaffListWidget from "./components/StaffListWidget";
 import ServicesExplorer from "./components/ServicesExplorer";
 import ServicesShowcase from "./components/ServicesShowcase";
+import HomepageStaff from "./components/HomepageStaff";
+import StaffShowcase from "./components/StaffShowcase";
 
 // Register code components used by Plasmic pages so Studio and runtime can render them
 PLASMIC.registerComponent(BookingWidget, {
@@ -461,5 +463,50 @@ PLASMIC.registerComponent(ServicesShowcase, {
     bgColor: { type: "color", description: "Background color", defaultValue: "white" },
     padding: { type: "string", description: "Section padding", defaultValue: "3rem 2rem" },
     cardImageHeight: { type: "string", description: "Card image height", defaultValue: "200px" },
+  },
+});
+
+PLASMIC.registerComponent(HomepageStaff, {
+  name: "HomepageStaff",
+  importPath: "@/components/HomepageStaff",
+  isDefaultExport: true,
+  props: {
+    title: { type: "string", description: "Section title", defaultValue: "Our Professionals" },
+    titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
+    showSeeAll: { type: "boolean", description: "Show See All link", defaultValue: true },
+    seeAllHref: { type: "string", description: "See All link", defaultValue: "/staff" },
+    seeAllColor: { type: "color", description: "See All color", defaultValue: "#D97639" },
+    cardBgColor: { type: "color", description: "Card background", defaultValue: "white" },
+    cardHoverColor: { type: "color", description: "Card hover color", defaultValue: "#f9fafb" },
+    nameColor: { type: "color", description: "Name color", defaultValue: "#1a1a1a" },
+    subtitleColor: { type: "color", description: "Subtitle color", defaultValue: "#6b7280" },
+    bgColor: { type: "color", description: "Background color", defaultValue: "#f9fafb" },
+    padding: { type: "string", description: "Section padding", defaultValue: "3rem 2rem" },
+    cardImageHeight: { type: "string", description: "Card image height", defaultValue: "300px" },
+    cardsPerView: { type: "number", description: "Cards per view (desktop)", defaultValue: 4 },
+    showArrows: { type: "boolean", description: "Show navigation arrows", defaultValue: true },
+    arrowColor: { type: "color", description: "Arrow color", defaultValue: "#D97639" },
+    arrowBgColor: { type: "color", description: "Arrow background", defaultValue: "white" },
+  },
+});
+
+PLASMIC.registerComponent(StaffShowcase, {
+  name: "StaffShowcase",
+  importPath: "@/components/StaffShowcase",
+  isDefaultExport: true,
+  props: {
+    title: { type: "string", description: "Section title", defaultValue: "Our Professionals" },
+    titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
+    breadcrumb: { type: "string", description: "Breadcrumb text", defaultValue: "Home / All" },
+    breadcrumbColor: { type: "color", description: "Breadcrumb color", defaultValue: "#6b7280" },
+    showBreadcrumb: { type: "boolean", description: "Show breadcrumb", defaultValue: true },
+    cardBgColor: { type: "color", description: "Card background", defaultValue: "white" },
+    cardHoverColor: { type: "color", description: "Card hover color", defaultValue: "#f9fafb" },
+    nameColor: { type: "color", description: "Name color", defaultValue: "#1a1a1a" },
+    subtitleColor: { type: "color", description: "Subtitle color", defaultValue: "#6b7280" },
+    bgColor: { type: "color", description: "Background color", defaultValue: "white" },
+    padding: { type: "string", description: "Section padding", defaultValue: "3rem 2rem" },
+    cardImageHeight: { type: "string", description: "Card image height", defaultValue: "350px" },
+    columns: { type: "number", description: "Columns (desktop)", defaultValue: 4 },
   },
 });
