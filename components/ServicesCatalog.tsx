@@ -60,10 +60,12 @@ export default function ServicesCatalog({
     const load = async () => {
       setLoading(true);
       try {
-        const res = await fetch("https://modify.undrstatemnt.com/.netlify/functions/Services");
+        const res = await fetch("/api/services");
         const data = await res.json();
-        const raw = Array.isArray(data.services) && data.services.length > 0 ? data.services : (data.calendars || []);
-        setAllServices(raw);
+        const raw = Array.isArray(data?.services) && data.services.length > 0
+          ? data.services
+          : (Array.isArray(data?.calendars) ? data.calendars : []);
+        setAllServices(Array.isArray(raw) ? raw : []);
       } catch (e) {
         console.error("ServicesCatalog load error", e);
         setAllServices([]);
@@ -142,7 +144,7 @@ export default function ServicesCatalog({
         </div>
       ) : (
         <div className="flex flex-col gap-10">
-          {groups.map((g) => {
+          {(Array.isArray(groups) ? groups : []).map((g) => {
             const items = g.services.slice(0, Math.max(1, maxPerGroup));
             return (
               <section key={g.id} className="flex flex-col gap-4">

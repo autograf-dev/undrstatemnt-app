@@ -80,12 +80,63 @@ export default function ServicesShowcase({
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await fetch("https://modify.undrstatemnt.com/.netlify/functions/Services");
+        const res = await fetch("/api/services");
         const data = await res.json();
-        setServices(data);
-        setFilteredServices(data);
+
+        // Coerce to an array of raw service/calendar entries
+        const raw: any[] = Array.isArray(data?.services)
+          ? data.services
+          : (Array.isArray(data?.calendars) ? data.calendars : (Array.isArray(data) ? data : []));
+
+        const mapped: Service[] = raw.map((s: any) => {
+          // Derive duration in minutes
+          const rawDur = Number(s?.slotDuration ?? s?.duration ?? 0);
+          const unit = String(s?.slotDurationUnit ?? s?.durationUnit ?? '').toLowerCase();
+          const duration = rawDur > 0 ? (unit === 'hour' || unit === 'hours' ? rawDur * 60 : rawDur) : 0;
+
+          // Derive price if present
+          const priceCandidates = ["price", "fromPrice", "minPrice", "startingPrice", "startPrice", "amount"];
+          let price = 0;
+          for (const k of priceCandidates) {
+            const v = Number(s?.[k]);
+            if (!Number.isNaN(v) && v > 0) { price = v; break; }
+          }
+
+          // Derive department/group name
+          const groupNameKeys = [
+            "category", "categoryName", "group", "groupName", "department", "departmentName", "folder", "folderName", "calendarGroup"
+          ];
+          let department_name = "Other Services";
+          for (const k of groupNameKeys) {
+            const val = s?.[k];
+            if (typeof val === "string" && val.trim()) { department_name = String(val).trim(); break; }
+          }
+
+          // Derive image url if present
+          const imageKeys = ["image", "imageUrl", "photo", "cover", "thumbnail", "thumbUrl"];
+          let image_url: string | undefined = undefined;
+          for (const k of imageKeys) {
+            const val = s?.[k];
+            if (typeof val === 'string' && val) { image_url = val; break; }
+          }
+
+        return {
+            id: String(s?.id ?? ''),
+            name: String(s?.name ?? 'Service'),
+            description: s?.description,
+            duration,
+            price,
+            image_url,
+            department_name,
+          } as Service;
+        });
+
+        setServices(mapped);
+        setFilteredServices(mapped);
       } catch (error) {
         console.error("Error fetching services:", error);
+        setServices([]);
+        setFilteredServices([]);
       } finally {
         setLoading(false);
       }
@@ -108,7 +159,7 @@ export default function ServicesShowcase({
   }, [searchQuery, services]);
 
   // Group services by department
-  const groupedServices = filteredServices.reduce((acc, service) => {
+  const groupedServices = (Array.isArray(filteredServices) ? filteredServices : []).reduce((acc, service) => {
     const dept = service.department_name || "Other Services";
     if (!acc[dept]) {
       acc[dept] = [];
@@ -199,7 +250,7 @@ export default function ServicesShowcase({
           </div>
         )}
 
-        {!loading && serviceGroups.map((group) => (
+        {!loading && (Array.isArray(serviceGroups) ? serviceGroups : []).map((group) => (
           <div key={group.name} className="mb-12">
             {/* Group Header with See All */}
             <div className="flex items-center justify-between mb-6">

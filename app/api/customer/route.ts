@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getValidAccessToken } from '@/lib/server/tokens';
+import { getValidAccessToken, getStoredTokens } from '@/lib/server/tokens';
 
 function cors() {
   return {
@@ -11,6 +11,15 @@ function cors() {
 
 export async function OPTIONS() {
   return new NextResponse('', { headers: cors() });
+}
+
+function toE164(phoneRaw: string) {
+  const digits = (phoneRaw || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length === 10) return `+1${digits}`; // assume CA/US
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  if (digits.startsWith('0')) return digits; // leave as-is (unlikely, but avoid breaking)
+  return digits.startsWith('+') ? digits : `+${digits}`;
 }
 
 async function findContactByQuery(accessToken: string, locationId: string, query: string) {
@@ -52,6 +61,14 @@ async function createContact(accessToken: string, locationId: string, firstName:
   });
   if (!resp.ok) {
     const msg = await resp.text();
+    // If duplicate contact is disallowed but we get an existing contact ID back, treat as success
+    try {
+      const json = JSON.parse(msg);
+      const dupId = json?.meta?.contactId || json?.contactId;
+      if (dupId) {
+        return { id: dupId, contactId: dupId, status: 'exists' };
+      }
+    } catch {}
     throw new Error(`Create contact failed: ${resp.status} ${msg}`);
   }
   return resp.json();
@@ -62,22 +79,32 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const firstName = (url.searchParams.get('firstName') || '').trim();
     const lastName = (url.searchParams.get('lastName') || '').trim();
-    const phone = (url.searchParams.get('phone') || '').replace(/\D/g, '');
-    if (!phone) return NextResponse.json({ error: 'phone is required' }, { status: 400, headers: cors() });
+    const phoneRaw = url.searchParams.get('phone') || '';
+    const phoneDigits = phoneRaw.replace(/\D/g, '');
+    if (!phoneDigits) return NextResponse.json({ error: 'phone is required' }, { status: 400, headers: cors() });
+
+    const phoneE164 = toE164(phoneRaw);
 
     const accessToken = await getValidAccessToken();
     if (!accessToken) return NextResponse.json({ error: 'Access token missing' }, { status: 401, headers: cors() });
 
-    const locationId = process.env.GHL_LOCATION_ID || 'iwqzlJBNFlXynsezheHv';
+    // prefer env; else use the most recent token's location_id; finally a static fallback
+    const stored = await getStoredTokens().catch(() => null as any);
+    const locationId = process.env.GHL_LOCATION_ID || stored?.location_id || 'iwqzlJBNFlXynsezheHv';
 
     // Try to find by phone first; if not found, create
-    const found = await findContactByQuery(accessToken, locationId, phone);
+    // Try E.164 first, then raw digits as a fallback
+    let found = await findContactByQuery(accessToken, locationId, phoneE164);
+    if (!found) found = await findContactByQuery(accessToken, locationId, phoneDigits);
     if (found) return NextResponse.json(found, { headers: cors() });
 
-    const created = await createContact(accessToken, locationId, firstName || 'Guest', lastName || 'User', phone);
+    const created = await createContact(accessToken, locationId, firstName || 'Guest', lastName || 'User', phoneE164);
     return NextResponse.json(created, { headers: cors() });
   } catch (err: any) {
-    console.error('customer error:', err?.message || err);
-    return NextResponse.json({ error: 'Failed to upsert customer', details: err?.message }, { status: 500, headers: cors() });
+    // If upstream returned structured JSON inside message, try to pass it along
+    const msg = err?.message || 'Unknown error';
+    console.error('customer error:', msg);
+    const isClientIssue = /Create contact failed: 4\d\d/.test(msg) || /phone is required/.test(msg);
+    return NextResponse.json({ error: 'Failed to upsert customer', details: msg }, { status: isClientIssue ? 400 : 500, headers: cors() });
   }
 }
