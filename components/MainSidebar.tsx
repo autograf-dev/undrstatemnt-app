@@ -44,19 +44,19 @@ const toPascalCase = (str: string) => {
     .join('');
 };
 
-const iconFor = (iconName?: string) => {
-  if (!iconName) return LucideIcons.MapPin;
+const iconFor = (iconName?: string): React.ComponentType<any> => {
+  if (!iconName) return LucideIcons.MapPin as React.ComponentType<any>;
   
   // Handle special cases
-  if (iconName === "barbers") return LucideIcons.Users;
-  if (iconName === "services") return LucideIcons.Scissors;
+  if (iconName === "barbers") return LucideIcons.Users as React.ComponentType<any>;
+  if (iconName === "services") return LucideIcons.Scissors as React.ComponentType<any>;
   
   // Convert kebab-case to PascalCase (e.g., "map-pin" -> "MapPin")
   const iconKey = toPascalCase(iconName) as keyof typeof LucideIcons;
   const IconComponent = LucideIcons[iconKey];
   
   // Return the icon if it exists, otherwise return default
-  return IconComponent && typeof IconComponent !== 'string' ? IconComponent : LucideIcons.MapPin;
+  return (IconComponent && typeof IconComponent !== 'string' ? IconComponent : LucideIcons.MapPin) as React.ComponentType<any>;
 };
 
 export default function MainSidebar({
