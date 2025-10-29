@@ -110,15 +110,14 @@ export default function Footer({
       }}
     >
       <div
-        className="mx-auto px-4"
+        className="mx-auto px-4 py-6 sm:py-8 md:py-10"
         style={{
-          padding,
           maxWidth,
         }}
       >
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8">
           {/* Logo & Business Info */}
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-center sm:text-left">
             {/* Logo */}
             <div className="shrink-0">
               <Image
@@ -126,7 +125,7 @@ export default function Footer({
                 alt={businessName}
                 width={logoWidth}
                 height={logoHeight}
-                className="object-contain"
+                className="object-contain w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16"
                 unoptimized={logoSrc?.startsWith('http')}
               />
             </div>
@@ -134,9 +133,8 @@ export default function Footer({
             {/* Business Name & Address */}
             <div>
               <h3
-                className="font-bold mb-1"
+                className="font-bold mb-1 text-lg sm:text-xl md:text-2xl"
                 style={{
-                  fontSize: businessNameSize,
                   color: businessNameColor,
                   letterSpacing: '0.05em',
                 }}
@@ -144,9 +142,8 @@ export default function Footer({
                 {businessName}
               </h3>
               <p
-                className="font-semibold"
+                className="font-semibold text-xs sm:text-sm md:text-base"
                 style={{
-                  fontSize: addressSize,
                   color: addressColor,
                   letterSpacing: '0.05em',
                 }}
@@ -157,19 +154,22 @@ export default function Footer({
           </div>
 
           {/* Social Media Links */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             {socialLinks.map((social) => {
               const SocialIcon = getIcon(social.icon);
+              const iconContainerSize = `${Math.max(40, socialIconSize * 1.8)}px`;
+              const iconDisplaySize = Math.max(20, socialIconSize * 0.9);
+              
               return (
                 <Link
                   key={social.id}
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center rounded-2xl transition-all duration-300 hover:shadow-md"
+                  className="flex items-center justify-center rounded-2xl transition-all duration-300 hover:shadow-md shrink-0"
                   style={{
-                    width: socialIconSize * 2,
-                    height: socialIconSize * 2,
+                    width: iconContainerSize,
+                    height: iconContainerSize,
                     backgroundColor: socialBgColor,
                   }}
                   onMouseEnter={(e) => {
@@ -182,8 +182,8 @@ export default function Footer({
                 >
                   <SocialIcon 
                     style={{ 
-                      width: socialIconSize, 
-                      height: socialIconSize,
+                      width: iconDisplaySize, 
+                      height: iconDisplaySize,
                       color: socialIconColor,
                     }} 
                   />

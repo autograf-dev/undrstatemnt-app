@@ -68,9 +68,9 @@ export interface HomepageServicesProps {
   categoryTitleColor?: string;
   /** Category title font size */
   categoryTitleSize?: string;
-  /** Show "See All" links */
+  /** Show "See All/View Less" button */
   showSeeAll?: boolean;
-  /** See All link color */
+  /** See All button color */
   seeAllColor?: string;
   /** See All font size - Mobile */
   seeAllSizeMobile?: string;
@@ -78,8 +78,12 @@ export interface HomepageServicesProps {
   seeAllSizeTablet?: string;
   /** See All font size - Desktop */
   seeAllSizeDesktop?: string;
-  /** See All href template */
-  seeAllHrefTemplate?: string;
+  /** Initial items to show when collapsed */
+  initialItemsToShow?: number;
+  /** View Less button text */
+  viewLessText?: string;
+  /** See All button text */
+  seeAllText?: string;
   
   // Card Appearance
   /** Card background color */
@@ -171,7 +175,9 @@ export default function HomepageServices({
   seeAllSizeMobile = "0.875rem",
   seeAllSizeTablet = "1rem",
   seeAllSizeDesktop = "1.125rem",
-  seeAllHrefTemplate = "/services?category={category}",
+  initialItemsToShow = 4,
+  viewLessText = "View Less",
+  seeAllText = "See All",
   cardBgColor = "white",
   cardHoverColor = "#f9fafb",
   cardWidthMobile = 280,
@@ -208,6 +214,7 @@ export default function HomepageServices({
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [categoryScrollPositions, setCategoryScrollPositions] = useState<{[key: string]: number}>({});
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   // Track window width for responsive behavior
   useEffect(() => {
@@ -319,6 +326,18 @@ export default function HomepageServices({
 
   const clearFilters = () => {
     setSelectedCategories([]);
+  };
+
+  const toggleCategoryExpansion = (category: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -468,43 +487,56 @@ export default function HomepageServices({
         {!loading && Object.entries(groupedServices).map(([category, categoryServices]) => {
           if (categoryServices.length === 0) return null;
           
+          const isExpanded = expandedCategories.has(category);
+          const displayServices = isExpanded || categoryServices.length <= initialItemsToShow
+            ? categoryServices
+            : categoryServices.slice(0, initialItemsToShow);
+          const showExpandButton = showSeeAll && categoryServices.length > initialItemsToShow;
+          
           return (
             <div key={category} className="mb-8 sm:mb-12">
-              {/* Category Header */}
-              {showCategoryTitles && (
+              {/* Category Header with See All Button */}
+              {(showCategoryTitles || showExpandButton) && (
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <h3
-                    className="font-bold"
-                    style={{ 
-                      color: categoryTitleColor,
-                      fontSize: categoryTitleSize
-                    }}
-                  >
-                    {category}
-                  </h3>
-                  {showSeeAll && groupByCategory && (
-                    <Link
-                      href={seeAllHrefTemplate.replace('{category}', encodeURIComponent(category))}
-                      className="font-semibold flex items-center gap-2 hover:underline whitespace-nowrap"
+                  {showCategoryTitles && (
+                    <h3
+                      className="font-bold"
+                      style={{ 
+                        color: categoryTitleColor,
+                        fontSize: categoryTitleSize
+                      }}
+                    >
+                      {category}
+                    </h3>
+                  )}
+                  {!showCategoryTitles && <div></div>}
+                  {showExpandButton && (
+                    <button
+                      onClick={() => toggleCategoryExpansion(category)}
+                      className="font-semibold flex items-center gap-2 hover:underline whitespace-nowrap transition-all"
                       style={{ 
                         color: seeAllColor,
                         fontSize: getResponsiveValue(seeAllSizeMobile, seeAllSizeTablet, seeAllSizeDesktop)
                       }}
                     >
-                      See All
-                      <ChevronRight style={{ 
-                        width: getResponsiveValue('16px', '18px', '20px'),
-                        height: getResponsiveValue('16px', '18px', '20px')
-                      }} />
-                    </Link>
+                      {isExpanded ? viewLessText : seeAllText}
+                      <ChevronRight 
+                        className="transition-transform duration-300"
+                        style={{ 
+                          width: getResponsiveValue('16px', '18px', '20px'),
+                          height: getResponsiveValue('16px', '18px', '20px'),
+                          transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                        }} 
+                      />
+                    </button>
                   )}
                 </div>
               )}
 
-              {/* Services Carousel */}
+              {/* Services Carousel or Grid */}
               <div className="relative">
-                {/* Navigation Arrows - Hidden on Mobile */}
-                {showArrows && (
+                {/* Navigation Arrows - Only show when NOT expanded and showArrows is true */}
+                {showArrows && !isExpanded && (
                   <>
                     <button
                       onClick={(e) => {
@@ -536,16 +568,26 @@ export default function HomepageServices({
                   </>
                 )}
 
-                {/* Scrollable Container */}
+                {/* Container - Carousel when collapsed, Grid when expanded */}
                 <div
-                  className="services-scroll overflow-x-auto scrollbar-hide -mx-2 px-2 snap-x snap-mandatory"
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                  className={cn(
+                    "transition-all duration-500",
+                    isExpanded 
+                      ? "" // Grid layout when expanded
+                      : "services-scroll overflow-x-auto scrollbar-hide -mx-2 px-2 snap-x snap-mandatory" // Carousel when collapsed
+                  )}
+                  style={isExpanded ? {} : { scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >
                   <div
-                    className="flex gap-4 md:gap-6"
-                    style={{ minWidth: "min-content" }}
+                    className={cn(
+                      "transition-all duration-500 gap-4 md:gap-6",
+                      isExpanded
+                        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" // Grid when expanded
+                        : "flex" // Carousel when collapsed
+                    )}
+                    style={isExpanded ? {} : { minWidth: "min-content" }}
                   >
-                    {categoryServices.map((service) => {
+                    {displayServices.map((service) => {
                       const cardWidth = getResponsiveValue(cardWidthMobile, cardWidthTablet, cardWidthDesktop);
                       const imageHeight = getResponsiveValue(cardImageHeightMobile, cardImageHeightTablet, cardImageHeightDesktop);
                       
@@ -553,9 +595,12 @@ export default function HomepageServices({
                         <Link
                           key={service.id}
                           href={cardLinkTemplate.replace('{id}', service.id)}
-                          className="flex-none rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 snap-center"
+                          className={cn(
+                            "rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105",
+                            isExpanded ? "w-full" : "flex-none snap-center"
+                          )}
                           style={{
-                            width: `${cardWidth}px`,
+                            width: isExpanded ? "auto" : `${cardWidth}px`,
                             backgroundColor: cardBgColor,
                           }}
                           onMouseEnter={(e) => {

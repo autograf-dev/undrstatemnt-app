@@ -56,11 +56,10 @@ export default function OurStory({
 
   return (
     <section
-      className={cn("w-full", className)}
+      className={cn("w-full py-8 px-4 sm:py-12 sm:px-6 md:py-16 md:px-8", className)}
       style={{
         ...style,
         backgroundColor: bgColor,
-        padding,
       }}
     >
       <div
@@ -71,28 +70,24 @@ export default function OurStory({
       >
         <div
           className={cn(
-            "flex flex-col gap-8 items-center",
-            "lg:flex-row lg:gap-12"
+            "flex flex-col gap-6 sm:gap-8 md:gap-10 items-center",
+            isImageRight ? "lg:flex-row" : "lg:flex-row-reverse",
+            "lg:gap-12"
           )}
-          style={{
-            flexDirection: isImageRight ? 'row' : 'row-reverse',
-          }}
         >
           {/* Text Content */}
-          <div className="flex-1">
+          <div className="flex-1 w-full">
             <h2
-              className="font-bold mb-4"
+              className="font-bold mb-4 sm:mb-5 md:mb-6 text-2xl sm:text-3xl md:text-4xl"
               style={{
-                fontSize: titleSize,
                 color: titleColor,
               }}
             >
               {title}
             </h2>
             <p
-              className="leading-relaxed"
+              className="leading-relaxed text-sm sm:text-base md:text-lg"
               style={{
-                fontSize: contentSize,
                 color: contentColor,
                 lineHeight: '1.8',
                 letterSpacing: '0.02em',
@@ -105,9 +100,9 @@ export default function OurStory({
           {/* Image */}
           <div className="flex-1 w-full">
             <div
-              className="relative w-full rounded-lg overflow-hidden shadow-lg"
+              className="relative w-full rounded-lg overflow-hidden shadow-lg h-64 sm:h-80 md:h-96"
               style={{
-                height: imageHeight,
+                maxHeight: imageHeight,
               }}
             >
               <Image

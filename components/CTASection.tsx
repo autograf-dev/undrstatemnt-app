@@ -86,35 +86,32 @@ export default function CTASection({
 
   return (
     <section
-      className={cn("w-full px-4", className)}
+      className={cn("w-full px-4 my-6 sm:my-8 md:my-12", className)}
       style={{
         ...style,
         backgroundColor: bgColor,
-        margin,
       }}
     >
       <div
-        className="mx-auto rounded-2xl border flex items-center justify-between gap-8 flex-wrap lg:flex-nowrap"
+        className="mx-auto rounded-xl sm:rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 md:gap-8 p-4 sm:p-6 md:p-8 lg:p-10"
         style={{
-          padding,
           borderColor,
           maxWidth,
         }}
       >
         {/* Text Content */}
-        <div className="flex-1">
+        <div className="flex-1 text-center sm:text-left w-full">
           <h2
-            className="font-bold mb-2"
+            className="font-bold mb-2 text-xl sm:text-2xl md:text-3xl"
             style={{
-              fontSize: headingSize,
               color: headingColor,
             }}
           >
             {heading}
           </h2>
           <p
+            className="text-sm sm:text-base md:text-lg"
             style={{
-              fontSize: subtextSize,
               color: subtextColor,
             }}
           >
@@ -125,7 +122,7 @@ export default function CTASection({
         {/* CTA Button */}
         <Link
           href={buttonHref}
-          className="inline-flex items-center gap-3 px-8 py-3.5 rounded-lg font-semibold text-base transition-all duration-300 hover:shadow-lg transform hover:scale-105 whitespace-nowrap"
+          className="inline-flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-3.5 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:shadow-lg transform hover:scale-105 w-full sm:w-auto whitespace-nowrap"
           style={{
             backgroundColor: buttonBgColor,
             color: buttonTextColor,
@@ -137,7 +134,7 @@ export default function CTASection({
             e.currentTarget.style.backgroundColor = buttonBgColor;
           }}
         >
-          <ButtonIcon className="w-5 h-5" />
+          <ButtonIcon className="w-4 h-4 sm:w-5 sm:h-5" />
           {buttonText}
         </Link>
       </div>

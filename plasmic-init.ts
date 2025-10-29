@@ -435,16 +435,21 @@ PLASMIC.registerComponent(HeroSection, {
   name: "HeroSection",
   importPath: "@/components/HeroSection",
   props: {
+    // Logo Controls
     logoSrc: { type: "imageUrl", description: "Logo image", defaultValue: "/next.svg" },
     logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 120 },
     logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 120 },
     logoBgColor: { type: "color", description: "Logo background", defaultValue: "white" },
     logoBorderColor: { type: "color", description: "Logo border", defaultValue: "#D4A574" },
+    
+    // Text Controls
     title: { type: "string", description: "Business name", defaultValue: "UNDRSTATEMNT CO." },
     titleSize: { type: "string", description: "Title font size", defaultValue: "3rem" },
     titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
     subtitle: { type: "string", description: "Subtitle/address", defaultValue: "1309 Edmonton Trl, Calgary, AB T2E 4Y8" },
     subtitleColor: { type: "color", description: "Subtitle color", defaultValue: "#666666" },
+    
+    // Button Controls
     buttonText: { type: "string", description: "Button text", defaultValue: "Make a Booking" },
     buttonHref: { type: "string", description: "Button link", defaultValue: "/booking" },
     buttonIcon: {
@@ -452,18 +457,112 @@ PLASMIC.registerComponent(HeroSection, {
       description: "Button icon",
       options: [
         "scissors", "calendar", "clock", "arrow-right", "chevron-right", "phone", 
-        "mail", "user", "star", "heart", "check", "plus", "shopping-cart"
+        "mail", "user", "star", "heart", "check", "plus", "shopping-cart", "sparkles"
       ],
       defaultValue: "scissors"
     },
     buttonBgColor: { type: "color", description: "Button background", defaultValue: "#D97639" },
     buttonTextColor: { type: "color", description: "Button text color", defaultValue: "white" },
     buttonHoverColor: { type: "color", description: "Button hover color", defaultValue: "#C06020" },
+    
+    // Container Style
     containerBgColor: { type: "color", description: "Container background (use rgba for transparency)", defaultValue: "rgba(255, 255, 255, 0.8)" },
     containerBorderColor: { type: "color", description: "Container border color", defaultValue: "rgba(255, 255, 255, 0.3)" },
     shadowColor: { type: "color", description: "Shadow color (use rgba)", defaultValue: "rgba(0, 0, 0, 0.15)" },
     shadowBlur: { type: "number", description: "Shadow blur (px)", defaultValue: 40 },
     shadowSpread: { type: "number", description: "Shadow spread (px)", defaultValue: 8 },
+    
+    // Left Doodle
+    showLeftDoodle: { type: "boolean", description: "Show left doodle image", defaultValue: false },
+    leftDoodleSrc: { type: "imageUrl", description: "Left doodle image", defaultValue: "/doodle-left.png" },
+    leftDoodleWidth: { type: "number", description: "Left doodle width (px)", defaultValue: 200 },
+    leftDoodleTop: { type: "string", description: "Left doodle top position (%, px, rem)", defaultValue: "10%" },
+    leftDoodleLeft: { type: "string", description: "Left doodle left position (%, px, rem)", defaultValue: "5%" },
+    hideLeftDoodleMobile: { type: "boolean", description: "Hide left doodle on mobile", defaultValue: true },
+    
+    // Right Doodle
+    showRightDoodle: { type: "boolean", description: "Show right doodle image", defaultValue: true },
+    rightDoodleSrc: { type: "imageUrl", description: "Right doodle image", defaultValue: "/doodle-right.png" },
+    rightDoodleWidth: { type: "number", description: "Right doodle width (px)", defaultValue: 200 },
+    rightDoodleTop: { type: "string", description: "Right doodle top position (%, px, rem)", defaultValue: "10%" },
+    rightDoodleRight: { type: "string", description: "Right doodle right position (%, px, rem)", defaultValue: "5%" },
+    hideRightDoodleMobile: { type: "boolean", description: "Hide right doodle on mobile", defaultValue: true },
+    
+    // Floating Icons
+    showFloatingIcons: { type: "boolean", description: "Show floating animated icons", defaultValue: true },
+    hideFloatingIconsMobile: { type: "boolean", description: "Hide floating icons on mobile", defaultValue: true },
+    
+    // Floating Icon 1
+    floatingIcon1: {
+      type: "choice",
+      description: "Floating icon 1",
+      options: [
+        "scissors", "star", "heart", "sparkles", "zap", "clock", "calendar", 
+        "smile", "coffee", "gift", "thumbs-up", "sun", "moon", "cloud"
+      ],
+      defaultValue: "scissors"
+    },
+    floatingIcon1Size: { type: "number", description: "Icon 1 size (px)", defaultValue: 40 },
+    floatingIcon1Color: { type: "color", description: "Icon 1 color", defaultValue: "#D97639" },
+    floatingIcon1Top: { type: "string", description: "Icon 1 top position (%)", defaultValue: "15%" },
+    floatingIcon1Left: { type: "string", description: "Icon 1 left position (%)", defaultValue: "10%" },
+    floatingIcon1Duration: { type: "string", description: "Icon 1 animation duration (s)", defaultValue: "3s" },
+    floatingIcon1Delay: { type: "string", description: "Icon 1 animation delay (s)", defaultValue: "0s" },
+    floatingIcon1Rotation: { type: "number", description: "Icon 1 rotation (deg)", defaultValue: 15 },
+    
+    // Floating Icon 2
+    floatingIcon2: {
+      type: "choice",
+      description: "Floating icon 2",
+      options: [
+        "scissors", "star", "heart", "sparkles", "zap", "clock", "calendar", 
+        "smile", "coffee", "gift", "thumbs-up", "sun", "moon", "cloud"
+      ],
+      defaultValue: "star"
+    },
+    floatingIcon2Size: { type: "number", description: "Icon 2 size (px)", defaultValue: 30 },
+    floatingIcon2Color: { type: "color", description: "Icon 2 color", defaultValue: "#F59E0B" },
+    floatingIcon2Top: { type: "string", description: "Icon 2 top position (%)", defaultValue: "20%" },
+    floatingIcon2Left: { type: "string", description: "Icon 2 left position (%)", defaultValue: "85%" },
+    floatingIcon2Duration: { type: "string", description: "Icon 2 animation duration (s)", defaultValue: "4s" },
+    floatingIcon2Delay: { type: "string", description: "Icon 2 animation delay (s)", defaultValue: "0.5s" },
+    floatingIcon2Rotation: { type: "number", description: "Icon 2 rotation (deg)", defaultValue: -20 },
+    
+    // Floating Icon 3
+    floatingIcon3: {
+      type: "choice",
+      description: "Floating icon 3",
+      options: [
+        "scissors", "star", "heart", "sparkles", "zap", "clock", "calendar", 
+        "smile", "coffee", "gift", "thumbs-up", "sun", "moon", "cloud"
+      ],
+      defaultValue: "sparkles"
+    },
+    floatingIcon3Size: { type: "number", description: "Icon 3 size (px)", defaultValue: 35 },
+    floatingIcon3Color: { type: "color", description: "Icon 3 color", defaultValue: "#8B5CF6" },
+    floatingIcon3Top: { type: "string", description: "Icon 3 top position (%)", defaultValue: "70%" },
+    floatingIcon3Left: { type: "string", description: "Icon 3 left position (%)", defaultValue: "15%" },
+    floatingIcon3Duration: { type: "string", description: "Icon 3 animation duration (s)", defaultValue: "3.5s" },
+    floatingIcon3Delay: { type: "string", description: "Icon 3 animation delay (s)", defaultValue: "1s" },
+    floatingIcon3Rotation: { type: "number", description: "Icon 3 rotation (deg)", defaultValue: 25 },
+    
+    // Floating Icon 4
+    floatingIcon4: {
+      type: "choice",
+      description: "Floating icon 4",
+      options: [
+        "scissors", "star", "heart", "sparkles", "zap", "clock", "calendar", 
+        "smile", "coffee", "gift", "thumbs-up", "sun", "moon", "cloud"
+      ],
+      defaultValue: "heart"
+    },
+    floatingIcon4Size: { type: "number", description: "Icon 4 size (px)", defaultValue: 28 },
+    floatingIcon4Color: { type: "color", description: "Icon 4 color", defaultValue: "#EC4899" },
+    floatingIcon4Top: { type: "string", description: "Icon 4 top position (%)", defaultValue: "75%" },
+    floatingIcon4Left: { type: "string", description: "Icon 4 left position (%)", defaultValue: "80%" },
+    floatingIcon4Duration: { type: "string", description: "Icon 4 animation duration (s)", defaultValue: "4.5s" },
+    floatingIcon4Delay: { type: "string", description: "Icon 4 animation delay (s)", defaultValue: "1.5s" },
+    floatingIcon4Rotation: { type: "number", description: "Icon 4 rotation (deg)", defaultValue: -15 },
   },
 });
 
@@ -703,12 +802,14 @@ PLASMIC.registerComponent(HomepageServices, {
     showCategoryTitles: { type: "boolean", description: "Show category titles", defaultValue: true },
     categoryTitleColor: { type: "color", description: "Category title color", defaultValue: "#1a1a1a" },
     categoryTitleSize: { type: "string", description: "Category title font size", defaultValue: "1.5rem" },
-    showSeeAll: { type: "boolean", description: "Show 'See All' links", defaultValue: true },
-    seeAllColor: { type: "color", description: "See All link color", defaultValue: "#D97639" },
+    showSeeAll: { type: "boolean", description: "Show 'See All/View Less' button", defaultValue: true },
+    seeAllColor: { type: "color", description: "See All button color", defaultValue: "#D97639" },
     seeAllSizeMobile: { type: "string", description: "See All size - Mobile", defaultValue: "0.875rem" },
     seeAllSizeTablet: { type: "string", description: "See All size - Tablet", defaultValue: "1rem" },
     seeAllSizeDesktop: { type: "string", description: "See All size - Desktop", defaultValue: "1.125rem" },
-    seeAllHrefTemplate: { type: "string", description: "See All link template (use {category})", defaultValue: "/services?category={category}" },
+    initialItemsToShow: { type: "number", description: "Initial items to show when collapsed", defaultValue: 4 },
+    seeAllText: { type: "string", description: "See All button text", defaultValue: "See All" },
+    viewLessText: { type: "string", description: "View Less button text", defaultValue: "View Less" },
     
     // Card Appearance
     cardBgColor: { type: "color", description: "Card background", defaultValue: "white" },
