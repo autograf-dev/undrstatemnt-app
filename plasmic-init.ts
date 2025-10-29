@@ -105,6 +105,8 @@ PLASMIC.registerComponent(ServicesExplorer, {
 import ServicesCatalog from "./components/ServicesCatalog";
 import MainSidebar from "./components/MainSidebar";
 import PageShellShadcn from "./components/PageShellShadcn";
+import MainHeader from "./components/MainHeader";
+import PageShellWithHeader from "./components/PageShellWithHeader";
 import HeroSection from "./components/HeroSection";
 import OurStory from "./components/OurStory";
 import CTASection from "./components/CTASection";
@@ -295,6 +297,141 @@ PLASMIC.registerComponent(PageShellShadcn, {
     buttonBgColor: { type: "color", description: "Sign-in button background", defaultValue: "white" },
     buttonTextColor: { type: "color", description: "Sign-in button text", defaultValue: "#391709" },
     defaultCollapsed: { type: "boolean", description: "Start collapsed (icon-only mode)", defaultValue: false },
+    children: { type: "slot", defaultValue: { type: "text", value: "Page content here" } },
+  },
+});
+
+PLASMIC.registerComponent(MainHeader, {
+  name: "MainHeader",
+  importPath: "@/components/MainHeader",
+  props: {
+    logoSrc: { 
+      type: "imageUrl", 
+      description: "Logo image", 
+      defaultValue: "/logo.png" 
+    },
+    logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 50 },
+    logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 50 },
+    title: { type: "string", description: "Business name", defaultValue: "UNDERSTATEMENT" },
+    items: {
+      type: "array",
+      description: "Navigation menu items",
+      itemType: {
+        type: "object",
+        nameFunc: (item: any) => item?.label || "New Menu Item",
+        fields: {
+          label: { 
+            type: "string", 
+            description: "Menu label",
+            defaultValue: "New Item"
+          },
+          href: { 
+            type: "string", 
+            description: "Link path (e.g. /home)",
+            defaultValue: "/"
+          },
+          icon: {
+            type: "choice",
+            description: "Icon from Lucide library",
+            options: [
+              "home", "barbers", "services", "calendar", "clock", "user", "users", 
+              "scissors", "star", "heart", "phone", "mail", "map-pin", "navigation",
+              "settings", "menu", "x", "check", "chevron-right", "chevron-left",
+              "chevron-down", "chevron-up", "arrow-right", "arrow-left", "plus",
+              "minus", "shopping-cart", "shopping-bag", "credit-card", "dollar-sign",
+              "gift", "tag", "bookmark", "bell", "message-circle", "send", "search",
+              "filter", "edit", "trash", "copy", "share", "download", "upload",
+              "image", "file", "folder", "lock", "unlock", "eye", "eye-off",
+              "thumbs-up", "thumbs-down", "smile", "frown", "coffee", "sun", "moon",
+              "cloud", "zap", "trending-up", "trending-down", "activity", "bar-chart",
+              "pie-chart", "help-circle", "info", "alert-circle", "alert-triangle"
+            ],
+            defaultValue: "home"
+          }
+        }
+      },
+      defaultValue: [
+        { label: "Home", href: "/", icon: "home" },
+        { label: "Barbers", href: "/barbers", icon: "barbers" },
+        { label: "Services", href: "/services", icon: "services" },
+      ],
+    },
+    activeHref: { type: "string", description: "Active href" },
+    signInLabel: { type: "string", description: "Sign in button text", defaultValue: "Sign In" },
+    signInHref: { type: "string", description: "Sign-in link", defaultValue: "/signin" },
+    bgColor: { type: "color", description: "Header background (use rgba for transparency)", defaultValue: "rgba(255, 255, 255, 0.8)" },
+    textColor: { type: "color", description: "Text color", defaultValue: "#1a1a1a" },
+    activeColor: { type: "color", description: "Active item color", defaultValue: "#000000" },
+    hoverColor: { type: "color", description: "Hover background color", defaultValue: "rgba(0, 0, 0, 0.05)" },
+    buttonBgColor: { type: "color", description: "Sign-in button background", defaultValue: "#000000" },
+    buttonTextColor: { type: "color", description: "Sign-in button text", defaultValue: "#ffffff" },
+  },
+});
+
+PLASMIC.registerComponent(PageShellWithHeader, {
+  name: "PageShellWithHeader",
+  importPath: "@/components/PageShellWithHeader",
+  props: {
+    logoSrc: { 
+      type: "imageUrl", 
+      description: "Logo image", 
+      defaultValue: "/logo.png" 
+    },
+    logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 50 },
+    logoHeight: { type: "number", description: "Logo height (px)", defaultValue: 50 },
+    title: { type: "string", description: "Business name", defaultValue: "UNDERSTATEMENT" },
+    headerItems: {
+      type: "array",
+      description: "Header navigation items",
+      itemType: {
+        type: "object",
+        nameFunc: (item: any) => item?.label || "New Menu Item",
+        fields: {
+          label: { 
+            type: "string", 
+            description: "Menu label",
+            defaultValue: "New Item"
+          },
+          href: { 
+            type: "string", 
+            description: "Link path (e.g. /home)",
+            defaultValue: "/"
+          },
+          icon: {
+            type: "choice",
+            description: "Icon from Lucide library",
+            options: [
+              "home", "barbers", "services", "calendar", "clock", "user", "users", 
+              "scissors", "star", "heart", "phone", "mail", "map-pin", "navigation",
+              "settings", "menu", "x", "check", "chevron-right", "chevron-left",
+              "chevron-down", "chevron-up", "arrow-right", "arrow-left", "plus",
+              "minus", "shopping-cart", "shopping-bag", "credit-card", "dollar-sign",
+              "gift", "tag", "bookmark", "bell", "message-circle", "send", "search",
+              "filter", "edit", "trash", "copy", "share", "download", "upload",
+              "image", "file", "folder", "lock", "unlock", "eye", "eye-off",
+              "thumbs-up", "thumbs-down", "smile", "frown", "coffee", "sun", "moon",
+              "cloud", "zap", "trending-up", "trending-down", "activity", "bar-chart",
+              "pie-chart", "help-circle", "info", "alert-circle", "alert-triangle"
+            ],
+            defaultValue: "home"
+          }
+        }
+      },
+      defaultValue: [
+        { label: "Home", href: "/", icon: "home" },
+        { label: "Barbers", href: "/barbers", icon: "barbers" },
+        { label: "Services", href: "/services", icon: "services" },
+      ],
+    },
+    activeHref: { type: "string", description: "Active href" },
+    signInLabel: { type: "string", description: "Sign in button text", defaultValue: "Sign In" },
+    signInHref: { type: "string", description: "Sign-in link", defaultValue: "/signin" },
+    headerBgColor: { type: "color", description: "Header background (use rgba for glassy effect)", defaultValue: "rgba(255, 255, 255, 0.8)" },
+    headerTextColor: { type: "color", description: "Header text color", defaultValue: "#1a1a1a" },
+    headerActiveColor: { type: "color", description: "Active item color", defaultValue: "#000000" },
+    headerHoverColor: { type: "color", description: "Hover background color", defaultValue: "rgba(0, 0, 0, 0.05)" },
+    buttonBgColor: { type: "color", description: "Sign-in button background", defaultValue: "#000000" },
+    buttonTextColor: { type: "color", description: "Sign-in button text", defaultValue: "#ffffff" },
     children: { type: "slot", defaultValue: { type: "text", value: "Page content here" } },
   },
 });
