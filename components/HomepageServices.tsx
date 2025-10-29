@@ -217,11 +217,17 @@ export default function HomepageServices({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Helper function to get responsive value based on screen size
+  const getResponsiveValue = <T,>(mobile: T, tablet: T, desktop: T): T => {
+    // Default to desktop if window width is 0 (SSR) or > 1024
+    if (windowWidth === 0 || windowWidth >= 1024) return desktop;
+    if (windowWidth < 768) return mobile;
+    return tablet;
+  };
+
   // Get current cards per view based on screen size
   const getCurrentCardsPerView = () => {
-    if (windowWidth < 768) return cardsPerViewMobile;
-    if (windowWidth < 1024) return cardsPerViewTablet;
-    return cardsPerViewDesktop;
+    return getResponsiveValue(cardsPerViewMobile, cardsPerViewTablet, cardsPerViewDesktop);
   };
 
   const currentCardsPerView = getCurrentCardsPerView();
@@ -231,9 +237,16 @@ export default function HomepageServices({
       try {
         const res = await fetch(apiPath);
         const data = await res.json();
-        setServices(data); 
+        // Ensure data is an array
+        if (Array.isArray(data)) {
+          setServices(data);
+        } else {
+          console.error("API response is not an array:", data);
+          setServices([]);
+        }
       } catch (error) {
         console.error("Error fetching services:", error);
+        setServices([]);
       } finally {
         setLoading(false);
       }
@@ -242,21 +255,25 @@ export default function HomepageServices({
     fetchServices();
   }, [apiPath]);
 
-  // Get unique categories
-  const categories = Array.from(new Set(services.map(s => s.category).filter(Boolean)));
+  // Get unique categories - ensure services is always an array
+  const categories = Array.isArray(services) 
+    ? Array.from(new Set(services.map(s => s.category).filter(Boolean)))
+    : [];
 
-  // Filter services
-  const filteredServices = services.filter(service => {
-    const matchesSearch = !searchQuery || 
-      service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.category?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = selectedCategories.length === 0 || 
-      selectedCategories.some(cat => service.category?.includes(cat));
-    
-    return matchesSearch && matchesCategory;
-  });
+  // Filter services - ensure services is an array
+  const filteredServices = Array.isArray(services) 
+    ? services.filter(service => {
+        const matchesSearch = !searchQuery || 
+          service.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.category?.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        const matchesCategory = selectedCategories.length === 0 || 
+          selectedCategories.some(cat => service.category?.includes(cat));
+        
+        return matchesSearch && matchesCategory;
+      })
+    : [];
 
   // Group services by category
   const groupedServices: {[key: string]: Service[]} = {};
@@ -273,7 +290,7 @@ export default function HomepageServices({
   }
 
   const handleScroll = (category: string, direction: 'left' | 'right', containerRef: HTMLDivElement) => {
-    const cardWidth = windowWidth < 768 ? cardWidthMobile : windowWidth < 1024 ? cardWidthTablet : cardWidthDesktop;
+    const cardWidth = getResponsiveValue(cardWidthMobile, cardWidthTablet, cardWidthDesktop);
     const scrollAmount = (cardWidth + 24) * currentCardsPerView; // 24 is gap
     
     const currentScroll = categoryScrollPositions[category] || 0;
@@ -313,7 +330,7 @@ export default function HomepageServices({
       }}
     >
       <div className="max-w-7xl mx-auto" style={{
-        padding: windowWidth < 768 ? paddingMobile : windowWidth < 1024 ? paddingTablet : paddingDesktop
+        padding: getResponsiveValue(paddingMobile, paddingTablet, paddingDesktop)
       }}>
         {/* Header with Search & Filter */}
         <div className="mb-6 sm:mb-8">
@@ -322,7 +339,7 @@ export default function HomepageServices({
             className="font-bold mb-4 sm:mb-6"
             style={{ 
               color: titleColor,
-              fontSize: windowWidth < 768 ? titleSizeMobile : windowWidth < 1024 ? titleSizeTablet : titleSizeDesktop
+              fontSize: getResponsiveValue(titleSizeMobile, titleSizeTablet, titleSizeDesktop)
             }}
           >
             {title}
@@ -386,7 +403,7 @@ export default function HomepageServices({
               style={{
                 backgroundColor: cardBgColor,
                 borderColor: searchBorderColor,
-                width: windowWidth < 640 ? "calc(100% - 2rem)" : "300px",
+                width: (windowWidth === 0 || windowWidth >= 640) ? "300px" : "calc(100% - 2rem)",
               }}
             >
               <div className="p-4">
@@ -471,13 +488,13 @@ export default function HomepageServices({
                       className="font-semibold flex items-center gap-2 hover:underline whitespace-nowrap"
                       style={{ 
                         color: seeAllColor,
-                        fontSize: windowWidth < 768 ? seeAllSizeMobile : windowWidth < 1024 ? seeAllSizeTablet : seeAllSizeDesktop
+                        fontSize: getResponsiveValue(seeAllSizeMobile, seeAllSizeTablet, seeAllSizeDesktop)
                       }}
                     >
                       See All
                       <ChevronRight style={{ 
-                        width: windowWidth < 768 ? '16px' : '20px',
-                        height: windowWidth < 768 ? '16px' : '20px'
+                        width: getResponsiveValue('16px', '18px', '20px'),
+                        height: getResponsiveValue('16px', '18px', '20px')
                       }} />
                     </Link>
                   )}
@@ -529,8 +546,8 @@ export default function HomepageServices({
                     style={{ minWidth: "min-content" }}
                   >
                     {categoryServices.map((service) => {
-                      const cardWidth = windowWidth < 768 ? cardWidthMobile : windowWidth < 1024 ? cardWidthTablet : cardWidthDesktop;
-                      const imageHeight = windowWidth < 768 ? cardImageHeightMobile : windowWidth < 1024 ? cardImageHeightTablet : cardImageHeightDesktop;
+                      const cardWidth = getResponsiveValue(cardWidthMobile, cardWidthTablet, cardWidthDesktop);
+                      const imageHeight = getResponsiveValue(cardImageHeightMobile, cardImageHeightTablet, cardImageHeightDesktop);
                       
                       return (
                         <Link
