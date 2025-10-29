@@ -85,6 +85,8 @@ export interface HeroSectionProps {
   leftDoodleLeft?: string;
   /** Hide left doodle on mobile */
   hideLeftDoodleMobile?: boolean;
+  /** Hide left doodle on tablet */
+  hideLeftDoodleTablet?: boolean;
   
   /** Show right doodle */
   showRightDoodle?: boolean;
@@ -98,6 +100,8 @@ export interface HeroSectionProps {
   rightDoodleRight?: string;
   /** Hide right doodle on mobile */
   hideRightDoodleMobile?: boolean;
+  /** Hide right doodle on tablet */
+  hideRightDoodleTablet?: boolean;
   
   // Floating Icons
   /** Show floating icons */
@@ -226,6 +230,7 @@ export default function HeroSection({
   leftDoodleTop = "10%",
   leftDoodleLeft = "5%",
   hideLeftDoodleMobile = true,
+  hideLeftDoodleTablet = false,
   // Right Doodle
   showRightDoodle = true,
   rightDoodleSrc = "/doodle-right.png",
@@ -233,6 +238,7 @@ export default function HeroSection({
   rightDoodleTop = "10%",
   rightDoodleRight = "5%",
   hideRightDoodleMobile = true,
+  hideRightDoodleTablet = false,
   // Floating Icons
   showFloatingIcons = true,
   floatingIcon1 = "scissors",
@@ -291,7 +297,14 @@ export default function HeroSection({
         <div
           className={cn(
             "absolute pointer-events-none",
-            hideLeftDoodleMobile && "hidden md:block"
+            // Handle mobile visibility
+            hideLeftDoodleMobile && !hideLeftDoodleTablet && "hidden md:block",
+            // Handle tablet visibility
+            !hideLeftDoodleMobile && hideLeftDoodleTablet && "block md:hidden lg:block",
+            // Handle both mobile and tablet hidden
+            hideLeftDoodleMobile && hideLeftDoodleTablet && "hidden lg:block",
+            // Show on all devices
+            !hideLeftDoodleMobile && !hideLeftDoodleTablet && "block"
           )}
           style={{
             top: leftDoodleTop,
@@ -317,7 +330,14 @@ export default function HeroSection({
         <div
           className={cn(
             "absolute pointer-events-none",
-            hideRightDoodleMobile && "hidden md:block"
+            // Handle mobile visibility
+            hideRightDoodleMobile && !hideRightDoodleTablet && "hidden md:block",
+            // Handle tablet visibility
+            !hideRightDoodleMobile && hideRightDoodleTablet && "block md:hidden lg:block",
+            // Handle both mobile and tablet hidden
+            hideRightDoodleMobile && hideRightDoodleTablet && "hidden lg:block",
+            // Show on all devices
+            !hideRightDoodleMobile && !hideRightDoodleTablet && "block"
           )}
           style={{
             top: rightDoodleTop,
@@ -380,7 +400,7 @@ export default function HeroSection({
           {/* Floating Icon 3 */}
           <div
             className="absolute animate-float"
-            style={{
+      style={{
               top: floatingIcon3Top,
               left: floatingIcon3Left,
               animationDuration: floatingIcon3Duration,
@@ -437,57 +457,57 @@ export default function HeroSection({
                 height: `min(${logoHeight}px, 35vw)`,
                 maxWidth: logoWidth,
                 maxHeight: logoHeight,
-                backgroundColor: logoBgColor,
-                border: `3px solid ${logoBorderColor}`,
-              }}
-            >
-              <Image
-                src={logoSrc || "/next.svg"}
-                alt={title}
+              backgroundColor: logoBgColor,
+              border: `3px solid ${logoBorderColor}`,
+            }}
+          >
+            <Image
+              src={logoSrc || "/next.svg"}
+              alt={title}
                 width={logoWidth}
                 height={logoHeight}
                 className="object-contain p-2"
                 unoptimized={logoSrc?.startsWith('http') || logoSrc?.startsWith('data:')}
-              />
-            </div>
+            />
           </div>
+        </div>
 
           {/* Title - Responsive text sizing */}
-          <h1
+        <h1
             className="font-extrabold tracking-wider uppercase mb-4 md:mb-6 text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
-            style={{
-              color: titleColor,
-              letterSpacing: '0.1em',
-            }}
-          >
-            {title}
-          </h1>
+          style={{
+            color: titleColor,
+            letterSpacing: '0.1em',
+          }}
+        >
+          {title}
+        </h1>
 
           {/* Subtitle - Responsive text */}
-          <p
+        <p
             className="text-sm sm:text-base md:text-lg mb-6 md:mb-8 px-4"
-            style={{
-              color: subtitleColor,
-            }}
-          >
-            {subtitle}
-          </p>
+          style={{
+            color: subtitleColor,
+          }}
+        >
+          {subtitle}
+        </p>
 
           {/* CTA Button - Mobile optimized */}
-          <Link
-            href={buttonHref}
+        <Link
+          href={buttonHref}
             className="relative inline-flex items-center gap-2 md:gap-3 px-6 md:px-8 py-3 md:py-3.5 rounded-xl font-semibold text-sm md:text-base transition-all duration-300 shadow-lg hover:scale-105 active:scale-95 overflow-hidden group"
-            style={{
-              backgroundColor: buttonBgColor,
-              color: buttonTextColor,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = buttonHoverColor;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = buttonBgColor;
-            }}
-          >
+          style={{
+            backgroundColor: buttonBgColor,
+            color: buttonTextColor,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = buttonHoverColor;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = buttonBgColor;
+          }}
+        >
             {/* Gradient shine effect on hover */}
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
             
@@ -495,7 +515,7 @@ export default function HeroSection({
               <ButtonIcon className="w-4 h-4 md:w-5 md:h-5" />
               <span>{buttonText}</span>
             </span>
-          </Link>
+        </Link>
         </div>
       </div>
       

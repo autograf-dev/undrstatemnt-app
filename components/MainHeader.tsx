@@ -209,7 +209,7 @@ export default function MainHeader({
       </header>
 
       {/* Mobile Header - Bottom Navigation */}
-      <header className="md:hidden fixed inset-x-0 z-1001">
+      <header className="md:hidden fixed inset-x-0 z-99999">
         {/* Top Bar with Enhanced Glassy Effect */}
         <div
           className="mx-4 mt-4 rounded-2xl shadow-2xl border border-white/30"

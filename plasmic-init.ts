@@ -478,7 +478,8 @@ PLASMIC.registerComponent(HeroSection, {
     leftDoodleWidth: { type: "number", description: "Left doodle width (px)", defaultValue: 200 },
     leftDoodleTop: { type: "string", description: "Left doodle top position (%, px, rem)", defaultValue: "10%" },
     leftDoodleLeft: { type: "string", description: "Left doodle left position (%, px, rem)", defaultValue: "5%" },
-    hideLeftDoodleMobile: { type: "boolean", description: "Hide left doodle on mobile", defaultValue: true },
+    hideLeftDoodleMobile: { type: "boolean", description: "Hide left doodle on mobile (< 768px)", defaultValue: true },
+    hideLeftDoodleTablet: { type: "boolean", description: "Hide left doodle on tablet (768px-1023px)", defaultValue: false },
     
     // Right Doodle
     showRightDoodle: { type: "boolean", description: "Show right doodle image", defaultValue: true },
@@ -486,7 +487,8 @@ PLASMIC.registerComponent(HeroSection, {
     rightDoodleWidth: { type: "number", description: "Right doodle width (px)", defaultValue: 200 },
     rightDoodleTop: { type: "string", description: "Right doodle top position (%, px, rem)", defaultValue: "10%" },
     rightDoodleRight: { type: "string", description: "Right doodle right position (%, px, rem)", defaultValue: "5%" },
-    hideRightDoodleMobile: { type: "boolean", description: "Hide right doodle on mobile", defaultValue: true },
+    hideRightDoodleMobile: { type: "boolean", description: "Hide right doodle on mobile (< 768px)", defaultValue: true },
+    hideRightDoodleTablet: { type: "boolean", description: "Hide right doodle on tablet (768px-1023px)", defaultValue: false },
     
     // Floating Icons
     showFloatingIcons: { type: "boolean", description: "Show floating animated icons", defaultValue: true },
@@ -757,6 +759,7 @@ PLASMIC.registerComponent(HomepageStaff, {
     cardsPerViewTablet: { type: "number", description: "Cards per view - Tablet", defaultValue: 2 },
     cardsPerViewDesktop: { type: "number", description: "Cards per view - Desktop", defaultValue: 4 },
     showArrows: { type: "boolean", description: "Show navigation arrows", defaultValue: true },
+    showArrowsMobile: { type: "boolean", description: "Show arrows on mobile (when using 2-grid layout)", defaultValue: false },
     arrowColor: { type: "color", description: "Arrow color", defaultValue: "#D97639" },
     arrowBgColor: { type: "color", description: "Arrow background", defaultValue: "white" },
     showScrollDots: { type: "boolean", description: "Show scroll indicator dots", defaultValue: true },
@@ -839,6 +842,7 @@ PLASMIC.registerComponent(HomepageServices, {
     cardsPerViewTablet: { type: "number", description: "Cards per view - Tablet", defaultValue: 2 },
     cardsPerViewDesktop: { type: "number", description: "Cards per view - Desktop", defaultValue: 4 },
     showArrows: { type: "boolean", description: "Show navigation arrows", defaultValue: true },
+    showArrowsMobile: { type: "boolean", description: "Show arrows on mobile (when using 2-grid layout)", defaultValue: false },
     arrowColor: { type: "color", description: "Arrow color", defaultValue: "#D97639" },
     arrowBgColor: { type: "color", description: "Arrow background", defaultValue: "white" },
     showScrollDots: { type: "boolean", description: "Show scroll indicator dots", defaultValue: true },

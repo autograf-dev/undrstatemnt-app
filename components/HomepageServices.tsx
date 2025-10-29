@@ -136,6 +136,8 @@ export interface HomepageServicesProps {
   cardsPerViewDesktop?: number;
   /** Show navigation arrows */
   showArrows?: boolean;
+  /** Show arrows on mobile */
+  showArrowsMobile?: boolean;
   /** Arrow color */
   arrowColor?: string;
   /** Arrow background */
@@ -201,6 +203,7 @@ export default function HomepageServices({
   cardsPerViewTablet = 2,
   cardsPerViewDesktop = 4,
   showArrows = true,
+  showArrowsMobile = false,
   arrowColor = "#D97639",
   arrowBgColor = "white",
   showScrollDots = true,
@@ -543,7 +546,10 @@ export default function HomepageServices({
                         const container = e.currentTarget.parentElement?.querySelector('.services-scroll') as HTMLDivElement;
                         if (container) handleScroll(category, 'left', container);
                       }}
-                      className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg transition-all hover:scale-110"
+                      className={cn(
+                        "absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg transition-all hover:scale-110",
+                        showArrowsMobile ? "flex" : "hidden md:flex"
+                      )}
                       style={{
                         backgroundColor: arrowBgColor,
                         color: arrowColor,
@@ -557,7 +563,10 @@ export default function HomepageServices({
                         const container = e.currentTarget.parentElement?.querySelector('.services-scroll') as HTMLDivElement;
                         if (container) handleScroll(category, 'right', container);
                       }}
-                      className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg transition-all hover:scale-110"
+                      className={cn(
+                        "absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg transition-all hover:scale-110",
+                        showArrowsMobile ? "flex" : "hidden md:flex"
+                      )}
                       style={{
                         backgroundColor: arrowBgColor,
                         color: arrowColor,
@@ -568,13 +577,13 @@ export default function HomepageServices({
                   </>
                 )}
 
-                {/* Container - Carousel when collapsed, Grid when expanded */}
+                {/* Container - Grid on mobile, Carousel on desktop when collapsed */}
                 <div
                   className={cn(
                     "transition-all duration-500",
                     isExpanded 
                       ? "" // Grid layout when expanded
-                      : "services-scroll overflow-x-auto scrollbar-hide -mx-2 px-2 snap-x snap-mandatory" // Carousel when collapsed
+                      : "md:services-scroll md:overflow-x-auto md:scrollbar-hide md:-mx-2 md:px-2 md:snap-x md:snap-mandatory" // Carousel only on desktop when collapsed
                   )}
                   style={isExpanded ? {} : { scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >
@@ -582,8 +591,8 @@ export default function HomepageServices({
                     className={cn(
                       "transition-all duration-500 gap-4 md:gap-6",
                       isExpanded
-                        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" // Grid when expanded
-                        : "flex" // Carousel when collapsed
+                        ? "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" // Grid when expanded (2 cols on mobile)
+                        : "grid grid-cols-2 md:flex" // Grid 2 cols on mobile, carousel on desktop when collapsed
                     )}
                     style={isExpanded ? {} : { minWidth: "min-content" }}
                   >
@@ -597,10 +606,10 @@ export default function HomepageServices({
                           href={cardLinkTemplate.replace('{id}', service.id)}
                           className={cn(
                             "rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105",
-                            isExpanded ? "w-full" : "flex-none snap-center"
+                            isExpanded ? "w-full" : "w-full md:flex-none md:snap-center"
                           )}
                           style={{
-                            width: isExpanded ? "auto" : `${cardWidth}px`,
+                            width: isExpanded ? "auto" : windowWidth >= 768 ? `${cardWidth}px` : undefined,
                             backgroundColor: cardBgColor,
                           }}
                           onMouseEnter={(e) => {
