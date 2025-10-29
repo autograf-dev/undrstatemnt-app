@@ -67,6 +67,9 @@ export default function PageShellShadcn({
   defaultCollapsed,
   children,
 }: PageShellShadcnProps) {
+  // Ensure sidebarItems is always an array
+  const validSidebarItems = Array.isArray(sidebarItems) ? sidebarItems : undefined;
+
   return (
     <div className={cn("min-h-screen", className)} style={style}>
       <MainSidebar
@@ -76,7 +79,7 @@ export default function PageShellShadcn({
         logoBgColor={logoBgColor}
         title={title}
         subtitle={subtitle}
-        items={sidebarItems}
+        items={validSidebarItems}
         activeHref={activeHref}
         signInLabel={signInLabel}
         signInHref={signInHref}
