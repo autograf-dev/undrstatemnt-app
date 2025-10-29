@@ -35,6 +35,29 @@ export interface PageShellWithHeaderProps {
   buttonBgColor?: string;
   /** Sign-in button text color */
   buttonTextColor?: string;
+  // Mobile Footer Nav Configuration
+  /** Show center booking button (mobile footer only) */
+  showMobileBookingButton?: boolean;
+  /** Center booking button link (mobile footer only) */
+  mobileBookingHref?: string;
+  /** Center booking button color (mobile footer only) */
+  mobileBookingColor?: string;
+  /** Booking button glow opacity (mobile footer only) */
+  mobileBookingGlowOpacity?: number;
+  /** Show user/signup icon (mobile footer only) */
+  showMobileUserIcon?: boolean;
+  /** User/signup link (mobile footer only) */
+  mobileUserHref?: string;
+  /** Footer background color (mobile footer only) */
+  mobileFooterBgColor?: string;
+  /** Icon color inactive (mobile footer only) */
+  mobileFooterIconColor?: string;
+  /** Icon color active (mobile footer only) */
+  mobileFooterActiveIconColor?: string;
+  /** Icon size in pixels (mobile footer only) */
+  mobileFooterIconSize?: number;
+  /** Footer padding (mobile footer only) */
+  mobileFooterPadding?: string;
   /** Main page content (slot from Plasmic) */
   children?: ReactNode;
 }
@@ -56,6 +79,18 @@ export default function PageShellWithHeader({
   headerHoverColor,
   buttonBgColor,
   buttonTextColor,
+  // Mobile Footer Nav
+  showMobileBookingButton,
+  mobileBookingHref,
+  mobileBookingColor,
+  mobileBookingGlowOpacity,
+  showMobileUserIcon,
+  mobileUserHref,
+  mobileFooterBgColor,
+  mobileFooterIconColor,
+  mobileFooterActiveIconColor,
+  mobileFooterIconSize,
+  mobileFooterPadding,
   children,
 }: PageShellWithHeaderProps) {
   // Ensure headerItems is always an array
@@ -78,6 +113,18 @@ export default function PageShellWithHeader({
         hoverColor={headerHoverColor}
         buttonBgColor={buttonBgColor}
         buttonTextColor={buttonTextColor}
+        // Mobile Footer Nav
+        showMobileBookingButton={showMobileBookingButton}
+        mobileBookingHref={mobileBookingHref}
+        mobileBookingColor={mobileBookingColor}
+        mobileBookingGlowOpacity={mobileBookingGlowOpacity}
+        showMobileUserIcon={showMobileUserIcon}
+        mobileUserHref={mobileUserHref}
+        mobileFooterBgColor={mobileFooterBgColor}
+        mobileFooterIconColor={mobileFooterIconColor}
+        mobileFooterActiveIconColor={mobileFooterActiveIconColor}
+        mobileFooterIconSize={mobileFooterIconSize}
+        mobileFooterPadding={mobileFooterPadding}
       />
       
       {/* Main content area with top padding for header on desktop, bottom padding for mobile */}
