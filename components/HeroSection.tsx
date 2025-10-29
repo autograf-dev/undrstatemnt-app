@@ -102,9 +102,9 @@ export default function HeroSection({
       className={cn("w-full", className)}
       style={style}
     >
-      {/* Glassy Container - Full width, no outer spacing */}
+      {/* Glassy Container with rounded corners */}
       <div 
-        className="w-full rounded-none md:rounded-2xl p-6 md:p-10 lg:p-12"
+        className="w-full rounded-2xl p-6 md:p-10 lg:p-12"
         style={{
           backgroundColor: containerBgColor,
           backdropFilter: "blur(16px) saturate(180%)",

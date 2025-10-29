@@ -603,22 +603,63 @@ PLASMIC.registerComponent(HomepageStaff, {
   importPath: "@/components/HomepageStaff",
   isDefaultExport: true,
   props: {
+    // API Configuration
+    apiPath: { 
+      type: "choice", 
+      description: "API endpoint to fetch staff data",
+      options: [
+        "/api/supabasestaff",
+        "/api/staff",
+        "/api/appointment",
+        "/api/services",
+        "/api/customer"
+      ],
+      defaultValue: "/api/supabasestaff" 
+    },
+    
+    // Title Controls
     title: { type: "string", description: "Section title", defaultValue: "Our Professionals" },
     titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
+    titleSizeMobile: { type: "string", description: "Title size - Mobile (e.g., 1.5rem, 24px)", defaultValue: "1.5rem" },
+    titleSizeTablet: { type: "string", description: "Title size - Tablet (e.g., 1.875rem, 30px)", defaultValue: "1.875rem" },
+    titleSizeDesktop: { type: "string", description: "Title size - Desktop (e.g., 2.25rem, 36px)", defaultValue: "2.25rem" },
+    
+    // See All Link
     showSeeAll: { type: "boolean", description: "Show See All link", defaultValue: true },
     seeAllHref: { type: "string", description: "See All link", defaultValue: "/staff" },
     seeAllColor: { type: "color", description: "See All color", defaultValue: "#D97639" },
+    seeAllSizeMobile: { type: "string", description: "See All size - Mobile", defaultValue: "0.875rem" },
+    seeAllSizeTablet: { type: "string", description: "See All size - Tablet", defaultValue: "1rem" },
+    seeAllSizeDesktop: { type: "string", description: "See All size - Desktop", defaultValue: "1.125rem" },
+    
+    // Card Appearance
     cardBgColor: { type: "color", description: "Card background", defaultValue: "white" },
     cardHoverColor: { type: "color", description: "Card hover color", defaultValue: "#f9fafb" },
-    nameColor: { type: "color", description: "Name color", defaultValue: "#1a1a1a" },
+    cardWidthMobile: { type: "number", description: "Card width - Mobile (px)", defaultValue: 280 },
+    cardWidthTablet: { type: "number", description: "Card width - Tablet (px)", defaultValue: 300 },
+    cardWidthDesktop: { type: "number", description: "Card width - Desktop (px)", defaultValue: 320 },
+    cardImageHeightMobile: { type: "number", description: "Card image height - Mobile (px)", defaultValue: 250 },
+    cardImageHeightTablet: { type: "number", description: "Card image height - Tablet (px)", defaultValue: 280 },
+    cardImageHeightDesktop: { type: "number", description: "Card image height - Desktop (px)", defaultValue: 300 },
+    nameColor: { type: "color", description: "Staff name color", defaultValue: "#1a1a1a" },
+    nameFontSize: { type: "string", description: "Staff name font size", defaultValue: "1.25rem" },
     subtitleColor: { type: "color", description: "Subtitle color", defaultValue: "#6b7280" },
+    subtitleFontSize: { type: "string", description: "Subtitle font size", defaultValue: "0.875rem" },
+    
+    // Section Style
     bgColor: { type: "color", description: "Background color", defaultValue: "#f9fafb" },
-    padding: { type: "string", description: "Section padding", defaultValue: "3rem 2rem" },
-    cardImageHeight: { type: "string", description: "Card image height", defaultValue: "300px" },
-    cardsPerView: { type: "number", description: "Cards per view (desktop)", defaultValue: 4 },
+    paddingMobile: { type: "string", description: "Section padding - Mobile (e.g., 2rem 1rem)", defaultValue: "2rem 1rem" },
+    paddingTablet: { type: "string", description: "Section padding - Tablet (e.g., 2.5rem 1.5rem)", defaultValue: "2.5rem 1.5rem" },
+    paddingDesktop: { type: "string", description: "Section padding - Desktop (e.g., 3rem 2rem)", defaultValue: "3rem 2rem" },
+    
+    // Carousel Controls
+    cardsPerViewMobile: { type: "number", description: "Cards per view - Mobile", defaultValue: 1 },
+    cardsPerViewTablet: { type: "number", description: "Cards per view - Tablet", defaultValue: 2 },
+    cardsPerViewDesktop: { type: "number", description: "Cards per view - Desktop", defaultValue: 4 },
     showArrows: { type: "boolean", description: "Show navigation arrows", defaultValue: true },
     arrowColor: { type: "color", description: "Arrow color", defaultValue: "#D97639" },
     arrowBgColor: { type: "color", description: "Arrow background", defaultValue: "white" },
+    showScrollDots: { type: "boolean", description: "Show scroll indicator dots", defaultValue: true },
   },
 });
 

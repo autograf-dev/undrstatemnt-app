@@ -21,69 +21,156 @@ interface Staff {
 export interface HomepageStaffProps {
   className?: string;
   style?: CSSProperties;
+  
+  // API Configuration
+  /** API endpoint to fetch staff data */
+  apiPath?: string;
+  
+  // Title Controls
   /** Section title */
   title?: string;
   /** Title color */
   titleColor?: string;
+  /** Title font size - Mobile */
+  titleSizeMobile?: string;
+  /** Title font size - Tablet */
+  titleSizeTablet?: string;
+  /** Title font size - Desktop */
+  titleSizeDesktop?: string;
+  
+  // See All Link Controls
   /** Show "See All" link */
   showSeeAll?: boolean;
   /** See All link href */
   seeAllHref?: string;
   /** See All color */
   seeAllColor?: string;
+  /** See All font size - Mobile */
+  seeAllSizeMobile?: string;
+  /** See All font size - Tablet */
+  seeAllSizeTablet?: string;
+  /** See All font size - Desktop */
+  seeAllSizeDesktop?: string;
+  
+  // Card Appearance
   /** Card background color */
   cardBgColor?: string;
   /** Card hover color */
   cardHoverColor?: string;
+  /** Card width - Mobile */
+  cardWidthMobile?: number;
+  /** Card width - Tablet */
+  cardWidthTablet?: number;
+  /** Card width - Desktop */
+  cardWidthDesktop?: number;
+  /** Card image height - Mobile */
+  cardImageHeightMobile?: number;
+  /** Card image height - Tablet */
+  cardImageHeightTablet?: number;
+  /** Card image height - Desktop */
+  cardImageHeightDesktop?: number;
   /** Staff name color */
   nameColor?: string;
+  /** Staff name font size */
+  nameFontSize?: string;
   /** Staff subtitle color */
   subtitleColor?: string;
+  /** Staff subtitle font size */
+  subtitleFontSize?: string;
+  
+  // Section Style
   /** Background color */
   bgColor?: string;
-  /** Section padding */
-  padding?: string;
-  /** Card image height */
-  cardImageHeight?: string;
-  /** Cards per view (desktop) */
-  cardsPerView?: number;
+  /** Section padding - Mobile */
+  paddingMobile?: string;
+  /** Section padding - Tablet */
+  paddingTablet?: string;
+  /** Section padding - Desktop */
+  paddingDesktop?: string;
+  
+  // Carousel Controls
+  /** Cards per view - Mobile */
+  cardsPerViewMobile?: number;
+  /** Cards per view - Tablet */
+  cardsPerViewTablet?: number;
+  /** Cards per view - Desktop */
+  cardsPerViewDesktop?: number;
   /** Show navigation arrows */
   showArrows?: boolean;
   /** Arrow color */
   arrowColor?: string;
   /** Arrow background */
   arrowBgColor?: string;
+  /** Show scroll dots */
+  showScrollDots?: boolean;
 }
 
 export default function HomepageStaff({
   className,
   style,
+  apiPath = "/api/supabasestaff",
   title = "Our Professionals",
   titleColor = "#1a1a1a",
+  titleSizeMobile = "1.5rem",
+  titleSizeTablet = "1.875rem",
+  titleSizeDesktop = "2.25rem",
   showSeeAll = true,
   seeAllHref = "/staff",
   seeAllColor = "#D97639",
+  seeAllSizeMobile = "0.875rem",
+  seeAllSizeTablet = "1rem",
+  seeAllSizeDesktop = "1.125rem",
   cardBgColor = "white",
   cardHoverColor = "#f9fafb",
+  cardWidthMobile = 280,
+  cardWidthTablet = 300,
+  cardWidthDesktop = 320,
+  cardImageHeightMobile = 250,
+  cardImageHeightTablet = 280,
+  cardImageHeightDesktop = 300,
   nameColor = "#1a1a1a",
+  nameFontSize = "1.25rem",
   subtitleColor = "#6b7280",
+  subtitleFontSize = "0.875rem",
   bgColor = "#f9fafb",
-  padding = "3rem 2rem",
-  cardImageHeight = "300px",
-  cardsPerView = 4,
+  paddingMobile = "2rem 1rem",
+  paddingTablet = "2.5rem 1.5rem",
+  paddingDesktop = "3rem 2rem",
+  cardsPerViewMobile = 1,
+  cardsPerViewTablet = 2,
+  cardsPerViewDesktop = 4,
   showArrows = true,
   arrowColor = "#D97639",
   arrowBgColor = "white",
+  showScrollDots = true,
 }: HomepageStaffProps) {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Track window width for responsive behavior
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Get current cards per view based on screen size
+  const getCurrentCardsPerView = () => {
+    if (windowWidth < 768) return cardsPerViewMobile;
+    if (windowWidth < 1024) return cardsPerViewTablet;
+    return cardsPerViewDesktop;
+  };
+
+  const currentCardsPerView = getCurrentCardsPerView();
 
   useEffect(() => {
     const fetchStaff = async () => {
       try {
-        const res = await fetch("/api/supabasestaff");
+        const res = await fetch(apiPath);
         const data = await res.json();
         setStaff(data); 
       } catch (error) {
@@ -94,7 +181,7 @@ export default function HomepageStaff({
     };
 
     fetchStaff();
-  }, []);
+  }, [apiPath]);
 
   const scrollToIndex = (index: number) => {
     if (scrollContainerRef.current) {
@@ -108,18 +195,18 @@ export default function HomepageStaff({
   };
 
   const handlePrevious = () => {
-    const newIndex = Math.max(0, currentIndex - cardsPerView);
+    const newIndex = Math.max(0, currentIndex - currentCardsPerView);
     scrollToIndex(newIndex);
   };
 
   const handleNext = () => {
-    const maxIndex = Math.max(0, staff.length - cardsPerView);
-    const newIndex = Math.min(maxIndex, currentIndex + cardsPerView);
+    const maxIndex = Math.max(0, staff.length - currentCardsPerView);
+    const newIndex = Math.min(maxIndex, currentIndex + currentCardsPerView);
     scrollToIndex(newIndex);
   };
 
   const canScrollLeft = currentIndex > 0;
-  const canScrollRight = currentIndex < staff.length - cardsPerView;
+  const canScrollRight = currentIndex < staff.length - currentCardsPerView;
 
   return (
     <section
@@ -129,23 +216,34 @@ export default function HomepageStaff({
         backgroundColor: bgColor,
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
-        {/* Header - Mobile Responsive */}
+      <div className="max-w-7xl mx-auto" style={{
+        padding: windowWidth < 768 ? paddingMobile : windowWidth < 1024 ? paddingTablet : paddingDesktop
+      }}>
+        {/* Header - Fully Responsive */}
         <div className="flex items-center justify-between mb-6 sm:mb-8 gap-4">
           <h2
-            className="text-2xl sm:text-3xl md:text-4xl font-bold"
-            style={{ color: titleColor }}
+            className="font-bold"
+            style={{ 
+              color: titleColor,
+              fontSize: windowWidth < 768 ? titleSizeMobile : windowWidth < 1024 ? titleSizeTablet : titleSizeDesktop
+            }}
           >
             {title}
           </h2>
           {showSeeAll && (
             <Link
               href={seeAllHref}
-              className="text-sm sm:text-base md:text-lg font-semibold flex items-center gap-1 sm:gap-2 hover:underline whitespace-nowrap"
-              style={{ color: seeAllColor }}
+              className="font-semibold flex items-center gap-2 hover:underline whitespace-nowrap"
+              style={{ 
+                color: seeAllColor,
+                fontSize: windowWidth < 768 ? seeAllSizeMobile : windowWidth < 1024 ? seeAllSizeTablet : seeAllSizeDesktop
+              }}
             >
               See All
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              <ChevronRight style={{ 
+                width: windowWidth < 768 ? '16px' : '20px',
+                height: windowWidth < 768 ? '16px' : '20px'
+              }} />
             </Link>
           )}
         </div>
@@ -200,77 +298,94 @@ export default function HomepageStaff({
                   minWidth: "min-content",
                 }}
               >
-                {staff.map((member) => (
-                  <Link
-                    key={member.id}
-                    href={`/booking?staffId=${member.ghl_id || member.id}`}
-                    className="flex-none rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 snap-center"
-                    style={{
-                      width: "280px",
-                      backgroundColor: cardBgColor,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = cardHoverColor;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = cardBgColor;
-                    }}
-                  >
-                    {/* Staff Image - Responsive Height */}
-                    <div
-                      className="relative w-full overflow-hidden bg-gray-200 h-[250px] md:h-[300px]"
+                {staff.map((member) => {
+                  const cardWidth = windowWidth < 768 ? cardWidthMobile : windowWidth < 1024 ? cardWidthTablet : cardWidthDesktop;
+                  const imageHeight = windowWidth < 768 ? cardImageHeightMobile : windowWidth < 1024 ? cardImageHeightTablet : cardImageHeightDesktop;
+                  
+                  return (
+                    <Link
+                      key={member.id}
+                      href={`/booking?staffId=${member.ghl_id || member.id}`}
+                      className="flex-none rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 snap-center"
+                      style={{
+                        width: `${cardWidth}px`,
+                        backgroundColor: cardBgColor,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = cardHoverColor;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = cardBgColor;
+                      }}
                     >
-                      {member.image_link ? (
-                        <Image
-                          src={member.image_link}
-                          alt={member.name}
-                          fill
-                          className="object-cover"
-                          unoptimized={member.image_link.startsWith('http')}
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-center justify-center text-5xl sm:text-6xl font-bold"
-                          style={{ color: titleColor, backgroundColor: "#e5e7eb" }}
-                        >
-                          {member.firstname.charAt(0)}
-                        </div>
-                      )}
-                    </div>
+                      {/* Staff Image - Fully Responsive */}
+                      <div
+                        className="relative w-full overflow-hidden bg-gray-200"
+                        style={{ height: `${imageHeight}px` }}
+                      >
+                        {member.image_link ? (
+                          <Image
+                            src={member.image_link}
+                            alt={member.name}
+                            fill
+                            className="object-cover"
+                            unoptimized={member.image_link.startsWith('http')}
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full flex items-center justify-center font-bold"
+                            style={{ 
+                              color: titleColor, 
+                              backgroundColor: "#e5e7eb",
+                              fontSize: `${imageHeight / 5}px`
+                            }}
+                          >
+                            {member.firstname.charAt(0)}
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Staff Info - Mobile Responsive */}
-                    <div className="p-4 sm:p-5 text-center">
-                      <h4
-                        className="text-lg sm:text-xl font-bold mb-1"
-                        style={{ color: nameColor }}
-                      >
-                        {member.name}
-                      </h4>
-                      <p
-                        className="text-xs sm:text-sm"
-                        style={{ color: subtitleColor }}
-                      >
-                        {member.firstname} {member.lastname}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
+                      {/* Staff Info - Fully Responsive */}
+                      <div className="p-4 sm:p-5 text-center">
+                        <h4
+                          className="font-bold mb-1"
+                          style={{ 
+                            color: nameColor,
+                            fontSize: nameFontSize
+                          }}
+                        >
+                          {member.name}
+                        </h4>
+                        <p
+                          style={{ 
+                            color: subtitleColor,
+                            fontSize: subtitleFontSize
+                          }}
+                        >
+                          {member.firstname} {member.lastname}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Scroll Indicator Dots - Mobile Responsive */}
-            <div className="flex justify-center gap-2 mt-4 sm:mt-6">
-              {Array.from({ length: Math.ceil(staff.length / cardsPerView) }).map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => scrollToIndex(idx * cardsPerView)}
-                  className="w-2 h-2 rounded-full transition-all"
-                  style={{
-                    backgroundColor: Math.floor(currentIndex / cardsPerView) === idx ? arrowColor : "#d1d5db",
-                  }}
-                />
-              ))}
-            </div>
+            {/* Scroll Indicator Dots - Responsive */}
+            {showScrollDots && (
+              <div className="flex justify-center gap-2 mt-4 sm:mt-6">
+                {Array.from({ length: Math.ceil(staff.length / currentCardsPerView) }).map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => scrollToIndex(idx * currentCardsPerView)}
+                    className="w-2 h-2 rounded-full transition-all"
+                    style={{
+                      backgroundColor: Math.floor(currentIndex / currentCardsPerView) === idx ? arrowColor : "#d1d5db",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
