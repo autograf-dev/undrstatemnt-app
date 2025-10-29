@@ -27,9 +27,32 @@ Example implementations showing:
 - Dark theme (black glassy)
 - How to use with icons
 
+## ✅ Registered with Plasmic
+
+These components are now registered in Plasmic Studio! You can:
+1. **Drag & drop** `MainHeader` or `PageShellWithHeader` from the component panel
+2. **Customize** all colors, text, and menu items visually
+3. **No coding required** - all props are editable in the right panel
+
+### Available in Plasmic:
+- ✅ **MainHeader** - Standalone header component
+- ✅ **PageShellWithHeader** - Full page wrapper with header + content slot
+
 ## Usage
 
-### Basic Example
+### In Plasmic Studio
+1. Open your Plasmic project
+2. Find "PageShellWithHeader" in the components panel
+3. Drag it onto your page
+4. Use the right panel to:
+   - Upload your logo
+   - Set business name
+   - Add/edit menu items (label, href, icon)
+   - Customize all colors
+   - Add content in the "children" slot
+5. Publish and sync!
+
+### Basic Example (Code)
 
 ```tsx
 import PageShellWithHeader from "@/components/PageShellWithHeader";
