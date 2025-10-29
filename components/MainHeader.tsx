@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import * as LucideIcons from "lucide-react";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,8 +10,49 @@ import Link from "next/link";
 export interface HeaderNavItem {
   label: string;
   href: string;
-  icon?: React.ReactNode;
+  icon?: string | React.ReactNode; // Support both string (from Plasmic) and ReactNode (from code)
 }
+
+// Convert icon name to PascalCase for Lucide icon lookup
+const toPascalCase = (str: string) => {
+  return str
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('');
+};
+
+// Helper function to get icon component from string name (for Plasmic integration)
+const getIconComponent = (iconName?: string | React.ReactNode): React.ReactNode => {
+  // If it's already a ReactNode (JSX element), return it directly
+  if (typeof iconName !== 'string') {
+    return iconName;
+  }
+  
+  if (!iconName) return null;
+  
+  // Handle special cases
+  if (iconName === "barbers") {
+    const Icon = LucideIcons.Users;
+    return <Icon className="w-5 h-5" />;
+  }
+  if (iconName === "services") {
+    const Icon = LucideIcons.Scissors;
+    return <Icon className="w-5 h-5" />;
+  }
+  
+  // Convert kebab-case to PascalCase (e.g., "map-pin" -> "MapPin")
+  const iconKey = toPascalCase(iconName) as keyof typeof LucideIcons;
+  const IconComponent = LucideIcons[iconKey];
+  
+  // Return the icon if it exists, otherwise return Home as default
+  if (IconComponent && typeof IconComponent !== 'string') {
+    const Icon = IconComponent as React.ComponentType<{ className?: string }>;
+    return <Icon className="w-5 h-5" />;
+  }
+  
+  const DefaultIcon = LucideIcons.Home;
+  return <DefaultIcon className="w-5 h-5" />;
+};
 
 export interface MainHeaderProps {
   /** Logo URL */
@@ -67,27 +109,27 @@ export default function MainHeader({
       <header
         className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-7xl hidden md:block"
         style={{
-          backgroundColor: bgColor,
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+          backdropFilter: "blur(16px) saturate(180%)",
+          WebkitBackdropFilter: "blur(16px) saturate(180%)",
         }}
       >
         <div
-          className="rounded-2xl shadow-lg border border-white/20"
+          className="rounded-2xl shadow-2xl border border-white/30"
           style={{
             backgroundColor: bgColor,
+            boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
           }}
         >
           <div className="px-6 py-4 flex items-center justify-between">
             {/* Logo Section */}
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3 transition-all duration-200 hover:opacity-80">
               {logoSrc && (
                 <div
-                  className="rounded-full overflow-hidden flex items-center justify-center"
+                  className="rounded-full overflow-hidden flex items-center justify-center shadow-lg"
                   style={{
                     width: logoWidth,
                     height: logoHeight,
-                    backgroundColor: "rgba(255, 255, 255, 0.5)",
+                    backgroundColor: "rgba(255, 255, 255, 0.6)",
                   }}
                 >
                   <Image
@@ -109,53 +151,56 @@ export default function MainHeader({
               )}
             </Link>
 
-            {/* Navigation */}
-            <nav className="flex items-center gap-1">
+            {/* Navigation with Gradient Hover */}
+            <nav className="flex items-center gap-2">
               {items.map((item, idx) => {
                 const isActive = activeHref === item.href;
+                const icon = getIconComponent(item.icon);
                 return (
                   <Link
                     key={idx}
                     href={item.href}
                     className={cn(
-                      "px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 font-medium text-sm"
+                      "group relative px-4 py-2.5 rounded-xl transition-all duration-300 flex items-center gap-2 font-medium text-sm overflow-hidden",
+                      isActive ? "shadow-lg" : "hover:shadow-md"
                     )}
                     style={{
                       color: isActive ? activeColor : textColor,
                       backgroundColor: isActive
-                        ? "rgba(0, 0, 0, 0.08)"
+                        ? "rgba(0, 0, 0, 0.1)"
                         : "transparent",
                       fontWeight: isActive ? "600" : "500",
                     }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.backgroundColor = hoverColor;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }
-                    }}
                   >
-                    {item.icon && <span className="w-5 h-5">{item.icon}</span>}
-                    {item.label}
+                    {/* Gradient hover effect */}
+                    <div className={cn(
+                      "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+                      !isActive && "bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-orange-500/10"
+                    )} />
+                    
+                    {/* Content */}
+                    <span className="relative z-10 flex items-center gap-2">
+                      {icon}
+                      <span>{item.label}</span>
+                    </span>
                   </Link>
                 );
               })}
             </nav>
 
-            {/* Sign In Button */}
+            {/* Sign In Button with Gradient */}
             {signInLabel && signInHref && (
               <Link
                 href={signInHref}
-                className="px-6 py-2.5 rounded-full font-medium text-sm transition-all duration-200 hover:scale-105 shadow-md"
+                className="relative px-6 py-2.5 rounded-full font-medium text-sm transition-all duration-300 hover:scale-105 shadow-lg overflow-hidden group"
                 style={{
                   backgroundColor: buttonBgColor,
                   color: buttonTextColor,
                 }}
               >
-                {signInLabel}
+                {/* Gradient shine effect on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                <span className="relative z-10">{signInLabel}</span>
               </Link>
             )}
           </div>
@@ -164,25 +209,26 @@ export default function MainHeader({
 
       {/* Mobile Header - Bottom Navigation */}
       <header className="md:hidden fixed inset-x-0 z-50">
-        {/* Top Bar */}
+        {/* Top Bar with Enhanced Glassy Effect */}
         <div
-          className="mx-4 mt-4 rounded-2xl shadow-lg border border-white/20"
+          className="mx-4 mt-4 rounded-2xl shadow-2xl border border-white/30"
           style={{
             backgroundColor: bgColor,
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
+            backdropFilter: "blur(16px) saturate(180%)",
+            WebkitBackdropFilter: "blur(16px) saturate(180%)",
+            boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
           }}
         >
           <div className="px-4 py-3 flex items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
+            {/* Logo and Title */}
+            <Link href="/" className="flex items-center gap-2 transition-all duration-200 active:scale-95">
               {logoSrc && (
                 <div
-                  className="rounded-full overflow-hidden flex items-center justify-center"
+                  className="rounded-full overflow-hidden flex items-center justify-center shadow-lg"
                   style={{
                     width: 40,
                     height: 40,
-                    backgroundColor: "rgba(255, 255, 255, 0.5)",
+                    backgroundColor: "rgba(255, 255, 255, 0.6)",
                   }}
                 >
                   <Image
@@ -207,7 +253,7 @@ export default function MainHeader({
             {/* Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg"
+              className="p-2 rounded-lg transition-all duration-200 active:scale-90"
               style={{ color: textColor }}
             >
               {mobileMenuOpen ? (
@@ -222,34 +268,42 @@ export default function MainHeader({
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
           <div
-            className="mx-4 mt-2 rounded-2xl shadow-lg border border-white/20 overflow-hidden"
+            className="mx-4 mt-2 rounded-2xl shadow-2xl border border-white/30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
             style={{
               backgroundColor: bgColor,
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
+              backdropFilter: "blur(16px) saturate(180%)",
+              WebkitBackdropFilter: "blur(16px) saturate(180%)",
+              boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
             }}
           >
             <nav className="p-2">
               {items.map((item, idx) => {
                 const isActive = activeHref === item.href;
+                const icon = getIconComponent(item.icon);
                 return (
                   <Link
                     key={idx}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-sm mb-1"
+                      "group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-sm mb-1 overflow-hidden"
                     )}
                     style={{
                       color: isActive ? activeColor : textColor,
                       backgroundColor: isActive
-                        ? "rgba(0, 0, 0, 0.08)"
+                        ? "rgba(0, 0, 0, 0.1)"
                         : "transparent",
                       fontWeight: isActive ? "600" : "500",
                     }}
                   >
-                    {item.icon && <span className="w-5 h-5">{item.icon}</span>}
-                    {item.label}
+                    {/* Gradient hover effect */}
+                    <div className={cn(
+                      "absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity duration-150",
+                      !isActive && "bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-orange-500/10"
+                    )} />
+                    
+                    <span className="relative z-10">{icon}</span>
+                    <span className="relative z-10">{item.label}</span>
                   </Link>
                 );
               })}
@@ -257,53 +311,60 @@ export default function MainHeader({
                 <Link
                   href={signInHref}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="mt-2 flex items-center justify-center px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200"
+                  className="relative mt-2 flex items-center justify-center px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 overflow-hidden group"
                   style={{
                     backgroundColor: buttonBgColor,
                     color: buttonTextColor,
                   }}
                 >
-                  {signInLabel}
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-active:translate-x-[100%] transition-transform duration-300" />
+                  <span className="relative z-10">{signInLabel}</span>
                 </Link>
               )}
             </nav>
           </div>
         )}
 
-        {/* Bottom Navigation Bar */}
+        {/* Bottom Navigation Bar - ICONS ONLY */}
         <div
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[95%] max-w-md rounded-2xl shadow-lg border border-white/20"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[95%] max-w-md rounded-2xl shadow-2xl border border-white/30"
           style={{
             backgroundColor: bgColor,
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
+            backdropFilter: "blur(16px) saturate(180%)",
+            WebkitBackdropFilter: "blur(16px) saturate(180%)",
+            boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
           }}
         >
           <nav className="px-2 py-3 flex items-center justify-around">
             {items.slice(0, 5).map((item, idx) => {
               const isActive = activeHref === item.href;
+              const icon = getIconComponent(item.icon);
               return (
                 <Link
                   key={idx}
                   href={item.href}
                   className={cn(
-                    "flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200"
+                    "group relative flex items-center justify-center p-3 rounded-xl transition-all duration-300 overflow-hidden",
+                    isActive ? "scale-110" : "hover:scale-105"
                   )}
                   style={{
                     color: isActive ? activeColor : textColor,
                     backgroundColor: isActive
-                      ? "rgba(0, 0, 0, 0.08)"
+                      ? "rgba(0, 0, 0, 0.1)"
                       : "transparent",
                   }}
                 >
-                  {item.icon && <span className="w-6 h-6">{item.icon}</span>}
-                  <span
-                    className="text-xs font-medium"
-                    style={{
-                      fontWeight: isActive ? "600" : "500",
-                    }}
-                  >
-                    {item.label}
+                  {/* Gradient background on active/hover */}
+                  <div className={cn(
+                    "absolute inset-0 transition-opacity duration-300",
+                    isActive 
+                      ? "opacity-100 bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-orange-500/20" 
+                      : "opacity-0 group-active:opacity-100 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10"
+                  )} />
+                  
+                  {/* Icon only - no text */}
+                  <span className="relative z-10 w-6 h-6 flex items-center justify-center">
+                    {icon}
                   </span>
                 </Link>
               );
