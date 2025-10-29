@@ -41,8 +41,6 @@ export interface HeroSectionProps {
   buttonTextColor?: string;
   /** Button hover color */
   buttonHoverColor?: string;
-  /** Background color */
-  bgColor?: string;
   /** Container background color */
   containerBgColor?: string;
   /** Container border color */
@@ -53,12 +51,6 @@ export interface HeroSectionProps {
   shadowBlur?: number;
   /** Shadow spread */
   shadowSpread?: number;
-  /** Container padding top */
-  paddingTop?: string;
-  /** Container padding bottom */
-  paddingBottom?: string;
-  /** Minimum height */
-  minHeight?: string;
 }
 
 // Convert icon name to PascalCase for Lucide icon lookup
@@ -97,25 +89,18 @@ export default function HeroSection({
   buttonBgColor = "#D97639",
   buttonTextColor = "white",
   buttonHoverColor = "#C06020",
-  bgColor = "#f5f5f5",
   containerBgColor = "rgba(255, 255, 255, 0.8)",
   containerBorderColor = "rgba(255, 255, 255, 0.3)",
   shadowColor = "rgba(0, 0, 0, 0.15)",
   shadowBlur = 40,
   shadowSpread = 8,
-  paddingTop = "4rem",
-  paddingBottom = "4rem",
-  minHeight = "auto",
 }: HeroSectionProps) {
   const ButtonIcon = getIcon(buttonIcon);
 
   return (
     <section
       className={cn("w-full", className)}
-      style={{
-        ...style,
-        minHeight,
-      }}
+      style={style}
     >
       {/* Glassy Container - Full width, no outer spacing */}
       <div 

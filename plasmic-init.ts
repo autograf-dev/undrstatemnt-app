@@ -464,15 +464,11 @@ PLASMIC.registerComponent(HeroSection, {
     buttonBgColor: { type: "color", description: "Button background", defaultValue: "#D97639" },
     buttonTextColor: { type: "color", description: "Button text color", defaultValue: "white" },
     buttonHoverColor: { type: "color", description: "Button hover color", defaultValue: "#C06020" },
-    bgColor: { type: "color", description: "Page background color", defaultValue: "#f5f5f5" },
     containerBgColor: { type: "color", description: "Container background (use rgba for transparency)", defaultValue: "rgba(255, 255, 255, 0.8)" },
     containerBorderColor: { type: "color", description: "Container border color", defaultValue: "rgba(255, 255, 255, 0.3)" },
     shadowColor: { type: "color", description: "Shadow color (use rgba)", defaultValue: "rgba(0, 0, 0, 0.15)" },
     shadowBlur: { type: "number", description: "Shadow blur (px)", defaultValue: 40 },
     shadowSpread: { type: "number", description: "Shadow spread (px)", defaultValue: 8 },
-    paddingTop: { type: "string", description: "Padding top", defaultValue: "4rem" },
-    paddingBottom: { type: "string", description: "Padding bottom", defaultValue: "4rem" },
-    minHeight: { type: "string", description: "Minimum height", defaultValue: "auto" },
   },
 });
 
