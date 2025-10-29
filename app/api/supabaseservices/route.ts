@@ -2,43 +2,61 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function GET() {
   try {
+    // Fetch all services from Supabase
     const { data, error } = await supabase
       .from("Data_Services")
-      .select("*")
-      .eq("Service/Available", "true")
-      .order("Service/Category", { ascending: true });
+      .select("*");
 
     if (error) {
-      console.error("Supabase error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("Supabase error fetching services:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch services" },
+        { status: 500 }
+      );
     }
 
-    // Transform the data to a more frontend-friendly format
-    const services = data?.map((service) => ({
-      id: service["🔒 Row ID"],
-      name: service["Service/Name"] || service["Service/Display Name"],
-      displayName: service["Service/Display Name"] || service["Service/Name"],
-      duration: service["Service/Duration"],
-      durationDisplay: service["Service/Display Duration"] || service["Service/Duration.Display"] || `${service["Service/Duration"]} mins`,
-      price: service["Service/Default Price"],
-      displayPrice: service["Service/Display Price"] || `From $${service["Service/Default Price"]}.00`,
-      photo: service["Service/Photo"],
-      category: service["Service/Category"],
-      categoryList: service["Service/Category List"],
-      available: service["Service/Available"],
-      barberIds: service["Barber/ID NEW"],
-      customPriceList: service["Custom/Price List"],
-      customPrice: service["Custom/Price"],
-    })) || [];
+    if (!data || data.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    // Transform the data to frontend-friendly format
+    const services = data.map((service) => {
+      const serviceName = service["Service/Name"] || "Unnamed Service";
+      // Handle backslash display name issue
+      const displayName = (service["Service/Display Name"] === "\\\\" || !service["Service/Display Name"]) 
+        ? serviceName 
+        : service["Service/Display Name"];
+      
+      return {
+        id: service["🔒 Row ID"] || service.id,
+        name: serviceName,
+        displayName: displayName,
+        duration: service["Service/Duration"] || "0",
+        durationDisplay: service["Service/Display Duration"] || service["Service/Duration.Display"] || `${service["Service/Duration"] || 0} mins`,
+        price: service["Service/Default Price"] || "0",
+        displayPrice: service["Service/Display Price"] || `From $${service["Service/Default Price"] || 0}.00`,
+        photo: service["Service/Photo"] || null,
+        category: service["Service/Category"] || "Other",
+        categoryList: service["Service/Category List"] || service["Service/Category"],
+        available: service["Service/Available"],
+        barberIds: service["Barber/ID NEW"],
+        customPriceList: service["Custom/Price List"],
+        customPrice: service["Custom/Price"],
+      };
+    });
+
+    // Sort by category for better organization
+    services.sort((a, b) => (a.category || "").localeCompare(b.category || ""));
 
     return NextResponse.json(services);
-  } catch (error) {
+    
+  } catch (error: any) {
     console.error("Error fetching services:", error);
     return NextResponse.json(
       { error: "Failed to fetch services" },

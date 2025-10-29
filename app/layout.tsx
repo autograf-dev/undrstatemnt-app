@@ -32,9 +32,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ height: 'auto', overflow: 'visible' }}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{ height: 'auto', minHeight: '100vh', overflow: 'visible' }}
       >
         {children}
       </body>

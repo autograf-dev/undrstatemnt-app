@@ -79,18 +79,20 @@ export default function CatchallPage(props: { plasmicData?: ComponentRenderData;
   const pageMeta = plasmicData.entryCompMetas[0];
   return (
     // Pass in the data fetched in getStaticProps as prefetchedData
-    <PlasmicRootProvider
-      loader={PLASMIC}
-      prefetchedData={plasmicData}
-      prefetchedQueryData={queryCache}
-      pageRoute={pageMeta.path}
-      pageParams={pageMeta.params}
-      pageQuery={router.query}
-    >
-      {
-        // pageMeta.displayName contains the name of the component you fetched.
-      }
-      <PlasmicComponent component={pageMeta.displayName} />
-    </PlasmicRootProvider>
+    <div style={{ height: 'auto', overflow: 'visible' }}>
+      <PlasmicRootProvider
+        loader={PLASMIC}
+        prefetchedData={plasmicData}
+        prefetchedQueryData={queryCache}
+        pageRoute={pageMeta.path}
+        pageParams={pageMeta.params}
+        pageQuery={router.query}
+      >
+        {
+          // pageMeta.displayName contains the name of the component you fetched.
+        }
+        <PlasmicComponent component={pageMeta.displayName} />
+      </PlasmicRootProvider>
+    </div>
   );
 }
