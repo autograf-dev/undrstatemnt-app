@@ -137,7 +137,8 @@ export default function MainHeader({
                     alt="Logo"
                     width={logoWidth}
                     height={logoHeight}
-                    className="object-contain"
+                    className="object-contain p-1"
+                    unoptimized={logoSrc.startsWith('http') || logoSrc.startsWith('data:')}
                   />
                 </div>
               )}
@@ -236,7 +237,8 @@ export default function MainHeader({
                     alt="Logo"
                     width={40}
                     height={40}
-                    className="object-contain"
+                    className="object-contain p-1"
+                    unoptimized={logoSrc.startsWith('http') || logoSrc.startsWith('data:')}
                   />
                 </div>
               )}

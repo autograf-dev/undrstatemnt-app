@@ -96,78 +96,93 @@ export default function HeroSection({
 
   return (
     <section
-      className={cn("w-full flex items-center justify-center", className)}
+      className={cn("w-full flex items-center justify-center px-4 py-8 md:py-12 lg:py-16", className)}
       style={{
         ...style,
         backgroundColor: bgColor,
-        paddingTop,
-        paddingBottom,
         minHeight,
       }}
     >
-      <div className="max-w-4xl mx-auto px-4 text-center">
-        {/* Logo */}
-        <div className="flex justify-center mb-6">
-          <div
-            className="rounded-full flex items-center justify-center overflow-hidden"
+      {/* Glassy Container with same styling as header */}
+      <div 
+        className="max-w-4xl w-full mx-auto rounded-2xl shadow-2xl border border-white/30 p-6 md:p-10 lg:p-12"
+        style={{
+          backgroundColor: "rgba(255, 255, 255, 0.8)",
+          backdropFilter: "blur(16px) saturate(180%)",
+          WebkitBackdropFilter: "blur(16px) saturate(180%)",
+          boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
+        }}
+      >
+        <div className="text-center">
+          {/* Logo - Responsive sizing */}
+          <div className="flex justify-center mb-6 md:mb-8">
+            <div
+              className="rounded-full flex items-center justify-center overflow-hidden shadow-2xl"
+              style={{
+                width: `min(${logoWidth}px, 35vw)`,
+                height: `min(${logoHeight}px, 35vw)`,
+                maxWidth: logoWidth,
+                maxHeight: logoHeight,
+                backgroundColor: logoBgColor,
+                border: `3px solid ${logoBorderColor}`,
+              }}
+            >
+              <Image
+                src={logoSrc || "/next.svg"}
+                alt={title}
+                width={logoWidth}
+                height={logoHeight}
+                className="object-contain p-2"
+                unoptimized={logoSrc?.startsWith('http') || logoSrc?.startsWith('data:')}
+              />
+            </div>
+          </div>
+
+          {/* Title - Responsive text sizing */}
+          <h1
+            className="font-extrabold tracking-wider uppercase mb-4 md:mb-6 text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
             style={{
-              width: logoWidth,
-              height: logoHeight,
-              backgroundColor: logoBgColor,
-              border: `3px solid ${logoBorderColor}`,
+              color: titleColor,
+              letterSpacing: '0.1em',
             }}
           >
-            <Image
-              src={logoSrc || "/next.svg"}
-              alt={title}
-              width={logoWidth - 20}
-              height={logoHeight - 20}
-              className="object-contain"
-              unoptimized={logoSrc?.startsWith('http')}
-            />
-          </div>
+            {title}
+          </h1>
+
+          {/* Subtitle - Responsive text */}
+          <p
+            className="text-sm sm:text-base md:text-lg mb-6 md:mb-8 px-4"
+            style={{
+              color: subtitleColor,
+            }}
+          >
+            {subtitle}
+          </p>
+
+          {/* CTA Button - Mobile optimized */}
+          <Link
+            href={buttonHref}
+            className="relative inline-flex items-center gap-2 md:gap-3 px-6 md:px-8 py-3 md:py-3.5 rounded-xl font-semibold text-sm md:text-base transition-all duration-300 shadow-lg hover:scale-105 active:scale-95 overflow-hidden group"
+            style={{
+              backgroundColor: buttonBgColor,
+              color: buttonTextColor,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = buttonHoverColor;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = buttonBgColor;
+            }}
+          >
+            {/* Gradient shine effect on hover */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+            
+            <span className="relative z-10 flex items-center gap-2 md:gap-3">
+              <ButtonIcon className="w-4 h-4 md:w-5 md:h-5" />
+              <span>{buttonText}</span>
+            </span>
+          </Link>
         </div>
-
-        {/* Title */}
-        <h1
-          className="font-extrabold tracking-wider uppercase mb-4"
-          style={{
-            fontSize: titleSize,
-            color: titleColor,
-            letterSpacing: '0.1em',
-          }}
-        >
-          {title}
-        </h1>
-
-        {/* Subtitle */}
-        <p
-          className="text-base mb-6"
-          style={{
-            color: subtitleColor,
-          }}
-        >
-          {subtitle}
-        </p>
-
-        {/* CTA Button */}
-        <Link
-          href={buttonHref}
-          className="inline-flex items-center gap-3 px-8 py-3.5 rounded-lg font-semibold text-base transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-          style={{
-            backgroundColor: buttonBgColor,
-            color: buttonTextColor,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = buttonHoverColor;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = buttonBgColor;
-          }}
-        >
-          <ButtonIcon className="w-5 h-5" />
-          {buttonText}
-        </Link>
       </div>
     </section>
   );
