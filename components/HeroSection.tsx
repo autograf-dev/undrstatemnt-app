@@ -111,16 +111,15 @@ export default function HeroSection({
 
   return (
     <section
-      className={cn("w-full flex items-center justify-center px-4 py-8 md:py-12 lg:py-16", className)}
+      className={cn("w-full", className)}
       style={{
         ...style,
-        backgroundColor: bgColor,
         minHeight,
       }}
     >
-      {/* Glassy Container - No double border */}
+      {/* Glassy Container - Full width, no outer spacing */}
       <div 
-        className="max-w-4xl w-full mx-auto rounded-2xl p-6 md:p-10 lg:p-12"
+        className="w-full rounded-none md:rounded-2xl p-6 md:p-10 lg:p-12"
         style={{
           backgroundColor: containerBgColor,
           backdropFilter: "blur(16px) saturate(180%)",
