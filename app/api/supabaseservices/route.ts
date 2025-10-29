@@ -134,50 +134,95 @@ export async function GET(req: Request) {
       let effective = { duration: base.duration, price: base.price, source: "default" as "default" | "custom" };
 
       if (barberId) {
-        // First try direct match on provided serviceId + barber row id
-        let customRows: any[] | null = null;
-        let customErr: any = null;
-        {
-          const { data, error } = await supabase
-            .from("Data_Services_Custom")
-            .select("*")
-            .eq("Service/ID", serviceId)
-            .eq("Barber/ID", barberId);
-          customRows = data as any[] | null;
-          customErr = error;
-        }
+        // Build candidate sets for service ids/names and barber identifiers
+        const serviceIdCandidates = new Set<string>([
+          String(serviceId),
+          String(serviceRow?.["glide_row_id"] || ""),
+          String(serviceRow?.["🔒 Row ID"] || ""),
+          String(serviceRow?.id || ""),
+          String(serviceRow?.["Row ID"] || ""),
+          String(serviceRow?.row_id || ""),
+        ].filter(Boolean));
 
-        // If nothing matched, try with all possible service id tokens from the base row
-        if ((!customRows || customRows.length === 0) && serviceRow) {
-          const serviceIdCandidates = [
-            serviceRow?.["glide_row_id"],
-            serviceRow?.["🔒 Row ID"],
-            serviceRow?.id,
-            serviceRow?.["Row ID"],
-            serviceRow?.row_id,
-          ]
-            .map((v: any) => (v != null ? String(v) : ""))
-            .filter(Boolean);
-          if (serviceIdCandidates.length > 0) {
-            const { data, error } = await supabase
-              .from("Data_Services_Custom")
-              .select("*")
-              .in("Service/ID", serviceIdCandidates)
-              .eq("Barber/ID", barberId);
-            customRows = data as any[] | null;
-            customErr = error;
+        const normalize = (x: any) => String(x ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+        const serviceNameCandidates = new Set<string>([
+          normalize(serviceRow?.["Service/Name"] || serviceRow?.name || ""),
+          normalize(serviceRow?.["Service/Display Name"] || ""),
+        ].filter(Boolean));
+
+        // Look up the barber in Data_barbers to collect both row id and user id and name
+        let barberRowId: string | null = null;
+        let barberUserId: string | null = null;
+        let barberNameNorm: string | null = null;
+        {
+          const byRow = await (supabase as any)
+            .from("Data_barbers")
+            .select('"🔒 Row ID", "User/ID", "Barber/Name"')
+            .eq("🔒 Row ID", barberId)
+            .maybeSingle();
+          if (!byRow.error && byRow.data) {
+            barberRowId = String(byRow.data?.["🔒 Row ID"] ?? "");
+            barberUserId = String(byRow.data?.["User/ID"] ?? "");
+            barberNameNorm = normalize(byRow.data?.["Barber/Name"] ?? "");
+          } else {
+            const byUser = await (supabase as any)
+              .from("Data_barbers")
+              .select('"🔒 Row ID", "User/ID", "Barber/Name"')
+              .eq("User/ID", barberId)
+              .maybeSingle();
+            if (!byUser.error && byUser.data) {
+              barberRowId = String(byUser.data?.["🔒 Row ID"] ?? "");
+              barberUserId = String(byUser.data?.["User/ID"] ?? "");
+              barberNameNorm = normalize(byUser.data?.["Barber/Name"] ?? "");
+            }
           }
         }
 
-        if (customErr) {
-          console.error("Supabase error fetching custom overrides:", customErr);
-        } else if (Array.isArray(customRows) && customRows.length > 0) {
-          const best = customRows[0];
-          const cPrice = Number(best["Barber/Price"] ?? NaN);
-          const cDuration = Number(best["Barber/Duration"] ?? NaN);
-          if (!Number.isNaN(cPrice)) effective.price = cPrice;
-          if (!Number.isNaN(cDuration)) effective.duration = cDuration;
-          effective.source = "custom";
+        // Fetch all custom rows and filter locally by service id/name and barber id/name
+        const { data: allCustom, error: custErr } = await (supabase as any)
+          .from("Data_Services_Custom")
+          .select("*");
+        if (custErr) {
+          console.error("Supabase error fetching custom overrides:", custErr);
+        } else if (Array.isArray(allCustom)) {
+          const matches = allCustom.filter((r: any) => {
+            const cIds = [
+              r?.["Service/ID"], r?.["Service/Row ID"], r?.["Service Row ID"], r?.["glide_row_id"], r?.["🔒 Row ID"], r?.["ServiceId"], r?.["Service ID"],
+            ].map((v: any) => (v != null ? String(v) : "")).filter(Boolean);
+            const cNames = [
+              r?.["Service/Name"], r?.["Service Name"], r?.["Service"], r?.["Service/Display Name"],
+            ].map(normalize).filter(Boolean);
+            const serviceMatch = (
+              cIds.some((cid: string) => serviceIdCandidates.has(cid)) ||
+              cNames.some((cn: string) => serviceNameCandidates.has(cn))
+            );
+
+            const bIds = [
+              r?.["Barber/ID"], r?.["Barber Row ID"], r?.["Barber/Row ID"], r?.["Barber 🔒 Row ID"], r?.["BarberId"], r?.["Barber ID"],
+            ].map((v: any) => (v != null ? String(v) : "")).filter(Boolean);
+            const bNames = [r?.["Barber/Name Lookup"], r?.["Barber/Name"]].map(normalize).filter(Boolean);
+            const barberMatch = (
+              bIds.includes(String(barberId)) ||
+              (barberRowId && bIds.includes(barberRowId)) ||
+              (barberUserId && bIds.includes(barberUserId)) ||
+              (barberNameNorm && bNames.includes(barberNameNorm))
+            );
+
+            return serviceMatch && barberMatch;
+          });
+
+          if (matches.length > 0) {
+            const best = matches[0];
+            const num = (v: any) => {
+              const n = Number(v);
+              return Number.isFinite(n) ? n : NaN;
+            };
+            const cPrice = num(best["Barber/Price"] ?? best["Custom/Price"] ?? best["Price"]);
+            const cDuration = num(best["Barber/Duration"] ?? best["Custom/Duration"] ?? best["Duration"]);
+            if (!Number.isNaN(cPrice)) effective.price = cPrice;
+            if (!Number.isNaN(cDuration)) effective.duration = cDuration;
+            effective.source = "custom";
+          }
         }
       }
 

@@ -28,6 +28,8 @@ export interface Staff {
   barberRowId?: string;
   /** Optional list of service IDs this barber supports (from Data_barbers "Services/List") */
   services?: string[];
+  /** When populated, indicates the barber offers the currently selected service via membership or a custom override */
+  offersForService?: boolean;
 }
 
 export interface DateInfo {

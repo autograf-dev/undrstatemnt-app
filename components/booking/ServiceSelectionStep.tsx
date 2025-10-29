@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import React from "react";
 import { 
   Scissors, 
   Heart, 
@@ -60,6 +61,12 @@ export function ServiceSelectionStep({
   cameFromUrlParam,
   onGoBack
 }: ServiceSelectionStepProps) {
+  // Dedupe services by id to avoid React key collisions if callers accidentally pass duplicates
+  const uniqueServices = React.useMemo(() => {
+    const map = new Map<string, Service>();
+    for (const s of services) map.set(s.id, s);
+    return Array.from(map.values());
+  }, [services]);
   const formatDurationMins = (mins: number): string => {
     const m = Number(mins || 0);
     const h = Math.floor(m / 60);
@@ -209,7 +216,7 @@ export function ServiceSelectionStep({
                 {/* Desktop: 3-column grid */}
                 <div className="hidden sm:block">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 stagger-animation">
-                {services.map((item) => (
+                {uniqueServices.map((item) => (
                   <div
                     key={item.id}
                         onClick={() => {
@@ -272,7 +279,7 @@ export function ServiceSelectionStep({
 
                 {/* Mobile: Single column grid with lesser height */}
                 <div className="sm:hidden grid grid-cols-1 gap-2 mb-4 stagger-animation">
-                  {services.map((item) => (
+                  {uniqueServices.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => {

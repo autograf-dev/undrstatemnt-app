@@ -427,7 +427,7 @@ export default function BookingWidget({
         // Prefer Supabase staff directory when available regardless of services load state
         let appendedFromSupabase = false;
         try {
-          const staffRes = await fetch(`${effectiveStaffApiPath}`);
+          const staffRes = await fetch(`${effectiveStaffApiPath}?serviceId=${encodeURIComponent(String(selectedService))}`);
           const staffList = await staffRes.json();
           if (typeof window !== 'undefined') {
             console.log('[Booking] supabase staff raw length:', Array.isArray(staffList) ? staffList.length : null);
@@ -443,8 +443,12 @@ export default function BookingWidget({
                 : typeof s.servicesList === 'string'
                   ? s.servicesList.split(',').map((x: string) => x.trim()).filter(Boolean)
                   : [],
+              // annotated by API when serviceId is provided
+              offersForService: s.offersForService === true,
             }));
-            const filtered = allStaff.filter((st) => Array.isArray(st.services) && st.services.includes(String(selectedService)));
+            const filtered = allStaff.filter((st) =>
+              st.offersForService === true || (Array.isArray(st.services) && st.services.includes(String(selectedService)))
+            );
             if (typeof window !== 'undefined') {
               console.log('[Booking] staff filtered count:', filtered.length, { selectedService, matched: filtered.map(s => s.name) });
             }
