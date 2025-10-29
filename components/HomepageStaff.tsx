@@ -127,14 +127,13 @@ export default function HomepageStaff({
       style={{
         ...style,
         backgroundColor: bgColor,
-        padding,
       }}
     >
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
+        {/* Header - Mobile Responsive */}
+        <div className="flex items-center justify-between mb-6 sm:mb-8 gap-4">
           <h2
-            className="text-4xl font-bold"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold"
             style={{ color: titleColor }}
           >
             {title}
@@ -142,11 +141,11 @@ export default function HomepageStaff({
           {showSeeAll && (
             <Link
               href={seeAllHref}
-              className="text-lg font-semibold flex items-center gap-2 hover:underline"
+              className="text-sm sm:text-base md:text-lg font-semibold flex items-center gap-1 sm:gap-2 hover:underline whitespace-nowrap"
               style={{ color: seeAllColor }}
             >
               See All
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </Link>
           )}
         </div>
@@ -162,11 +161,11 @@ export default function HomepageStaff({
         {/* Staff Carousel */}
         {!loading && (
           <div className="relative">
-            {/* Navigation Arrows */}
+            {/* Navigation Arrows - Hidden on Mobile */}
             {showArrows && canScrollLeft && (
               <button
                 onClick={handlePrevious}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg transition-all hover:scale-110"
+                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg transition-all hover:scale-110"
                 style={{
                   backgroundColor: arrowBgColor,
                   color: arrowColor,
@@ -179,7 +178,7 @@ export default function HomepageStaff({
             {showArrows && canScrollRight && (
               <button
                 onClick={handleNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg transition-all hover:scale-110"
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg transition-all hover:scale-110"
                 style={{
                   backgroundColor: arrowBgColor,
                   color: arrowColor,
@@ -189,14 +188,14 @@ export default function HomepageStaff({
               </button>
             )}
 
-            {/* Scrollable Container */}
+            {/* Scrollable Container - Mobile Responsive */}
             <div
               ref={scrollContainerRef}
-              className="overflow-x-auto scrollbar-hide -mx-2 px-2"
+              className="overflow-x-auto scrollbar-hide -mx-2 px-2 snap-x snap-mandatory"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               <div
-                className="flex gap-6"
+                className="flex gap-4 md:gap-6"
                 style={{
                   minWidth: "min-content",
                 }}
@@ -205,10 +204,9 @@ export default function HomepageStaff({
                   <Link
                     key={member.id}
                     href={`/booking?staffId=${member.ghl_id || member.id}`}
-                    className="flex-none rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105"
+                    className="flex-none rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 snap-center"
                     style={{
-                      width: `calc((100% - ${(cardsPerView - 1) * 1.5}rem) / ${cardsPerView})`,
-                      minWidth: "250px",
+                      width: "280px",
                       backgroundColor: cardBgColor,
                     }}
                     onMouseEnter={(e) => {
@@ -218,10 +216,9 @@ export default function HomepageStaff({
                       e.currentTarget.style.backgroundColor = cardBgColor;
                     }}
                   >
-                    {/* Staff Image */}
+                    {/* Staff Image - Responsive Height */}
                     <div
-                      className="relative w-full overflow-hidden bg-gray-200"
-                      style={{ height: cardImageHeight }}
+                      className="relative w-full overflow-hidden bg-gray-200 h-[250px] md:h-[300px]"
                     >
                       {member.image_link ? (
                         <Image
@@ -233,7 +230,7 @@ export default function HomepageStaff({
                         />
                       ) : (
                         <div
-                          className="w-full h-full flex items-center justify-center text-6xl font-bold"
+                          className="w-full h-full flex items-center justify-center text-5xl sm:text-6xl font-bold"
                           style={{ color: titleColor, backgroundColor: "#e5e7eb" }}
                         >
                           {member.firstname.charAt(0)}
@@ -241,16 +238,16 @@ export default function HomepageStaff({
                       )}
                     </div>
 
-                    {/* Staff Info */}
-                    <div className="p-5 text-center">
+                    {/* Staff Info - Mobile Responsive */}
+                    <div className="p-4 sm:p-5 text-center">
                       <h4
-                        className="text-xl font-bold mb-1"
+                        className="text-lg sm:text-xl font-bold mb-1"
                         style={{ color: nameColor }}
                       >
                         {member.name}
                       </h4>
                       <p
-                        className="text-sm"
+                        className="text-xs sm:text-sm"
                         style={{ color: subtitleColor }}
                       >
                         {member.firstname} {member.lastname}
@@ -261,8 +258,8 @@ export default function HomepageStaff({
               </div>
             </div>
 
-            {/* Scroll Indicator Dots */}
-            <div className="flex justify-center gap-2 mt-6">
+            {/* Scroll Indicator Dots - Mobile Responsive */}
+            <div className="flex justify-center gap-2 mt-4 sm:mt-6">
               {Array.from({ length: Math.ceil(staff.length / cardsPerView) }).map((_, idx) => (
                 <button
                   key={idx}
