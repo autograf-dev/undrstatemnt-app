@@ -265,7 +265,7 @@ export default function StaffShowcase({
                           fontSize: `${imageHeight / 4}px`
                         }}
                       >
-                        {member.firstname.charAt(0)}
+                        {(member.firstname ?? "").charAt(0)}
                       </div>
                     )}
                   </div>

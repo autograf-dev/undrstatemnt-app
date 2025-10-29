@@ -641,7 +641,7 @@ export default function HomepageServices({
                                   fontSize: `${imageHeight / 5}px`
                                 }}
                               >
-                                {(service.displayName || service.name).charAt(0)}
+                                {((service.displayName || service.name) ?? "").charAt(0)}
                               </div>
                             )}
                           </div>

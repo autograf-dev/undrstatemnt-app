@@ -340,7 +340,7 @@ export default function HomepageStaff({
                               fontSize: `${imageHeight / 5}px`
                             }}
                           >
-                            {member.firstname.charAt(0)}
+                            {(member.firstname ?? "").charAt(0)}
                           </div>
                         )}
                       </div>
