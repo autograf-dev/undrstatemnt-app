@@ -107,7 +107,7 @@ export default function MainHeader({
     <>
       {/* Desktop Header */}
       <header
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-7xl hidden md:block"
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-999999 w-[95%] max-w-7xl hidden md:block"
         style={{
           backdropFilter: "blur(16px) saturate(180%)",
           WebkitBackdropFilter: "blur(16px) saturate(180%)",

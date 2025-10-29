@@ -20,53 +20,132 @@ interface Staff {
 export interface StaffShowcaseProps {
   className?: string;
   style?: CSSProperties;
+  
+  // Title Controls
   /** Section title */
   title?: string;
   /** Title color */
   titleColor?: string;
+  /** Title font size - Mobile */
+  titleSizeMobile?: string;
+  /** Title font size - Tablet */
+  titleSizeTablet?: string;
+  /** Title font size - Desktop */
+  titleSizeDesktop?: string;
+  
+  // Breadcrumb
   /** Breadcrumb text */
   breadcrumb?: string;
   /** Breadcrumb color */
   breadcrumbColor?: string;
   /** Show breadcrumb */
   showBreadcrumb?: boolean;
+  /** Breadcrumb font size */
+  breadcrumbSize?: string;
+  
+  // Card Appearance
   /** Card background color */
   cardBgColor?: string;
   /** Card hover color */
   cardHoverColor?: string;
+  /** Card image height - Mobile */
+  cardImageHeightMobile?: number;
+  /** Card image height - Tablet */
+  cardImageHeightTablet?: number;
+  /** Card image height - Desktop */
+  cardImageHeightDesktop?: number;
+  /** Card border radius */
+  cardBorderRadius?: string;
+  
+  // Staff Info
   /** Staff name color */
   nameColor?: string;
+  /** Staff name font size */
+  nameFontSize?: string;
   /** Staff subtitle color */
   subtitleColor?: string;
+  /** Staff subtitle font size */
+  subtitleFontSize?: string;
+  
+  // Layout Controls
+  /** Columns - Mobile */
+  columnsMobile?: number;
+  /** Columns - Tablet */
+  columnsTablet?: number;
+  /** Columns - Desktop */
+  columnsDesktop?: number;
+  /** Gap between cards */
+  cardGap?: string;
+  
+  // Section Style
   /** Background color */
   bgColor?: string;
-  /** Section padding */
-  padding?: string;
-  /** Card image height */
-  cardImageHeight?: string;
-  /** Columns (desktop) */
-  columns?: number;
+  /** Section padding - Mobile */
+  paddingMobile?: string;
+  /** Section padding - Tablet */
+  paddingTablet?: string;
+  /** Section padding - Desktop */
+  paddingDesktop?: string;
+  /** Maximum width */
+  maxWidth?: string;
 }
 
 export default function StaffShowcase({
   className,
   style,
+  // Title
   title = "Our Professionals",
   titleColor = "#1a1a1a",
+  titleSizeMobile = "1.5rem",
+  titleSizeTablet = "2rem",
+  titleSizeDesktop = "2.5rem",
+  // Breadcrumb
   breadcrumb = "Home / All",
   breadcrumbColor = "#6b7280",
   showBreadcrumb = true,
+  breadcrumbSize = "0.875rem",
+  // Card Appearance
   cardBgColor = "white",
   cardHoverColor = "#f9fafb",
+  cardImageHeightMobile = 250,
+  cardImageHeightTablet = 300,
+  cardImageHeightDesktop = 350,
+  cardBorderRadius = "0.75rem",
+  // Staff Info
   nameColor = "#1a1a1a",
+  nameFontSize = "1.25rem",
   subtitleColor = "#6b7280",
+  subtitleFontSize = "0.875rem",
+  // Layout
+  columnsMobile = 2,
+  columnsTablet = 3,
+  columnsDesktop = 4,
+  cardGap = "1.5rem",
+  // Section Style
   bgColor = "white",
-  padding = "3rem 2rem",
-  cardImageHeight = "350px",
-  columns = 4,
+  paddingMobile = "2rem 1rem",
+  paddingTablet = "2.5rem 1.5rem",
+  paddingDesktop = "3rem 2rem",
+  maxWidth = "1280px",
 }: StaffShowcaseProps) {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
+  const [windowWidth, setWindowWidth] = useState(0);
+
+  // Track window width for responsive behavior
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Helper function to get responsive value based on screen size
+  const getResponsiveValue = <T,>(mobile: T, tablet: T, desktop: T): T => {
+    if (windowWidth === 0 || windowWidth >= 1024) return desktop;
+    if (windowWidth < 768) return mobile;
+    return tablet;
+  };
 
   useEffect(() => {
     const fetchStaff = async () => {
@@ -84,29 +163,26 @@ export default function StaffShowcase({
     fetchStaff();
   }, []);
 
-  const gridCols = {
-    2: "grid-cols-1 md:grid-cols-2",
-    3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-    4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
-    5: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5",
-  }[columns] || "grid-cols-1 md:grid-cols-2 lg:grid-cols-4";
+  // Build responsive grid classes
+  const gridColsClass = `grid-cols-${columnsMobile} md:grid-cols-${columnsTablet} lg:grid-cols-${columnsDesktop}`;
 
   return (
     <section
-      className={cn("w-full", className)}
+      className={cn("w-full py-8 px-4 sm:py-10 sm:px-6 md:py-12 md:px-8", className)}
       style={{
         ...style,
         backgroundColor: bgColor,
-        padding,
       }}
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto" style={{ maxWidth }}>
         {/* Breadcrumb */}
         {showBreadcrumb && (
-          <div className="mb-4">
+          <div className="mb-3 sm:mb-4">
             <p
-              className="text-sm"
-              style={{ color: breadcrumbColor }}
+              style={{ 
+                color: breadcrumbColor,
+                fontSize: breadcrumbSize
+              }}
             >
               {breadcrumb}
             </p>
@@ -115,8 +191,11 @@ export default function StaffShowcase({
 
         {/* Title */}
         <h1
-          className="text-4xl font-bold mb-12"
-          style={{ color: titleColor }}
+          className="font-bold mb-8 sm:mb-10 md:mb-12"
+          style={{ 
+            color: titleColor,
+            fontSize: getResponsiveValue(titleSizeMobile, titleSizeTablet, titleSizeDesktop)
+          }}
         >
           {title}
         </h1>
@@ -137,62 +216,83 @@ export default function StaffShowcase({
         )}
 
         {!loading && staff.length > 0 && (
-          <div className={cn("grid gap-6", gridCols)}>
-            {staff.map((member) => (
-              <Link
-                key={member.id}
-                href={`/booking?staffId=${member.ghl_id || member.id}`}
-                className="group rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105"
-                style={{
-                  backgroundColor: cardBgColor,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = cardHoverColor;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = cardBgColor;
-                }}
-              >
-                {/* Staff Image */}
-                <div
-                  className="relative w-full overflow-hidden bg-gray-200"
-                  style={{ height: cardImageHeight }}
+          <div 
+            className={cn("grid", gridColsClass)}
+            style={{ gap: cardGap }}
+          >
+            {staff.map((member) => {
+              const imageHeight = getResponsiveValue(
+                cardImageHeightMobile,
+                cardImageHeightTablet,
+                cardImageHeightDesktop
+              );
+              
+              return (
+                <Link
+                  key={member.id}
+                  href={`/booking?staffId=${member.ghl_id || member.id}`}
+                  className="group overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105"
+                  style={{
+                    backgroundColor: cardBgColor,
+                    borderRadius: cardBorderRadius,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = cardHoverColor;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = cardBgColor;
+                  }}
                 >
-                  {member.image_link ? (
-                    <Image
-                      src={member.image_link}
-                      alt={member.name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                      unoptimized={member.image_link.startsWith('http')}
-                    />
-                  ) : (
-                    <div
-                      className="w-full h-full flex items-center justify-center text-6xl font-bold"
-                      style={{ color: titleColor, backgroundColor: "#e5e7eb" }}
-                    >
-                      {member.firstname.charAt(0)}
-                    </div>
-                  )}
-                </div>
+                  {/* Staff Image */}
+                  <div
+                    className="relative w-full overflow-hidden bg-gray-200"
+                    style={{ height: `${imageHeight}px` }}
+                  >
+                    {member.image_link ? (
+                      <Image
+                        src={member.image_link}
+                        alt={member.name}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-300"
+                        unoptimized={member.image_link.startsWith('http')}
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center font-bold"
+                        style={{ 
+                          color: titleColor, 
+                          backgroundColor: "#e5e7eb",
+                          fontSize: `${imageHeight / 4}px`
+                        }}
+                      >
+                        {member.firstname.charAt(0)}
+                      </div>
+                    )}
+                  </div>
 
-                {/* Staff Info */}
-                <div className="p-5 text-center">
-                  <h3
-                    className="text-xl font-bold mb-1"
-                    style={{ color: nameColor }}
-                  >
-                    {member.name}
-                  </h3>
-                  <p
-                    className="text-sm"
-                    style={{ color: subtitleColor }}
-                  >
-                    {member.firstname} {member.lastname}
-                  </p>
-                </div>
-              </Link>
-            ))}
+                  {/* Staff Info */}
+                  <div className="p-4 sm:p-5 text-center">
+                    <h3
+                      className="font-bold mb-1"
+                      style={{ 
+                        color: nameColor,
+                        fontSize: nameFontSize
+                      }}
+                    >
+                      {member.name}
+                    </h3>
+                    <p
+                      style={{ 
+                        color: subtitleColor,
+                        fontSize: subtitleFontSize
+                      }}
+                    >
+                      {member.firstname} {member.lastname}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
