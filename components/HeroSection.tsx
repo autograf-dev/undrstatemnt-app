@@ -43,6 +43,16 @@ export interface HeroSectionProps {
   buttonHoverColor?: string;
   /** Background color */
   bgColor?: string;
+  /** Container background color */
+  containerBgColor?: string;
+  /** Container border color */
+  containerBorderColor?: string;
+  /** Shadow color */
+  shadowColor?: string;
+  /** Shadow blur */
+  shadowBlur?: number;
+  /** Shadow spread */
+  shadowSpread?: number;
   /** Container padding top */
   paddingTop?: string;
   /** Container padding bottom */
@@ -88,6 +98,11 @@ export default function HeroSection({
   buttonTextColor = "white",
   buttonHoverColor = "#C06020",
   bgColor = "#f5f5f5",
+  containerBgColor = "rgba(255, 255, 255, 0.8)",
+  containerBorderColor = "rgba(255, 255, 255, 0.3)",
+  shadowColor = "rgba(0, 0, 0, 0.15)",
+  shadowBlur = 40,
+  shadowSpread = 8,
   paddingTop = "4rem",
   paddingBottom = "4rem",
   minHeight = "auto",
@@ -103,14 +118,15 @@ export default function HeroSection({
         minHeight,
       }}
     >
-      {/* Glassy Container with same styling as header */}
+      {/* Glassy Container - No double border */}
       <div 
-        className="max-w-4xl w-full mx-auto rounded-2xl shadow-2xl border border-white/30 p-6 md:p-10 lg:p-12"
+        className="max-w-4xl w-full mx-auto rounded-2xl p-6 md:p-10 lg:p-12"
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.8)",
+          backgroundColor: containerBgColor,
           backdropFilter: "blur(16px) saturate(180%)",
           WebkitBackdropFilter: "blur(16px) saturate(180%)",
-          boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
+          border: `1px solid ${containerBorderColor}`,
+          boxShadow: `0 ${shadowSpread}px ${shadowBlur}px 0 ${shadowColor}`,
         }}
       >
         <div className="text-center">
