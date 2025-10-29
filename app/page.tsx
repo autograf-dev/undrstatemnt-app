@@ -1,20 +1,21 @@
-import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../plasmic-init";
+import PlasmicHomepage from "@/components/PlasmicHomepage";
 
 export default async function Home() {
   // Fetch Plasmic page data for homepage
   const plasmicData = await PLASMIC.maybeFetchComponentData("/home");
   
   if (!plasmicData) {
-    // If no Plasmic page found for /home, try root /
-    const rootData = await PLASMIC.maybeFetchComponentData("/");
-    if (!rootData) {
-      return <div>Homepage not found in Plasmic. Please create a page with path "/home" or "/" in Plasmic Studio.</div>;
-    }
-    const pageMeta = rootData.entryCompMetas[0];
-    return <PlasmicComponent component={pageMeta.displayName} />;
+    // If no Plasmic page found for /home, show message
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold mb-4">Homepage not found in Plasmic</h1>
+          <p>Please create a page with path &quot;/home&quot; in Plasmic Studio.</p>
+        </div>
+      </div>
+    );
   }
   
-  const pageMeta = plasmicData.entryCompMetas[0];
-  return <PlasmicComponent component={pageMeta.displayName} />;
+  return <PlasmicHomepage plasmicData={plasmicData} />;
 }
