@@ -33,6 +33,7 @@ interface InformationStepProps {
   formatPhoneNumber: (value: string) => string;
   isValidCAPhone: (phone: string) => boolean;
   isFormValid: boolean;
+  effectivePrice?: number | null;
 }
 
 export function InformationStep({
@@ -51,7 +52,8 @@ export function InformationStep({
   formatDurationMins,
   formatPhoneNumber,
   isValidCAPhone,
-  isFormValid
+  isFormValid,
+  effectivePrice
 }: InformationStepProps) {
   const formatCalendarDate = (dateInfo: DateInfo | null): string => {
     if (!dateInfo) return '';
@@ -116,6 +118,13 @@ export function InformationStep({
               <span className="text-sm font-semibold text-black">{selectedService?.name}</span>
               <span className="text-sm text-gray-700">with {selectedStaff?.name}</span>
             </div>
+            {/* Price (if available) */}
+            {typeof effectivePrice === 'number' && effectivePrice > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-orange-primary font-semibold">$</span>
+                <span className="text-sm text-gray-700">From ${effectivePrice.toFixed(2)}</span>
+              </div>
+            )}
             {/* Guests */}
             <div className="flex items-center gap-1">
               {guestCount > 1 ? <Users className="text-sm text-orange-primary" /> : <User className="text-sm text-orange-primary" />}
@@ -228,6 +237,12 @@ export function InformationStep({
                   <User className="text-xl text-orange-primary" />
                   <span className="text-gray-700">with {selectedStaff?.name}</span>
                 </div>
+                {typeof effectivePrice === 'number' && effectivePrice > 0 && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl text-orange-primary font-semibold">$</span>
+                    <span className="text-gray-700">From ${effectivePrice.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-3">
                   {guestCount > 1 ? <Users className="text-xl text-orange-primary" /> : <User className="text-xl text-orange-primary" />}
                   <span className="text-gray-700">

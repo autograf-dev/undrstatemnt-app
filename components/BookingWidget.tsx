@@ -135,8 +135,8 @@ export default function BookingWidget({
   className,
   style,
   // API Configuration
-  servicesApiPath = "/api/services",
-  staffApiPath = "/api/staff",
+  servicesApiPath = "/api/supabaseservices",
+  staffApiPath = "/api/supabasestaff",
   staffSlotsApiPath = "/api/staff-slots",
   customerApiPath = "/api/customer",
   appointmentApiPath = "/api/appointment",
@@ -182,6 +182,23 @@ export default function BookingWidget({
   stepperInactiveColor = "#e5e7eb",
   stepperCompletedColor = "#10b981",
 }: BookingWidgetProps) {
+  // Normalize/override legacy API paths coming from Plasmic instances
+  const effectiveServicesApiPath = servicesApiPath === "/api/services" ? "/api/supabaseservices" : servicesApiPath;
+  const effectiveStaffApiPath = staffApiPath === "/api/staff" ? "/api/supabasestaff" : staffApiPath;
+  const effectiveStaffSlotsApiPath = staffSlotsApiPath === "/api/staffSlots" ? "/api/staff-slots" : staffSlotsApiPath;
+  // Log overrides once on mount (avoid spamming per render)
+  useEffect(() => {
+    if (servicesApiPath !== effectiveServicesApiPath) {
+      console.warn('[Booking] Overriding servicesApiPath from', servicesApiPath, 'to', effectiveServicesApiPath);
+    }
+    if (staffApiPath !== effectiveStaffApiPath) {
+      console.warn('[Booking] Overriding staffApiPath from', staffApiPath, 'to', effectiveStaffApiPath);
+    }
+    if (staffSlotsApiPath !== effectiveStaffSlotsApiPath) {
+      console.warn('[Booking] Overriding staffSlotsApiPath from', staffSlotsApiPath, 'to', effectiveStaffSlotsApiPath);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Dynamic steps based on labels
   const STEPS = [
     { title: step1Label, icon: "scissors", value: "service" },
@@ -198,7 +215,15 @@ export default function BookingWidget({
   // If you don't want to load groups at all, use a sentinel department 'all'
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [services, setServices] = useState<Service[]>([]);
-  const [selectedService, setSelectedService] = useState<string>("");
+  // Initialize selected service from URL (prevents first-load race clearing it)
+  const initialSelectedService = typeof window !== 'undefined' ? (() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get('serviceId') || sp.get('calendarId') || "";
+    } catch { return ""; }
+  })() : "";
+  const [selectedService, setSelectedService] = useState<string>(initialSelectedService);
+  const [usingSupabaseServices, setUsingSupabaseServices] = useState<boolean>(false);
   // We're not fetching groups anymore; start as not loading
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [loadingServices, setLoadingServices] = useState(false);
@@ -209,10 +234,21 @@ export default function BookingWidget({
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [guestCount, setGuestCount] = useState(1);
   const [showGuestInput, setShowGuestInput] = useState(false);
+  
+  // Effective overrides (duration/price) for current service+staff
+  const [effectiveDuration, setEffectiveDuration] = useState<number | null>(null);
+  const [effectivePrice, setEffectivePrice] = useState<number | null>(null);
 
   // URL parameters / preselection
   const [preselectedDepartmentId, setPreselectedDepartmentId] = useState<string>("");
-  const [cameFromUrlParam, setCameFromUrlParam] = useState(false);
+  // Seed cameFromUrlParam from URL immediately to avoid first-effect races
+  const initialCameFromUrl = typeof window !== 'undefined' ? (() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      return Boolean(sp.get('serviceId') || sp.get('calendarId'));
+    } catch { return false; }
+  })() : false;
+  const [cameFromUrlParam, setCameFromUrlParam] = useState(initialCameFromUrl);
 
   // Date & Time selection state
   const [availableDates, setAvailableDates] = useState<DateInfo[]>([]);
@@ -237,73 +273,90 @@ export default function BookingWidget({
   });
   const [bookingLoading, setBookingLoading] = useState<boolean>(false);
   
-  // Skip loading departments entirely; services will be loaded directly.
-  // useEffect(() => {}, []);
-  //         const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-  //         if (!isMobile) {
-  //           setSelectedDepartment(departmentItems[0].id);
-  //         }
-  //       } else if (preselectedDepartmentId) {
-  //         // Find department by name or ID
-  //         let foundGroup = departmentItems.find((group: Department) => 
-  //           group.name.toLowerCase() === preselectedDepartmentId.toLowerCase()
-  //         );
-          
-  //         if (!foundGroup) {
-  //           foundGroup = departmentItems.find((group: Department) => 
-  //             group.id === preselectedDepartmentId
-  //           );
-  //         }
-          
-  //         if (foundGroup) {
-  //           setSelectedDepartment(foundGroup.id);
-  //         }
-  //       }
-  //     } catch (error) {
-  //       console.error('Error loading departments:', error);
-  //       setDepartments([]);
-  //     } finally {
-  //       setLoadingGroups(false);
-  //     }
-  //   };
-
-  //   loadDepartments();
-  // }, [preselectedDepartmentId]);
+  // Preselect via URL (?serviceId=..., optional ?staffId=...)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const svc = sp.get('serviceId') || sp.get('calendarId');
+      const stf = sp.get('staffId') || sp.get('userId') || sp.get('barberId');
+      if (svc) {
+        // selectedService already seeded from URL on initial state; keep it if present
+        if (!selectedService) setSelectedService(svc);
+        setCameFromUrlParam(true);
+        if (stf) {
+          setSelectedStaff(stf);
+          setCurrentStep('datetime');
+        } else {
+          setCurrentStep('staff');
+        }
+      }
+    } catch {}
+  }, []);
 
   // Load services when department is selected
   useEffect(() => {
     const loadServices = async () => {
       setLoadingServices(true);
-      setSelectedService("");
+      // Never clear selectedService automatically; preserve deep-linked or user selection
       
       try {
         const start = Date.now();
         // If selectedDepartment is 'all', load all services; otherwise, filter by department
         const url = selectedDepartment && selectedDepartment !== 'all'
-          ? `${servicesApiPath}?id=${selectedDepartment}`
-          : servicesApiPath;
+          ? `${effectiveServicesApiPath}?id=${selectedDepartment}`
+          : effectiveServicesApiPath;
         const res = await fetch(url);
         const data = await res.json();
-        // Some responses return `services`, some `calendars`. Prefer `services` when present.
-        const rawServices = (Array.isArray(data.services) && data.services.length > 0)
-          ? data.services
-          : (data.calendars || []);
-        
-        const serviceItems = rawServices.map((service: any) => {
-          const raw = Number(service.slotDuration ?? service.duration ?? 0);
-          const unit = String(service.slotDurationUnit ?? service.durationUnit ?? '').toLowerCase();
-          const minutes = raw > 0 ? (unit === 'hours' || unit === 'hour' ? raw * 60 : raw) : 0;
-          
-          return {
-            id: service.id,
-            name: service.name,
-            description: service.description,
-            durationMinutes: minutes,
-            teamMembers: service.teamMembers || []
-          };
+        if (typeof window !== 'undefined') {
+          console.log('[Booking] loadServices:', { url, cameFromUrlParam, selectedService, dataSample: Array.isArray(data) ? data.length : Object.keys(data || {}).slice(0, 3) });
+        }
+        let serviceItems: Service[] = [];
+        if (Array.isArray(data)) {
+          // Supabase services format
+          setUsingSupabaseServices(true);
+          serviceItems = data.map((s: any) => {
+            const minutes = Number(s.duration ?? s.durationMinutes ?? 0) || 0;
+            return {
+              id: String(s.id),
+              name: s.displayName || s.name || 'Service',
+              description: s.description || '',
+              durationMinutes: minutes,
+            };
+          });
+        } else {
+          // HighLevel services/calendars format
+          setUsingSupabaseServices(false);
+          const rawServices = (Array.isArray(data.services) && data.services.length > 0)
+            ? data.services
+            : (data.calendars || []);
+
+          serviceItems = rawServices.map((service: any) => {
+            const raw = Number(service.slotDuration ?? service.duration ?? 0);
+            const unit = String(service.slotDurationUnit ?? service.durationUnit ?? '').toLowerCase();
+            const minutes = raw > 0 ? (unit === 'hours' || unit === 'hour' ? raw * 60 : raw) : 0;
+            
+            return {
+              id: service.id,
+              name: service.name,
+              description: service.description,
+              durationMinutes: minutes,
+              teamMembers: service.teamMembers || []
+            };
+          });
+        }
+        // Merge with any previously injected service (from deep-link bootstrap)
+        setServices((prev) => {
+          const byId = new Map<string, Service>();
+          for (const p of prev) byId.set(p.id, p);
+          for (const s of serviceItems) byId.set(s.id, s);
+          // If deep-linked service isn’t in the list, keep the existing injected one
+          if (cameFromUrlParam && selectedService && !serviceItems.find((s) => s.id === selectedService)) {
+            const injected = prev.find((p) => p.id === selectedService);
+            if (injected) byId.set(injected.id, injected);
+          }
+          return Array.from(byId.values());
         });
-        
-        setServices(serviceItems);
         
         // Ensure skeleton shows at least 1s for smoother UX
         const elapsed = Date.now() - start;
@@ -320,7 +373,39 @@ export default function BookingWidget({
     };
 
     loadServices();
-  }, [selectedDepartment, servicesApiPath]);
+  }, [selectedDepartment, effectiveServicesApiPath, cameFromUrlParam]);
+
+  // Ensure selected service has base info when deep-linked via URL (populate duration/name)
+  useEffect(() => {
+    const ensureServiceLoaded = async () => {
+      if (!selectedService) return;
+      // If we already have this service, skip
+      if (services.find((s) => s.id === selectedService)) return;
+      try {
+        const url = new URL('/api/supabaseservices', window.location.origin);
+        url.searchParams.set('serviceId', selectedService);
+        const resp = await fetch(url.toString());
+        const data = await resp.json();
+        const svc = data?.service;
+        if (svc) {
+          const minutes = Number(svc.duration ?? svc.durationMinutes ?? 0) || 0;
+          setServices((prev) => [
+            ...prev,
+            {
+              id: String(svc.id),
+              name: svc.displayName || svc.name || 'Service',
+              description: svc.description || '',
+              durationMinutes: minutes,
+            },
+          ]);
+          setUsingSupabaseServices(true);
+        }
+      } catch (e) {
+        // non-fatal; keep going
+      }
+    };
+    ensureServiceLoaded();
+  }, [selectedService]);
 
   // Load staff when service is selected
   useEffect(() => {
@@ -332,20 +417,6 @@ export default function BookingWidget({
       setStaff([]);
       
       try {
-        // When using 'all', fetch from the base services endpoint; else filter by department
-        const url = selectedDepartment && selectedDepartment !== 'all'
-          ? `${servicesApiPath}?id=${selectedDepartment}`
-          : servicesApiPath;
-        const lastServiceApi = await fetch(url);
-        const lastServiceData = await lastServiceApi.json();
-        // Support either `services` or `calendars`
-        const serviceList = (Array.isArray(lastServiceData.services) && lastServiceData.services.length > 0)
-          ? lastServiceData.services
-          : (lastServiceData.calendars || []);
-        
-        const serviceObj = serviceList.find((s: any) => s.id === selectedService);
-        const teamMembers = serviceObj?.teamMembers || [];
-
         const items: Staff[] = [{
           id: 'any',
           name: 'Any available staff',
@@ -353,38 +424,81 @@ export default function BookingWidget({
           icon: 'user'
         }];
 
-        const staffPromises = teamMembers.map(async (member: any) => {
-          try {
-            const staffRes = await fetch(`${staffApiPath}?id=${member.userId}`);
-            const staffData = await staffRes.json();
-
-            const derivedName =
-              staffData?.data?.name ||
-              staffData?.name ||
-              staffData?.fullName ||
-              staffData?.displayName ||
-              [staffData?.staff?.firstName, staffData?.staff?.lastName].filter(Boolean).join(' ') ||
-              [staffData?.users?.firstName, staffData?.users?.lastName].filter(Boolean).join(' ') ||
-              [staffData?.firstName, staffData?.lastName].filter(Boolean).join(' ') ||
-              staffData?.user?.name ||
-              'Staff';
-
-            return {
-              id: member.userId || staffData?.id,
-              name: derivedName,
-              icon: 'user'
-            };
-          } catch (error) {
-            console.error('Error fetching staff data for member:', member.userId, error);
-            return null;
+        // Prefer Supabase staff directory when available regardless of services load state
+        let appendedFromSupabase = false;
+        try {
+          const staffRes = await fetch(`${effectiveStaffApiPath}`);
+          const staffList = await staffRes.json();
+          if (typeof window !== 'undefined') {
+            console.log('[Booking] supabase staff raw length:', Array.isArray(staffList) ? staffList.length : null);
           }
-        });
+          if (Array.isArray(staffList) && staffList.length) {
+            const allStaff: Staff[] = staffList.map((s: any) => ({
+              id: String(s.ghl_id || s.id),
+              name: s.name || s.fullName || 'Staff',
+              icon: 'user',
+              barberRowId: s.barberRowId || s['🔒 Row ID'] || undefined,
+              services: Array.isArray(s.servicesList)
+                ? s.servicesList.map((v: any) => String(v))
+                : typeof s.servicesList === 'string'
+                  ? s.servicesList.split(',').map((x: string) => x.trim()).filter(Boolean)
+                  : [],
+            }));
+            const filtered = allStaff.filter((st) => Array.isArray(st.services) && st.services.includes(String(selectedService)));
+            if (typeof window !== 'undefined') {
+              console.log('[Booking] staff filtered count:', filtered.length, { selectedService, matched: filtered.map(s => s.name) });
+            }
+            items.push(...filtered);
+            appendedFromSupabase = filtered.length > 0;
+          }
+        } catch {}
 
-        const staffResults = await Promise.all(staffPromises);
-        const validStaff = staffResults.filter(Boolean) as Staff[];
-        items.push(...validStaff);
-        
+        if (!appendedFromSupabase) {
+          // Fallback to deriving from HighLevel service team members
+          const url = selectedDepartment && selectedDepartment !== 'all'
+            ? `${effectiveServicesApiPath}?id=${selectedDepartment}`
+            : effectiveServicesApiPath;
+          const lastServiceApi = await fetch(url);
+          const lastServiceData = await lastServiceApi.json();
+          const serviceList = (Array.isArray(lastServiceData.services) && lastServiceData.services.length > 0)
+            ? lastServiceData.services
+            : (lastServiceData.calendars || []);
+          const serviceObj = serviceList.find((s: any) => s.id === selectedService);
+          const teamMembers = serviceObj?.teamMembers || [];
+
+          const staffPromises = teamMembers.map(async (member: any) => {
+            try {
+              const staffRes = await fetch(`${effectiveStaffApiPath}?id=${member.userId}`);
+              const staffData = await staffRes.json();
+              const derivedName =
+                staffData?.data?.name ||
+                staffData?.name ||
+                staffData?.fullName ||
+                staffData?.displayName ||
+                [staffData?.staff?.firstName, staffData?.staff?.lastName].filter(Boolean).join(' ') ||
+                [staffData?.users?.firstName, staffData?.users?.lastName].filter(Boolean).join(' ') ||
+                [staffData?.firstName, staffData?.lastName].filter(Boolean).join(' ') ||
+                staffData?.user?.name ||
+                'Staff';
+              return {
+                id: member.userId || staffData?.id,
+                name: derivedName,
+                icon: 'user'
+              };
+            } catch (error) {
+              console.error('Error fetching staff data for member:', member.userId, error);
+              return null;
+            }
+          });
+          const staffResults = await Promise.all(staffPromises);
+          const validStaff = staffResults.filter(Boolean) as Staff[];
+          items.push(...validStaff);
+        }
+
         setStaff(items);
+        if (typeof window !== 'undefined') {
+          console.log('[Booking] final staff count:', items.length);
+        }
       } catch (error) {
         console.error('Error loading staff:', error);
         setStaff([]);
@@ -394,7 +508,41 @@ export default function BookingWidget({
     };
 
     loadStaff();
-  }, [selectedService, selectedDepartment, servicesApiPath, staffApiPath]);
+  }, [selectedService, selectedDepartment, effectiveServicesApiPath, effectiveStaffApiPath, usingSupabaseServices]);
+
+  // Fetch effective duration/price overrides for the selected service + staff
+  useEffect(() => {
+    const resetOverrides = () => {
+      setEffectiveDuration(null);
+      setEffectivePrice(null);
+    };
+    if (!selectedService) { resetOverrides(); return; }
+    if (!selectedStaff || selectedStaff === 'any') { resetOverrides(); return; }
+
+    const loadOverrides = async () => {
+      try {
+        const url = new URL('/api/supabaseservices', window.location.origin);
+        url.searchParams.set('serviceId', selectedService);
+        // Prefer Data_barbers row id if available for override join
+        const selected = staff.find((s) => s.id === selectedStaff);
+        const overrideBarberId = selected?.barberRowId || selectedStaff;
+        url.searchParams.set('barberId', overrideBarberId);
+        const resp = await fetch(url.toString());
+        const data = await resp.json();
+        const eff = data?.effective;
+        if (eff && typeof eff.duration === 'number') setEffectiveDuration(eff.duration);
+        else setEffectiveDuration(null);
+        if (eff && typeof eff.price === 'number') setEffectivePrice(eff.price);
+        else setEffectivePrice(null);
+      } catch (e) {
+        console.error('Error fetching effective overrides:', e);
+        setEffectiveDuration(null);
+        setEffectivePrice(null);
+      }
+    };
+
+    loadOverrides();
+  }, [selectedService, selectedStaff]);
 
   // Load working slots when staff is selected
   useEffect(() => {
@@ -412,7 +560,7 @@ export default function BookingWidget({
       try {
         const serviceDurationMinutes = getServiceDuration(serviceId);
         
-        let apiUrl = `${staffSlotsApiPath}?calendarId=${serviceId}`;
+          let apiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}`;
         if (userId && selectedStaff !== 'any') {
           apiUrl += `&userId=${userId}`;
         }
@@ -459,7 +607,7 @@ export default function BookingWidget({
     };
 
     loadWorkingSlots();
-  }, [selectedService, selectedStaff, staffSlotsApiPath]);
+  }, [selectedService, selectedStaff, effectiveStaffSlotsApiPath, effectiveDuration]);
 
   const getGroupIcon = (name: string): string => {
     switch (name.toLowerCase()) {
@@ -475,7 +623,15 @@ export default function BookingWidget({
   };
 
   const getServiceDuration = (serviceId: string): number => {
-    const service = services.find(s => s.id === serviceId);
+    // Prefer effective override when service+staff pair is selected
+    if (
+      serviceId === selectedService &&
+      selectedStaff && selectedStaff !== 'any' &&
+      typeof effectiveDuration === 'number' && effectiveDuration > 0
+    ) {
+      return effectiveDuration;
+    }
+    const service = services.find((s) => s.id === serviceId);
     return service?.durationMinutes || 0;
   };
 
@@ -661,6 +817,8 @@ export default function BookingWidget({
 
   const handleServiceSelectAndSubmit = (serviceId: string) => {
     setSelectedService(serviceId);
+    setEffectiveDuration(null);
+    setEffectivePrice(null);
     setCurrentStep("staff");
   };
 
@@ -672,6 +830,8 @@ export default function BookingWidget({
 
   const handleStaffSelectAndSubmit = (staffId: string) => {
     setSelectedStaff(staffId);
+    setEffectiveDuration(null);
+    setEffectivePrice(null);
     setCurrentStep("datetime");
   };
 
@@ -731,8 +891,8 @@ export default function BookingWidget({
         title: serviceObj?.name || "Appointment",
         serviceName: serviceObj?.name || "",
         service_name: serviceObj?.name || "",
-        servicePrice: "0",
-        service_price: "0",
+  servicePrice: String((effectivePrice ?? 0) || 0),
+  service_price: String((effectivePrice ?? 0) || 0),
         serviceDuration: String(durationMins || 0),
         service_duration: String(durationMins || 0),
         // staff & customer display names
@@ -878,6 +1038,7 @@ export default function BookingWidget({
             formatPhoneNumber={formatPhoneNumber}
             isValidCAPhone={isValidCAPhone}
             isFormValid={isFormValid}
+            effectivePrice={effectivePrice ?? undefined}
           />
         );
       case 'success':

@@ -80,54 +80,49 @@ export default function ServicesShowcase({
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await fetch("/api/services");
+        const res = await fetch("/api/supabaseservices");
         const data = await res.json();
 
-        // Coerce to an array of raw service/calendar entries
-        const raw: any[] = Array.isArray(data?.services)
-          ? data.services
-          : (Array.isArray(data?.calendars) ? data.calendars : (Array.isArray(data) ? data : []));
+        // Endpoint returns an array of curated services; fallback to legacy shapes if needed
+        const raw: any[] = Array.isArray(data)
+          ? data
+          : (Array.isArray(data?.services)
+              ? data.services
+              : (Array.isArray(data?.calendars) ? data.calendars : []));
 
         const mapped: Service[] = raw.map((s: any) => {
-          // Derive duration in minutes
-          const rawDur = Number(s?.slotDuration ?? s?.duration ?? 0);
+          // Name and description
+          const name = s?.displayName || s?.name || 'Service';
+          const description = s?.description || '';
+          // Duration
+          const baseDur = Number(s?.duration ?? s?.durationMinutes ?? s?.slotDuration ?? s?.durationMin ?? 0);
           const unit = String(s?.slotDurationUnit ?? s?.durationUnit ?? '').toLowerCase();
-          const duration = rawDur > 0 ? (unit === 'hour' || unit === 'hours' ? rawDur * 60 : rawDur) : 0;
-
-          // Derive price if present
-          const priceCandidates = ["price", "fromPrice", "minPrice", "startingPrice", "startPrice", "amount"];
+          const duration = baseDur > 0 ? ((unit === 'hour' || unit === 'hours') ? baseDur * 60 : baseDur) : 0;
+          // Price
           let price = 0;
-          for (const k of priceCandidates) {
-            const v = Number(s?.[k]);
-            if (!Number.isNaN(v) && v > 0) { price = v; break; }
+          if (typeof s?.price === 'number') price = s.price;
+          else if (typeof s?.displayPrice === 'string') {
+            const m = s.displayPrice.match(/\$([0-9]+(?:\.[0-9]{1,2})?)/);
+            if (m) price = Number(m[1]);
+          } else {
+            const priceCandidates = ["fromPrice", "minPrice", "startingPrice", "startPrice", "amount"]; // legacy
+            for (const k of priceCandidates) {
+              const v = Number(s?.[k]);
+              if (!Number.isNaN(v) && v > 0) { price = v; break; }
+            }
           }
-
-          // Derive department/group name
-          const groupNameKeys = [
-            "category", "categoryName", "group", "groupName", "department", "departmentName", "folder", "folderName", "calendarGroup"
-          ];
-          let department_name = "Other Services";
-          for (const k of groupNameKeys) {
-            const val = s?.[k];
-            if (typeof val === "string" && val.trim()) { department_name = String(val).trim(); break; }
-          }
-
-          // Derive image url if present
-          const imageKeys = ["image", "imageUrl", "photo", "cover", "thumbnail", "thumbUrl"];
-          let image_url: string | undefined = undefined;
-          for (const k of imageKeys) {
-            const val = s?.[k];
-            if (typeof val === 'string' && val) { image_url = val; break; }
-          }
-
-        return {
+          // Category
+          const dept = s?.category || s?.categoryList || s?.department || s?.departmentName || 'Other Services';
+          // Image
+          const image_url = s?.photo || s?.image || s?.imageUrl || s?.cover || s?.thumbnail || s?.thumbUrl;
+          return {
             id: String(s?.id ?? ''),
-            name: String(s?.name ?? 'Service'),
-            description: s?.description,
+            name: String(name),
+            description,
             duration,
-            price,
+            price: Number(price) || 0,
             image_url,
-            department_name,
+            department_name: String(dept || 'Other Services'),
           } as Service;
         });
 

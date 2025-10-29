@@ -30,14 +30,14 @@ PLASMIC.registerComponent(BookingWidget, {
     servicesApiPath: { 
       type: "choice", 
       description: "API endpoint for services",
-      options: ["/api/services", "/api/supabaseservices"],
-      defaultValue: "/api/services"
+      options: ["/api/supabaseservices", "/api/services"],
+      defaultValue: "/api/supabaseservices"
     },
     staffApiPath: { 
       type: "choice", 
       description: "API endpoint for staff",
-      options: ["/api/staff", "/api/supabasestaff"],
-      defaultValue: "/api/staff"
+      options: ["/api/supabasestaff", "/api/staff"],
+      defaultValue: "/api/supabasestaff"
     },
     staffSlotsApiPath: { 
       type: "choice", 

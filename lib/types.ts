@@ -19,10 +19,15 @@ export interface TeamMember {
 }
 
 export interface Staff {
+  /** Primary identifier used for booking and slot lookups (HighLevel user id) */
   id: string;
   name: string;
   icon?: string;
   badge?: string;
+  /** Supabase Data_barbers row id ("🔒 Row ID") for override joins */
+  barberRowId?: string;
+  /** Optional list of service IDs this barber supports (from Data_barbers "Services/List") */
+  services?: string[];
 }
 
 export interface DateInfo {
