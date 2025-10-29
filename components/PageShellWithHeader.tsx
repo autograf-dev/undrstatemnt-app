@@ -62,7 +62,7 @@ export default function PageShellWithHeader({
   const validHeaderItems = Array.isArray(headerItems) ? headerItems : [];
 
   return (
-    <div className={cn("min-h-screen bg-gray-50", className)} style={style}>
+    <div className={cn("bg-gray-50", className)} style={style}>
       <MainHeader
         logoSrc={logoSrc}
         logoWidth={logoWidth}
@@ -81,7 +81,7 @@ export default function PageShellWithHeader({
       />
       
       {/* Main content area with top padding for header on desktop, bottom padding for mobile */}
-      <main className="pt-24 pb-24 md:pb-8 px-4 md:px-8 min-h-screen">
+      <main className="pt-24 pb-24 md:pb-8 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           {children}
         </div>

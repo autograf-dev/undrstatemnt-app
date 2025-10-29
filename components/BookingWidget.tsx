@@ -40,7 +40,7 @@ const getStepIcon = (stepValue: string) => {
   }
 };
 
-export default function BookingWidget({ className, style, fullHeight = false }: { className?: string; style?: CSSProperties; fullHeight?: boolean }) {
+export default function BookingWidget({ className, style }: { className?: string; style?: CSSProperties }) {
   const [currentStep, setCurrentStep] = useState<BookingStep>("service");
   
   // Service selection state
@@ -744,7 +744,7 @@ export default function BookingWidget({ className, style, fullHeight = false }: 
   };
 
   return (
-    <div className={cn(fullHeight ? "min-h-screen bg-white" : "bg-white", className)} style={style}>
+    <div className={cn("bg-white", className)} style={style}>
       <div className="flex flex-col items-center gap-6 pb-16 px-2 sm:px-4">
         <div className="w-full max-w-5xl overflow-hidden">
           <div className="p-4 sm:p-8">

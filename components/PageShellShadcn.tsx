@@ -71,7 +71,7 @@ export default function PageShellShadcn({
   const validSidebarItems = Array.isArray(sidebarItems) ? sidebarItems : undefined;
 
   return (
-    <div className={cn("min-h-screen", className)} style={style}>
+    <div className={cn("", className)} style={style}>
       <MainSidebar
         logoSrc={logoSrc}
         logoWidth={logoWidth}
@@ -91,7 +91,7 @@ export default function PageShellShadcn({
         buttonTextColor={buttonTextColor}
         defaultCollapsed={defaultCollapsed}
       />
-      <main className="ml-[220px] bg-gray-50 min-h-screen">
+      <main className="ml-[220px] bg-gray-50">
         {children}
       </main>
     </div>
