@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Plus, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -83,6 +83,29 @@ export interface MainHeaderProps {
   buttonBgColor?: string;
   /** Button text color */
   buttonTextColor?: string;
+  // Mobile Footer Nav Configuration
+  /** Show center booking button (mobile footer only) */
+  showMobileBookingButton?: boolean;
+  /** Center booking button link (mobile footer only) */
+  mobileBookingHref?: string;
+  /** Center booking button color (mobile footer only) */
+  mobileBookingColor?: string;
+  /** Booking button glow opacity (mobile footer only) */
+  mobileBookingGlowOpacity?: number;
+  /** Show user/signup icon (mobile footer only) */
+  showMobileUserIcon?: boolean;
+  /** User/signup link (mobile footer only) */
+  mobileUserHref?: string;
+  /** Footer background color (mobile footer only) */
+  mobileFooterBgColor?: string;
+  /** Icon color inactive (mobile footer only) */
+  mobileFooterIconColor?: string;
+  /** Icon color active (mobile footer only) */
+  mobileFooterActiveIconColor?: string;
+  /** Icon size in pixels (mobile footer only) */
+  mobileFooterIconSize?: number;
+  /** Footer padding (mobile footer only) */
+  mobileFooterPadding?: string;
 }
 
 export default function MainHeader({
@@ -100,6 +123,18 @@ export default function MainHeader({
   hoverColor = "rgba(0, 0, 0, 0.05)",
   buttonBgColor = "#000000",
   buttonTextColor = "#ffffff",
+  // Mobile Footer Nav
+  showMobileBookingButton = true,
+  mobileBookingHref = "/booking",
+  mobileBookingColor = "#D97639",
+  mobileBookingGlowOpacity = 0.3,
+  showMobileUserIcon = true,
+  mobileUserHref = "/signin",
+  mobileFooterBgColor = "rgba(255, 255, 255, 0.8)",
+  mobileFooterIconColor = "#1a1a1a",
+  mobileFooterActiveIconColor = "#000000",
+  mobileFooterIconSize = 24,
+  mobileFooterPadding = "0.75rem",
 }: MainHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -331,14 +366,15 @@ export default function MainHeader({
         <div
           className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[95%] max-w-md rounded-2xl shadow-2xl border border-white/30"
           style={{
-            backgroundColor: bgColor,
+            backgroundColor: mobileFooterBgColor,
             backdropFilter: "blur(16px) saturate(180%)",
             WebkitBackdropFilter: "blur(16px) saturate(180%)",
             boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
           }}
         >
-          <nav className="px-2 py-3 flex items-center justify-around">
-            {items.slice(0, 5).map((item, idx) => {
+          <nav className="flex items-center justify-around" style={{ padding: mobileFooterPadding }}>
+            {/* First 2 menu items */}
+            {items.slice(0, 2).map((item, idx) => {
               const isActive = activeHref === item.href;
               const icon = getIconComponent(item.icon);
               return (
@@ -350,13 +386,12 @@ export default function MainHeader({
                     isActive ? "scale-110" : "hover:scale-105"
                   )}
                   style={{
-                    color: isActive ? activeColor : textColor,
+                    color: isActive ? mobileFooterActiveIconColor : mobileFooterIconColor,
                     backgroundColor: isActive
                       ? "rgba(0, 0, 0, 0.1)"
                       : "transparent",
                   }}
                 >
-                  {/* Gradient background on active/hover */}
                   <div className={cn(
                     "absolute inset-0 transition-opacity duration-300",
                     isActive 
@@ -364,13 +399,115 @@ export default function MainHeader({
                       : "opacity-0 group-active:opacity-100 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10"
                   )} />
                   
-                  {/* Icon only - no text */}
-                  <span className="relative z-10 w-6 h-6 flex items-center justify-center">
+                  <span 
+                    className="relative z-10 flex items-center justify-center"
+                    style={{
+                      width: `${mobileFooterIconSize}px`,
+                      height: `${mobileFooterIconSize}px`,
+                    }}
+                  >
                     {icon}
                   </span>
                 </Link>
               );
             })}
+
+            {/* Center Plus Icon for Booking (PROMINENT) */}
+            {showMobileBookingButton && (
+              <Link
+                href={mobileBookingHref}
+                className="group relative flex items-center justify-center rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95"
+                style={{
+                  backgroundColor: mobileBookingColor,
+                  width: '56px',
+                  height: '56px',
+                }}
+              >
+                <Plus className="w-7 h-7 text-white relative z-10" strokeWidth={2.5} />
+                
+                {/* Glow effect */}
+                <div 
+                  className="absolute inset-0 rounded-full blur-md"
+                  style={{ 
+                    backgroundColor: mobileBookingColor,
+                    opacity: mobileBookingGlowOpacity 
+                  }}
+                />
+              </Link>
+            )}
+
+            {/* Next 2 menu items */}
+            {items.slice(2, 4).map((item, idx) => {
+              const isActive = activeHref === item.href;
+              const icon = getIconComponent(item.icon);
+              return (
+                <Link
+                  key={idx + 2}
+                  href={item.href}
+                  className={cn(
+                    "group relative flex items-center justify-center p-3 rounded-xl transition-all duration-300 overflow-hidden",
+                    isActive ? "scale-110" : "hover:scale-105"
+                  )}
+                  style={{
+                    color: isActive ? mobileFooterActiveIconColor : mobileFooterIconColor,
+                    backgroundColor: isActive
+                      ? "rgba(0, 0, 0, 0.1)"
+                      : "transparent",
+                  }}
+                >
+                  <div className={cn(
+                    "absolute inset-0 transition-opacity duration-300",
+                    isActive 
+                      ? "opacity-100 bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-orange-500/20" 
+                      : "opacity-0 group-active:opacity-100 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10"
+                  )} />
+                  
+                  <span 
+                    className="relative z-10 flex items-center justify-center"
+                    style={{
+                      width: `${mobileFooterIconSize}px`,
+                      height: `${mobileFooterIconSize}px`,
+                    }}
+                  >
+                    {icon}
+                  </span>
+                </Link>
+              );
+            })}
+
+            {/* User/Signup Icon at the end */}
+            {showMobileUserIcon && (
+              <Link
+                href={mobileUserHref}
+                className={cn(
+                  "group relative flex items-center justify-center p-3 rounded-xl transition-all duration-300 overflow-hidden hover:scale-105",
+                  activeHref === mobileUserHref ? "scale-110" : ""
+                )}
+                style={{
+                  color: activeHref === mobileUserHref ? mobileFooterActiveIconColor : mobileFooterIconColor,
+                  backgroundColor: activeHref === mobileUserHref
+                    ? "rgba(0, 0, 0, 0.1)"
+                    : "transparent",
+                }}
+              >
+                <div className={cn(
+                  "absolute inset-0 transition-opacity duration-300",
+                  activeHref === mobileUserHref
+                    ? "opacity-100 bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-orange-500/20" 
+                    : "opacity-0 group-active:opacity-100 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10"
+                )} />
+                
+                <span 
+                  className="relative z-10 flex items-center justify-center"
+                  style={{
+                    width: `${mobileFooterIconSize}px`,
+                    height: `${mobileFooterIconSize}px`,
+                  }}
+                >
+                  <User style={{ width: `${mobileFooterIconSize - 4}px`, height: `${mobileFooterIconSize - 4}px` }} />
+                </span>
+              </Link>
+            )}
           </nav>
         </div>
       </header>

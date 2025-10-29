@@ -393,7 +393,7 @@ PLASMIC.registerComponent(MainHeader, {
           href: { 
             type: "string", 
             description: "Link path (e.g. /home)",
-            defaultValue: "/"
+            defaultValue: "/homepage"
           },
           icon: {
             type: "choice",
@@ -416,12 +416,12 @@ PLASMIC.registerComponent(MainHeader, {
         }
       },
       defaultValue: [
-        { label: "Home", href: "/", icon: "home" },
+        { label: "Home", href: "/homepage", icon: "home" },
         { label: "Barbers", href: "/barbers", icon: "barbers" },
         { label: "Services", href: "/services", icon: "services" },
       ],
     },
-    activeHref: { type: "string", description: "Active href" },
+    activeHref: { type: "string", description: "Active href", defaultValue: "/homepage" },
     signInLabel: { type: "string", description: "Sign in button text", defaultValue: "Sign In" },
     signInHref: { type: "string", description: "Sign-in link", defaultValue: "/signin" },
     bgColor: { type: "color", description: "Header background (use rgba for transparency)", defaultValue: "rgba(255, 255, 255, 0.8)" },
@@ -430,6 +430,18 @@ PLASMIC.registerComponent(MainHeader, {
     hoverColor: { type: "color", description: "Hover background color", defaultValue: "rgba(0, 0, 0, 0.05)" },
     buttonBgColor: { type: "color", description: "Sign-in button background", defaultValue: "#000000" },
     buttonTextColor: { type: "color", description: "Sign-in button text", defaultValue: "#ffffff" },
+    // Mobile Footer Nav Configuration
+    showMobileBookingButton: { type: "boolean", description: "[Mobile Footer] Show center booking button", defaultValue: true },
+    mobileBookingHref: { type: "string", description: "[Mobile Footer] Center booking button link", defaultValue: "/booking" },
+    mobileBookingColor: { type: "color", description: "[Mobile Footer] Center booking button color", defaultValue: "#D97639" },
+    mobileBookingGlowOpacity: { type: "number", description: "[Mobile Footer] Booking button glow opacity (0-1)", defaultValue: 0.3 },
+    showMobileUserIcon: { type: "boolean", description: "[Mobile Footer] Show user/signup icon", defaultValue: true },
+    mobileUserHref: { type: "string", description: "[Mobile Footer] User/signup link", defaultValue: "/signin" },
+    mobileFooterBgColor: { type: "color", description: "[Mobile Footer] Footer background color", defaultValue: "rgba(255, 255, 255, 0.8)" },
+    mobileFooterIconColor: { type: "color", description: "[Mobile Footer] Icon color (inactive)", defaultValue: "#1a1a1a" },
+    mobileFooterActiveIconColor: { type: "color", description: "[Mobile Footer] Icon color (active)", defaultValue: "#000000" },
+    mobileFooterIconSize: { type: "number", description: "[Mobile Footer] Icon size (px)", defaultValue: 24 },
+    mobileFooterPadding: { type: "string", description: "[Mobile Footer] Padding (e.g., 0.75rem)", defaultValue: "0.75rem" },
   },
 });
 
