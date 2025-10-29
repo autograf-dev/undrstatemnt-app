@@ -202,7 +202,7 @@ export default function MainSidebar({
       {/* Nav Menu */}
       <nav className="flex-1 py-4 px-2 overflow-y-auto">
         <ul className="space-y-1">
-          {items.map((item) => {
+          {(Array.isArray(items) ? items : []).map((item) => {
             const Icon = iconFor(item.icon);
             const active = activeHref ? activeHref === item.href : false;
             return (
