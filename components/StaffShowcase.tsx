@@ -71,7 +71,7 @@ export default function StaffShowcase({
   useEffect(() => {
     const fetchStaff = async () => {
       try {
-        const res = await fetch("/api/staff");
+        const res = await fetch("/api/supabasestaff");
         const data = await res.json();
         setStaff(data);
       } catch (error) {

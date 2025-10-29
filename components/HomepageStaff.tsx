@@ -83,9 +83,9 @@ export default function HomepageStaff({
   useEffect(() => {
     const fetchStaff = async () => {
       try {
-        const res = await fetch("/api/staff");
+        const res = await fetch("/api/supabasestaff");
         const data = await res.json();
-        setStaff(data);
+        setStaff(data); 
       } catch (error) {
         console.error("Error fetching staff:", error);
       } finally {
