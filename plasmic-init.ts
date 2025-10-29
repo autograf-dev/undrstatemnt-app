@@ -25,7 +25,77 @@ PLASMIC.registerComponent(BookingWidget, {
   name: "BookingWidget",
   importPath: "@/components/BookingWidget",
   isDefaultExport: true,
-  props: {},
+  props: {
+    // API Configuration
+    servicesApiPath: { 
+      type: "choice", 
+      description: "API endpoint for services",
+      options: ["/api/services", "/api/supabaseservices"],
+      defaultValue: "/api/services"
+    },
+    staffApiPath: { 
+      type: "choice", 
+      description: "API endpoint for staff",
+      options: ["/api/staff", "/api/supabasestaff"],
+      defaultValue: "/api/staff"
+    },
+    staffSlotsApiPath: { 
+      type: "choice", 
+      description: "API endpoint for staff slots",
+      options: ["/api/staff-slots", "/api/staffSlots"],
+      defaultValue: "/api/staff-slots"
+    },
+    customerApiPath: { type: "string", description: "API endpoint for customers", defaultValue: "/api/customer" },
+    appointmentApiPath: { type: "string", description: "API endpoint for appointments", defaultValue: "/api/appointment" },
+    
+    // Color Scheme
+    primaryColor: { type: "color", description: "Primary color (buttons, active states)", defaultValue: "#D97639" },
+    secondaryColor: { type: "color", description: "Secondary color", defaultValue: "#6b7280" },
+    bgColor: { type: "color", description: "Background color", defaultValue: "white" },
+    cardBgColor: { type: "color", description: "Card background color", defaultValue: "#ffffff" },
+    textColorPrimary: { type: "color", description: "Text color - Primary", defaultValue: "#1a1a1a" },
+    textColorSecondary: { type: "color", description: "Text color - Secondary", defaultValue: "#6b7280" },
+    borderColor: { type: "color", description: "Border color", defaultValue: "#e5e7eb" },
+    hoverColor: { type: "color", description: "Hover color", defaultValue: "#f9fafb" },
+    
+    // Typography
+    headingSize: { type: "string", description: "Heading font size (e.g., 1.5rem, 24px)", defaultValue: "1.5rem" },
+    subheadingSize: { type: "string", description: "Subheading font size (e.g., 1.125rem, 18px)", defaultValue: "1.125rem" },
+    bodyTextSize: { type: "string", description: "Body text font size (e.g., 1rem, 16px)", defaultValue: "1rem" },
+    smallTextSize: { type: "string", description: "Small text font size (e.g., 0.875rem, 14px)", defaultValue: "0.875rem" },
+    
+    // Step Labels
+    step1Label: { type: "string", description: "Step 1 label", defaultValue: "Service" },
+    step2Label: { type: "string", description: "Step 2 label", defaultValue: "Staff" },
+    step3Label: { type: "string", description: "Step 3 label", defaultValue: "Date & Time" },
+    step4Label: { type: "string", description: "Step 4 label", defaultValue: "Information" },
+    step5Label: { type: "string", description: "Step 5 label", defaultValue: "Success" },
+    
+    // Button Text
+    continueButtonText: { type: "string", description: "Continue button text", defaultValue: "Continue" },
+    backButtonText: { type: "string", description: "Back button text", defaultValue: "Back" },
+    submitButtonText: { type: "string", description: "Submit button text", defaultValue: "Submit" },
+    bookNowButtonText: { type: "string", description: "Book Now button text", defaultValue: "Book Now" },
+    
+    // Loading & Empty States
+    loadingText: { type: "string", description: "Loading text", defaultValue: "Loading..." },
+    noResultsText: { type: "string", description: "No results text", defaultValue: "No results found" },
+    showLoadingSpinner: { type: "boolean", description: "Show loading spinner", defaultValue: true },
+    
+    // Spacing & Layout
+    maxWidth: { type: "string", description: "Container max width (e.g., 1280px)", defaultValue: "1280px" },
+    containerPadding: { type: "string", description: "Container padding (e.g., 2rem)", defaultValue: "2rem" },
+    cardBorderRadius: { type: "string", description: "Card border radius (e.g., 0.75rem, 12px)", defaultValue: "0.75rem" },
+    buttonBorderRadius: { type: "string", description: "Button border radius (e.g., 0.5rem, 8px)", defaultValue: "0.5rem" },
+    cardGap: { type: "string", description: "Card gap/spacing (e.g., 1rem, 16px)", defaultValue: "1rem" },
+    
+    // Stepper Configuration
+    showStepper: { type: "boolean", description: "Show stepper on desktop", defaultValue: true },
+    showMobileStepIndicator: { type: "boolean", description: "Show step indicator on mobile", defaultValue: true },
+    stepperActiveColor: { type: "color", description: "Stepper color - Active", defaultValue: "#D97639" },
+    stepperInactiveColor: { type: "color", description: "Stepper color - Inactive", defaultValue: "#e5e7eb" },
+    stepperCompletedColor: { type: "color", description: "Stepper color - Completed", defaultValue: "#10b981" },
+  },
 });
 
 PLASMIC.registerComponent(ServiceListWidget, {

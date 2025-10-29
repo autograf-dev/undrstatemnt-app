@@ -21,13 +21,104 @@ import {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const STEPS = [
-  { title: "Service", icon: "scissors", value: "service" },
-  { title: "Staff", icon: "user-check", value: "staff" },
-  { title: "Date & Time", icon: "calendar-days", value: "datetime" },
-  { title: "Information", icon: "info", value: "information" },
-  { title: "Success", icon: "check-circle", value: "success" },
-];
+export interface BookingWidgetProps {
+  className?: string;
+  style?: CSSProperties;
+  
+  // API Configuration
+  /** API endpoint for services */
+  servicesApiPath?: string;
+  /** API endpoint for staff */
+  staffApiPath?: string;
+  /** API endpoint for staff slots */
+  staffSlotsApiPath?: string;
+  /** API endpoint for customers */
+  customerApiPath?: string;
+  /** API endpoint for appointments */
+  appointmentApiPath?: string;
+  
+  // Color Scheme
+  /** Primary color (buttons, active states) */
+  primaryColor?: string;
+  /** Secondary color */
+  secondaryColor?: string;
+  /** Background color */
+  bgColor?: string;
+  /** Card background color */
+  cardBgColor?: string;
+  /** Text color - Primary */
+  textColorPrimary?: string;
+  /** Text color - Secondary */
+  textColorSecondary?: string;
+  /** Border color */
+  borderColor?: string;
+  /** Hover color */
+  hoverColor?: string;
+  
+  // Typography
+  /** Heading font size */
+  headingSize?: string;
+  /** Subheading font size */
+  subheadingSize?: string;
+  /** Body text font size */
+  bodyTextSize?: string;
+  /** Small text font size */
+  smallTextSize?: string;
+  
+  // Step Labels
+  /** Step 1 label */
+  step1Label?: string;
+  /** Step 2 label */
+  step2Label?: string;
+  /** Step 3 label */
+  step3Label?: string;
+  /** Step 4 label */
+  step4Label?: string;
+  /** Step 5 label */
+  step5Label?: string;
+  
+  // Button Text
+  /** Continue button text */
+  continueButtonText?: string;
+  /** Back button text */
+  backButtonText?: string;
+  /** Submit button text */
+  submitButtonText?: string;
+  /** Book Now button text */
+  bookNowButtonText?: string;
+  
+  // Loading & Empty States
+  /** Loading text */
+  loadingText?: string;
+  /** No results text */
+  noResultsText?: string;
+  /** Show loading spinner */
+  showLoadingSpinner?: boolean;
+  
+  // Spacing & Layout
+  /** Container max width */
+  maxWidth?: string;
+  /** Container padding */
+  containerPadding?: string;
+  /** Card border radius */
+  cardBorderRadius?: string;
+  /** Button border radius */
+  buttonBorderRadius?: string;
+  /** Card gap/spacing */
+  cardGap?: string;
+  
+  // Stepper Configuration
+  /** Show stepper on desktop */
+  showStepper?: boolean;
+  /** Show step indicator on mobile */
+  showMobileStepIndicator?: boolean;
+  /** Stepper color - Active */
+  stepperActiveColor?: string;
+  /** Stepper color - Inactive */
+  stepperInactiveColor?: string;
+  /** Stepper color - Completed */
+  stepperCompletedColor?: string;
+}
 
 const getStepIcon = (stepValue: string) => {
   switch (stepValue) {
@@ -40,7 +131,66 @@ const getStepIcon = (stepValue: string) => {
   }
 };
 
-export default function BookingWidget({ className, style }: { className?: string; style?: CSSProperties }) {
+export default function BookingWidget({
+  className,
+  style,
+  // API Configuration
+  servicesApiPath = "/api/services",
+  staffApiPath = "/api/staff",
+  staffSlotsApiPath = "/api/staff-slots",
+  customerApiPath = "/api/customer",
+  appointmentApiPath = "/api/appointment",
+  // Color Scheme
+  primaryColor = "#D97639",
+  secondaryColor = "#6b7280",
+  bgColor = "white",
+  cardBgColor = "#ffffff",
+  textColorPrimary = "#1a1a1a",
+  textColorSecondary = "#6b7280",
+  borderColor = "#e5e7eb",
+  hoverColor = "#f9fafb",
+  // Typography
+  headingSize = "1.5rem",
+  subheadingSize = "1.125rem",
+  bodyTextSize = "1rem",
+  smallTextSize = "0.875rem",
+  // Step Labels
+  step1Label = "Service",
+  step2Label = "Staff",
+  step3Label = "Date & Time",
+  step4Label = "Information",
+  step5Label = "Success",
+  // Button Text
+  continueButtonText = "Continue",
+  backButtonText = "Back",
+  submitButtonText = "Submit",
+  bookNowButtonText = "Book Now",
+  // Loading & Empty States
+  loadingText = "Loading...",
+  noResultsText = "No results found",
+  showLoadingSpinner = true,
+  // Spacing & Layout
+  maxWidth = "1280px",
+  containerPadding = "2rem",
+  cardBorderRadius = "0.75rem",
+  buttonBorderRadius = "0.5rem",
+  cardGap = "1rem",
+  // Stepper Configuration
+  showStepper = true,
+  showMobileStepIndicator = true,
+  stepperActiveColor = "#D97639",
+  stepperInactiveColor = "#e5e7eb",
+  stepperCompletedColor = "#10b981",
+}: BookingWidgetProps) {
+  // Dynamic steps based on labels
+  const STEPS = [
+    { title: step1Label, icon: "scissors", value: "service" },
+    { title: step2Label, icon: "user-check", value: "staff" },
+    { title: step3Label, icon: "calendar-days", value: "datetime" },
+    { title: step4Label, icon: "info", value: "information" },
+    { title: step5Label, icon: "check-circle", value: "success" },
+  ];
+
   const [currentStep, setCurrentStep] = useState<BookingStep>("service");
   
   // Service selection state
@@ -129,10 +279,9 @@ export default function BookingWidget({ className, style }: { className?: string
       try {
         const start = Date.now();
         // If selectedDepartment is 'all', load all services; otherwise, filter by department
-  const base = '/api/services';
         const url = selectedDepartment && selectedDepartment !== 'all'
-          ? `${base}?id=${selectedDepartment}`
-          : base;
+          ? `${servicesApiPath}?id=${selectedDepartment}`
+          : servicesApiPath;
         const res = await fetch(url);
         const data = await res.json();
         // Some responses return `services`, some `calendars`. Prefer `services` when present.
@@ -171,7 +320,7 @@ export default function BookingWidget({ className, style }: { className?: string
     };
 
     loadServices();
-  }, [selectedDepartment]);
+  }, [selectedDepartment, servicesApiPath]);
 
   // Load staff when service is selected
   useEffect(() => {
@@ -183,11 +332,10 @@ export default function BookingWidget({ className, style }: { className?: string
       setStaff([]);
       
       try {
-  const base = '/api/services';
         // When using 'all', fetch from the base services endpoint; else filter by department
         const url = selectedDepartment && selectedDepartment !== 'all'
-          ? `${base}?id=${selectedDepartment}`
-          : base;
+          ? `${servicesApiPath}?id=${selectedDepartment}`
+          : servicesApiPath;
         const lastServiceApi = await fetch(url);
         const lastServiceData = await lastServiceApi.json();
         // Support either `services` or `calendars`
@@ -207,7 +355,7 @@ export default function BookingWidget({ className, style }: { className?: string
 
         const staffPromises = teamMembers.map(async (member: any) => {
           try {
-            const staffRes = await fetch(`/api/staff?id=${member.userId}`);
+            const staffRes = await fetch(`${staffApiPath}?id=${member.userId}`);
             const staffData = await staffRes.json();
 
             const derivedName =
@@ -246,7 +394,7 @@ export default function BookingWidget({ className, style }: { className?: string
     };
 
     loadStaff();
-  }, [selectedService, selectedDepartment]);
+  }, [selectedService, selectedDepartment, servicesApiPath, staffApiPath]);
 
   // Load working slots when staff is selected
   useEffect(() => {
@@ -264,7 +412,7 @@ export default function BookingWidget({ className, style }: { className?: string
       try {
         const serviceDurationMinutes = getServiceDuration(serviceId);
         
-  let apiUrl = `/api/staff-slots?calendarId=${serviceId}`;
+        let apiUrl = `${staffSlotsApiPath}?calendarId=${serviceId}`;
         if (userId && selectedStaff !== 'any') {
           apiUrl += `&userId=${userId}`;
         }
@@ -311,7 +459,7 @@ export default function BookingWidget({ className, style }: { className?: string
     };
 
     loadWorkingSlots();
-  }, [selectedService, selectedStaff]);
+  }, [selectedService, selectedStaff, staffSlotsApiPath]);
 
   const getGroupIcon = (name: string): string => {
     switch (name.toLowerCase()) {
@@ -550,7 +698,7 @@ export default function BookingWidget({ className, style }: { className?: string
 
     try {
       // 1) Upsert/find customer to get contactId
-  const customerUrl = new URL("/api/customer", window.location.origin);
+      const customerUrl = new URL(customerApiPath, window.location.origin);
       customerUrl.searchParams.set("firstName", contactForm.firstName.trim());
       customerUrl.searchParams.set("lastName", contactForm.lastName.trim());
       customerUrl.searchParams.set("phone", contactForm.phone.replace(/\D/g, ""));
@@ -565,7 +713,7 @@ export default function BookingWidget({ className, style }: { className?: string
       const endIsoUtc = addMinutesIso(startIsoUtc, durationMins);
 
       // 3) Book appointment (send camelCase and snake_case params for compatibility)
-  const apptUrl = new URL("/api/appointment", window.location.origin);
+      const apptUrl = new URL(appointmentApiPath, window.location.origin);
       const params: Record<string, string> = {
         // identifiers
         calendarId: selectedService,
@@ -744,28 +892,45 @@ export default function BookingWidget({ className, style }: { className?: string
   };
 
   return (
-    <div className={cn("bg-white", className)} style={style}>
-      <div className="flex flex-col items-center gap-6 pb-16 px-2 sm:px-4">
-        <div className="w-full max-w-5xl overflow-hidden">
+    <div 
+      className={cn("", className)} 
+      style={{ 
+        ...style,
+        backgroundColor: bgColor,
+        color: textColorPrimary,
+      }}
+    >
+      <div 
+        className="flex flex-col items-center gap-6 pb-16 px-2 sm:px-4"
+        style={{ padding: containerPadding }}
+      >
+        <div className="w-full overflow-hidden" style={{ maxWidth }}>
           <div className="p-4 sm:p-8">
             {/* Desktop Stepper */}
-            <div className="hidden sm:block stepper-container">
-              <Stepper 
-                steps={STEPS} 
-                currentStep={currentStep} 
-                className="mb-0"
-              />
-            </div>
+            {showStepper && (
+              <div className="hidden sm:block stepper-container">
+                <Stepper 
+                  steps={STEPS} 
+                  currentStep={currentStep} 
+                  className="mb-0"
+                />
+              </div>
+            )}
             
             {/* Mobile Step Indicator */}
-            <div className="sm:hidden fixed top-4 right-4 z-50">
-              <div className="w-12 h-12 bg-orange-primary rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-in-out">
-                {(() => {
-                  const IconComponent = getStepIcon(currentStep);
-                  return <IconComponent className="w-6 h-6 text-white" />;
-                })()}
+            {showMobileStepIndicator && (
+              <div className="sm:hidden fixed top-4 right-4 z-50">
+                <div 
+                  className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-in-out"
+                  style={{ backgroundColor: stepperActiveColor }}
+                >
+                  {(() => {
+                    const IconComponent = getStepIcon(currentStep);
+                    return <IconComponent className="w-6 h-6 text-white" />;
+                  })()}
+                </div>
               </div>
-            </div>
+            )}
             
             {renderCurrentStep()}
           </div>
