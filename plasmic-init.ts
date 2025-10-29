@@ -17,6 +17,7 @@ import StaffListWidget from "./components/StaffListWidget";
 import ServicesExplorer from "./components/ServicesExplorer";
 import ServicesShowcase from "./components/ServicesShowcase";
 import HomepageStaff from "./components/HomepageStaff";
+import HomepageServices from "./components/HomepageServices";
 import StaffShowcase from "./components/StaffShowcase";
 
 // Register code components used by Plasmic pages so Studio and runtime can render them
@@ -660,6 +661,90 @@ PLASMIC.registerComponent(HomepageStaff, {
     arrowColor: { type: "color", description: "Arrow color", defaultValue: "#D97639" },
     arrowBgColor: { type: "color", description: "Arrow background", defaultValue: "white" },
     showScrollDots: { type: "boolean", description: "Show scroll indicator dots", defaultValue: true },
+  },
+});
+
+PLASMIC.registerComponent(HomepageServices, {
+  name: "HomepageServices",
+  importPath: "@/components/HomepageServices",
+  isDefaultExport: true,
+  props: {
+    // API Configuration
+    apiPath: { 
+      type: "choice", 
+      description: "API endpoint to fetch services data",
+      options: [
+        "/api/supabaseservices",
+        "/api/services",
+        "/api/appointment",
+        "/api/customer"
+      ],
+      defaultValue: "/api/supabaseservices" 
+    },
+    
+    // Title Controls
+    title: { type: "string", description: "Section title", defaultValue: "Our Services" },
+    titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
+    titleSizeMobile: { type: "string", description: "Title size - Mobile (e.g., 1.5rem, 24px)", defaultValue: "1.5rem" },
+    titleSizeTablet: { type: "string", description: "Title size - Tablet (e.g., 1.875rem, 30px)", defaultValue: "1.875rem" },
+    titleSizeDesktop: { type: "string", description: "Title size - Desktop (e.g., 2.25rem, 36px)", defaultValue: "2.25rem" },
+    
+    // Search & Filter
+    showSearch: { type: "boolean", description: "Show search bar", defaultValue: true },
+    searchPlaceholder: { type: "string", description: "Search placeholder text", defaultValue: "Search" },
+    showFilter: { type: "boolean", description: "Show filter button", defaultValue: true },
+    filterButtonText: { type: "string", description: "Filter button text", defaultValue: "Filter" },
+    searchBgColor: { type: "color", description: "Search/Filter background", defaultValue: "#f3f4f6" },
+    searchTextColor: { type: "color", description: "Search/Filter text color", defaultValue: "#6b7280" },
+    searchBorderColor: { type: "color", description: "Search/Filter border color", defaultValue: "#e5e7eb" },
+    
+    // Category Display
+    groupByCategory: { type: "boolean", description: "Group services by category", defaultValue: true },
+    showCategoryTitles: { type: "boolean", description: "Show category titles", defaultValue: true },
+    categoryTitleColor: { type: "color", description: "Category title color", defaultValue: "#1a1a1a" },
+    categoryTitleSize: { type: "string", description: "Category title font size", defaultValue: "1.5rem" },
+    showSeeAll: { type: "boolean", description: "Show 'See All' links", defaultValue: true },
+    seeAllColor: { type: "color", description: "See All link color", defaultValue: "#D97639" },
+    seeAllSizeMobile: { type: "string", description: "See All size - Mobile", defaultValue: "0.875rem" },
+    seeAllSizeTablet: { type: "string", description: "See All size - Tablet", defaultValue: "1rem" },
+    seeAllSizeDesktop: { type: "string", description: "See All size - Desktop", defaultValue: "1.125rem" },
+    seeAllHrefTemplate: { type: "string", description: "See All link template (use {category})", defaultValue: "/services?category={category}" },
+    
+    // Card Appearance
+    cardBgColor: { type: "color", description: "Card background", defaultValue: "white" },
+    cardHoverColor: { type: "color", description: "Card hover color", defaultValue: "#f9fafb" },
+    cardWidthMobile: { type: "number", description: "Card width - Mobile (px)", defaultValue: 280 },
+    cardWidthTablet: { type: "number", description: "Card width - Tablet (px)", defaultValue: 300 },
+    cardWidthDesktop: { type: "number", description: "Card width - Desktop (px)", defaultValue: 320 },
+    cardImageHeightMobile: { type: "number", description: "Card image height - Mobile (px)", defaultValue: 200 },
+    cardImageHeightTablet: { type: "number", description: "Card image height - Tablet (px)", defaultValue: 220 },
+    cardImageHeightDesktop: { type: "number", description: "Card image height - Desktop (px)", defaultValue: 240 },
+    nameColor: { type: "color", description: "Service name color", defaultValue: "#1a1a1a" },
+    nameFontSize: { type: "string", description: "Service name font size", defaultValue: "1rem" },
+    priceColor: { type: "color", description: "Price color", defaultValue: "#D97639" },
+    priceFontSize: { type: "string", description: "Price font size", defaultValue: "0.875rem" },
+    durationColor: { type: "color", description: "Duration color", defaultValue: "#6b7280" },
+    durationFontSize: { type: "string", description: "Duration font size", defaultValue: "0.875rem" },
+    showDuration: { type: "boolean", description: "Show service duration", defaultValue: true },
+    
+    // Section Style
+    bgColor: { type: "color", description: "Background color", defaultValue: "white" },
+    paddingMobile: { type: "string", description: "Section padding - Mobile (e.g., 2rem 1rem)", defaultValue: "2rem 1rem" },
+    paddingTablet: { type: "string", description: "Section padding - Tablet (e.g., 2.5rem 1.5rem)", defaultValue: "2.5rem 1.5rem" },
+    paddingDesktop: { type: "string", description: "Section padding - Desktop (e.g., 3rem 2rem)", defaultValue: "3rem 2rem" },
+    
+    // Carousel Controls
+    cardsPerViewMobile: { type: "number", description: "Cards per view - Mobile", defaultValue: 1 },
+    cardsPerViewTablet: { type: "number", description: "Cards per view - Tablet", defaultValue: 2 },
+    cardsPerViewDesktop: { type: "number", description: "Cards per view - Desktop", defaultValue: 4 },
+    showArrows: { type: "boolean", description: "Show navigation arrows", defaultValue: true },
+    arrowColor: { type: "color", description: "Arrow color", defaultValue: "#D97639" },
+    arrowBgColor: { type: "color", description: "Arrow background", defaultValue: "white" },
+    showScrollDots: { type: "boolean", description: "Show scroll indicator dots", defaultValue: true },
+    scrollDotsColor: { type: "color", description: "Scroll dots color", defaultValue: "#D97639" },
+    
+    // Card Click Behavior
+    cardLinkTemplate: { type: "string", description: "Card link template (use {id} for service ID)", defaultValue: "/booking?serviceId={id}" },
   },
 });
 
