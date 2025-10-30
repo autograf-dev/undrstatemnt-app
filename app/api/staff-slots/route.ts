@@ -260,7 +260,6 @@ export async function GET(req: Request) {
           6: { start: parseInt(barberData["Saturday/Start Value"]) || 0, end: parseInt(barberData["Saturday/End Value"]) || 0 },
         };
       } else {
-        // No per-barber hours found; proceed with shop hours only (will yield empty slots for this barber, not a 500).
         barberHoursMap = {};
         barberWeekendIndexes = [];
       }
