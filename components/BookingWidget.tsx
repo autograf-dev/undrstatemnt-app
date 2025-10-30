@@ -225,7 +225,7 @@ export default function BookingWidget({
   // Normalize/override legacy API paths coming from Plasmic instances
   const effectiveServicesApiPath = servicesApiPath === "/api/services" ? "/api/supabaseservices" : servicesApiPath;
   const effectiveStaffApiPath = staffApiPath === "/api/staff" ? "/api/supabasestaff" : staffApiPath;
-  const effectiveStaffSlotsApiPath = staffSlotsApiPath === "/api/staffSlots" || staffSlotsApiPath === "/api/staff-slots" ? "/api/free-slots" : staffSlotsApiPath;
+  const effectiveStaffSlotsApiPath = staffSlotsApiPath === "/api/staffSlots" || staffSlotsApiPath === "/api/staff-slots" ? "/api/staff-slots" : staffSlotsApiPath;
   // Log overrides once on mount (avoid spamming per render)
   useEffect(() => {
     if (servicesApiPath !== effectiveServicesApiPath) {
