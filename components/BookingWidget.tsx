@@ -1128,11 +1128,11 @@ export default function BookingWidget({
       }}
     >
       <div 
-        className="flex flex-col items-center gap-6 pb-16 px-2 sm:px-4"
+        className="flex flex-col items-center gap-6 pb-16 px-0 sm:px-0"
         style={{ padding: containerPadding }}
       >
         <div className="w-full overflow-hidden" style={{ maxWidth }}>
-          <div className="p-4 sm:p-8">
+          <div className="p-0 sm:p-8">
             {/* Desktop Stepper */}
             {showStepper && (
               <div className="hidden sm:block stepper-container">

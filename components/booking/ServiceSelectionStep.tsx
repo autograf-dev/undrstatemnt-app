@@ -78,9 +78,9 @@ export function ServiceSelectionStep({
 
   return (
     <div className="service-selection-container">
-      <div className="text-center mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-3xl font-bold mb-2 sm:mb-3 whitespace-nowrap">Select Your Service</h2>
-        <p className="text-sm sm:text-lg font-medium">Choose a group and a specific service you'd like to book</p>
+      <div className="text-center mb-3 sm:mb-8">
+        <h2 className="text-xl sm:text-3xl font-bold mb-0 sm:mb-3 whitespace-nowrap">Select Your Service</h2>
+        <p className="hidden sm:block text-sm sm:text-lg font-medium">Choose a group and a specific service you'd like to book</p>
       </div>
       
       <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
@@ -285,7 +285,7 @@ export function ServiceSelectionStep({
                 {/* Mobile: Single column grid with lesser height */}
 
                 {/* Mobile: Single column grid with lesser height */}
-                <div className="sm:hidden grid grid-cols-1 gap-2 mb-4 stagger-animation">
+                <div className="sm:hidden grid grid-cols-2 gap-1 mb-2 px-0 stagger-animation">
                   {uniqueServices.map((item) => (
                     <div
                       key={item.id}
@@ -293,7 +293,7 @@ export function ServiceSelectionStep({
                         onServiceSelect(item.id);
                       }}
                       className={cn(
-                        "service-card smooth-transition flex items-center justify-between p-2 rounded-lg border-2 relative",
+                        "service-card smooth-transition flex items-center justify-between p-2 rounded-lg border relative",
                         selectedService === item.id && "selected"
                       )}
                     >
