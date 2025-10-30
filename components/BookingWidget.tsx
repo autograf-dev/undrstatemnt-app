@@ -944,6 +944,10 @@ export default function BookingWidget({
         if (!calendarId && (serviceObj as any)?.raw?.["ghl_calendar_id"]) {
           calendarId = (serviceObj as any).raw["ghl_calendar_id"];
         }
+        // Final fallback: treat selectedService as calendarId if your services == calendars setup
+        if (!calendarId && selectedService) {
+          calendarId = selectedService;
+        }
       } catch (e) {
         console.error("Failed to look up ghl_calendar_id for booking:", e);
       }
