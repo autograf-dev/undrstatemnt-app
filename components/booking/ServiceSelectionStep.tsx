@@ -110,6 +110,11 @@ export function ServiceSelectionStep({
     return `${r}m`;
   };
 
+  // Resolve active defaults
+  const resolvedActiveBg = serviceCardActiveBg || '#391709';
+  const resolvedActiveText = serviceCardActiveText || '#ffffff';
+  const resolvedActiveBorder = serviceCardActiveBorderColor || resolvedActiveBg;
+
   return (
     <div className="service-selection-container sm:p-0">
       <div className="text-center mb-3 sm:mb-8">
