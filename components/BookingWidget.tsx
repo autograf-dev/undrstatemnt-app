@@ -158,7 +158,7 @@ export default function BookingWidget({
   // API Configuration
   servicesApiPath = "/api/supabaseservices",
   staffApiPath = "/api/supabasestaff",
-  staffSlotsApiPath = "/api/staff-slots",
+  staffSlotsApiPath = "/api/free-slots",
   customerApiPath = "/api/customer",
   appointmentApiPath = "/api/appointment",
   // Color Scheme
