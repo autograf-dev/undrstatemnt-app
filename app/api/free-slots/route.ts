@@ -123,52 +123,93 @@ export async function GET(req: Request) {
 
     const slotsData = buildStaticSlotsMinutes(daysToCheck, 30);
 
-    // Business hours
-    const { data: businessHoursData, error: bhError } = await supabase.from('business_hours').select('*').eq('is_open', true);
-    if (bhError) throw new Error('Failed to fetch business hours');
-    const businessHoursMap: Record<number, any> = {};
-    (businessHoursData || []).forEach((item: any) => {
-      item.open_time = Number(item.open_time);
-      item.close_time = Number(item.close_time);
-      businessHoursMap[item.day_of_week] = item;
+    // Business hours (Trading_hours)
+    const { data: tradingHoursData, error: thError } = await supabase.from('Trading_hours').select('*');
+    if (thError) throw new Error('Failed to fetch trading hours');
+    const nameToIndex: Record<string, number> = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+    const businessHoursMap: Record<number, { open_time: number; close_time: number }> = {};
+    (tradingHoursData || []).forEach((item: any) => {
+      const idx = nameToIndex[item['Day/Name']] ?? undefined;
+      if (idx === undefined) return;
+      const open_time = Number(item['Day/Start'] ?? 0);
+      const close_time = Number(item['Day/End'] ?? 0);
+      if (!Number.isFinite(open_time) || !Number.isFinite(close_time)) return;
+      businessHoursMap[idx] = { open_time, close_time };
     });
 
-    // Barber hours + weekends
+    // Barber hours from Data_barbers + simple day-off via zeros or flags
     let barberHoursMap: Record<number, { start: number; end: number }> = {};
     let barberWeekendIndexes: number[] = [];
+    let hasBarber = false;
     if (userId) {
-      const { data: barberData, error: barberError } = await supabase.from('barber_hours').select('*').eq('ghl_id', userId).single();
-      if (barberError) throw new Error('Failed to fetch barber hours');
-
-      let weekendDays: string[] = [];
-      if (barberData?.weekend_days) {
-        try {
-          let weekendString = String(barberData.weekend_days).replace(/^['"]|['"]$/g, '');
-          if (weekendString.includes('{') && weekendString.includes('}')) {
-            weekendString = weekendString.replace(/^['"]*\{/, '[').replace(/\}['"]*.*$/, ']').replace(/\\"/g, '"');
-          }
-          weekendDays = JSON.parse(weekendString);
-        } catch {}
+      // Try by GHL_id first
+      let barberData: any = null;
+      let barberError: any = null;
+      let barberStatus: number | undefined = undefined;
+      {
+        const { data, error, status } = await supabase
+          .from('Data_barbers')
+          .select('*')
+          .eq('GHL_id', userId)
+          .maybeSingle();
+        barberData = data; barberError = error; barberStatus = status;
       }
-      const dayNameToIndex: Record<string, number> = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
-      barberWeekendIndexes = weekendDays.map((d) => dayNameToIndex[d]).filter((v) => v !== undefined);
+      if (!barberData) {
+        const { data, error, status } = await supabase
+          .from('Data_barbers')
+          .select('*')
+          .eq('User/ID', userId)
+          .maybeSingle();
+        if (data) { barberData = data; barberError = null; barberStatus = status; }
+        else { barberError = error; barberStatus = status; }
+      }
+      if (barberError && barberStatus !== 406 && barberStatus !== 404) throw new Error('Failed to fetch barber hours');
+      if (barberData) hasBarber = true;
 
+      const dayNameToIndex: Record<string, number> = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
       barberHoursMap = {
-        0: { start: parseInt(barberData['Sunday/Start Value']) || 0, end: parseInt(barberData['Sunday/End Value']) || 0 },
-        1: { start: parseInt(barberData['Monday/Start Value']) || 0, end: parseInt(barberData['Monday/End Value']) || 0 },
-        2: { start: parseInt(barberData['Tuesday/Start Value']) || 0, end: parseInt(barberData['Tuesday/End Value']) || 0 },
-        3: { start: parseInt(barberData['Wednesday/Start Value']) || 0, end: parseInt(barberData['Wednesday/End Value']) || 0 },
-        4: { start: parseInt(barberData['Thursday/Start Value']) || 0, end: parseInt(barberData['Thursday/End Value']) || 0 },
-        5: { start: parseInt(barberData['Friday/Start Value']) || 0, end: parseInt(barberData['Friday/End Value']) || 0 },
-        6: { start: parseInt(barberData['Saturday/Start Value']) || 0, end: parseInt(barberData['Saturday/End Value']) || 0 },
+        0: { start: parseInt(barberData?.['Sunday/Start Value']) || 0, end: parseInt(barberData?.['Sunday/End Value']) || 0 },
+        1: { start: parseInt(barberData?.['Monday/Start Value']) || 0, end: parseInt(barberData?.['Monday/End Value']) || 0 },
+        2: { start: parseInt(barberData?.['Tuesday/Start Value']) || 0, end: parseInt(barberData?.['Tuesday/End Value']) || 0 },
+        3: { start: parseInt(barberData?.['Wednesday/Start Value']) || 0, end: parseInt(barberData?.['Wednesday/End Value']) || 0 },
+        4: { start: parseInt(barberData?.['Thursday/Start Value']) || 0, end: parseInt(barberData?.['Thursday/End Value']) || 0 },
+        5: { start: parseInt(barberData?.['Friday/Start Value']) || 0, end: parseInt(barberData?.['Friday/End Value']) || 0 },
+        6: { start: parseInt(barberData?.['Saturday/Start Value']) || 0, end: parseInt(barberData?.['Saturday/End Value']) || 0 },
       };
+
+      // Optional: treat "Sunday/Day Off" or Availability booleans as day-off flags
+      if (barberData && String(barberData?.['Sunday/Day Off']).toLowerCase().includes('day off')) barberWeekendIndexes.push(0);
     }
 
     // Time off
     let timeOffList: { start: Date; end: Date }[] = [];
-    if (userId) {
-      const { data: timeOffData } = await supabase.from('time_off').select('*').eq('ghl_id', userId);
-      timeOffList = (timeOffData || []).map((item: any) => ({ start: new Date(item['Event/Start']), end: new Date(item['Event/End']) }));
+    if (hasBarber) {
+      // Prefer Data_barbers "Time Off/Unavailable Dates" if present (YYYYMMDD list)
+      let dbRow: any = null;
+      {
+        const { data } = await supabase
+          .from('Data_barbers')
+          .select('Time Off/Unavailable Dates')
+          .eq('GHL_id', userId)
+          .maybeSingle();
+        if (data) dbRow = data;
+      }
+      if (!dbRow) {
+        const { data } = await supabase
+          .from('Data_barbers')
+          .select('Time Off/Unavailable Dates')
+          .eq('User/ID', userId)
+          .maybeSingle();
+        if (data) dbRow = data;
+      }
+      const raw = (dbRow && typeof dbRow === 'object' ? (dbRow as Record<string, any>)['Time Off/Unavailable Dates'] : undefined) as string | undefined;
+      if (raw) {
+        const items = String(raw).split(',').map((s) => s.trim()).filter((s) => /^\d{8}$/.test(s));
+        timeOffList = items.map((v) => {
+          const y = v.slice(0, 4), m = v.slice(4, 6), d = v.slice(6, 8);
+          return { start: new Date(`${y}-${m}-${d}T00:00:00`), end: new Date(`${y}-${m}-${d}T23:59:59`) };
+        });
+      }
     }
     const isDateInTimeOff = (date: Date) => {
       const dayKey = ymdInTZ(date);
@@ -181,7 +222,7 @@ export async function GET(req: Request) {
 
     // Time blocks
     let timeBlockList: any[] = [];
-    if (userId) {
+    if (hasBarber) {
       const { data: blockData } = await supabase.from('time_block').select('*').eq('ghl_id', userId);
       timeBlockList = (blockData || []).map((item: any) => {
         const raw = item['Block/Recurring'];
@@ -201,20 +242,17 @@ export async function GET(req: Request) {
 
     // Existing bookings
     let existingBookings: any[] = [];
-    if (userId) {
+    if (hasBarber) {
       const { data: bookingsData } = await supabase
-        .from('restyle_bookings')
-        .select('start_time, booking_duration, assigned_user_id, status, appointment_status')
+        .from('ghl_appointment')
+        .select('*')
         .eq('assigned_user_id', userId)
-        .in('status', ['booked', 'confirmed'])
-        .in('appointment_status', ['confirmed', 'pending'])
         .gte('start_time', startOfRange.toISOString())
         .lte('start_time', endOfRange.toISOString());
 
       existingBookings = (bookingsData || []).map((b: any) => {
         const startTime = new Date(b.start_time);
-        const duration = parseInt(b.booking_duration) || 30;
-        const endTime = new Date(startTime.getTime() + duration * 60000);
+        const endTime = b.end_time ? new Date(b.end_time) : new Date(startTime.getTime() + (parseInt(b.booking_duration) || 30) * 60000);
         return {
           startDayKey: ymdInTZ(startTime),
           startMinutes: minutesInTZ(startTime),
@@ -252,8 +290,8 @@ export async function GET(req: Request) {
     const filteredSlots: Record<string, string[]> = {};
     for (const day of daysToCheck) {
       const dateKey = ymdInTZ(day);
-      const dow = dayOfWeekInTZ(day);
-      const bh = (businessHoursMap as any)[dow];
+      const dowNum: number = Number(dayOfWeekInTZ(day));
+      const bh = businessHoursMap[dowNum];
       if (!bh) continue;
       const openTime = bh.open_time;
       const closeTime = bh.close_time;
@@ -261,13 +299,13 @@ export async function GET(req: Request) {
       let validMins = (slotsData[dateKey]?.minutes || []).slice();
       validMins = validMins.filter((mins) => {
         const end = mins + serviceDurationMinutes;
-        if (!userId) return mins >= openTime && end <= closeTime;
+        if (!hasBarber) return mins >= openTime && end <= closeTime;
         return mins >= openTime && mins <= closeTime;
       });
 
-      if (userId) {
-        if ((barberWeekendIndexes || []).includes(dow)) continue;
-        const bhours = barberHoursMap[dow];
+      if (hasBarber) {
+        if ((barberWeekendIndexes || []).includes(dowNum)) continue;
+        const bhours = barberHoursMap[dowNum];
         if (!bhours || (bhours.start === 0 && bhours.end === 0)) continue;
         if (isDateInTimeOff(day)) continue;
         validMins = validMins.filter((mins) => {

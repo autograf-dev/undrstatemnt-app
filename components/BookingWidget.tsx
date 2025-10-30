@@ -158,7 +158,7 @@ export default function BookingWidget({
   // API Configuration
   servicesApiPath = "/api/supabaseservices",
   staffApiPath = "/api/supabasestaff",
-  staffSlotsApiPath = "/api/staff-slots",
+  staffSlotsApiPath = "/api/free-slots",
   customerApiPath = "/api/customer",
   appointmentApiPath = "/api/appointment",
   // Color Scheme
@@ -225,7 +225,7 @@ export default function BookingWidget({
   // Normalize/override legacy API paths coming from Plasmic instances
   const effectiveServicesApiPath = servicesApiPath === "/api/services" ? "/api/supabaseservices" : servicesApiPath;
   const effectiveStaffApiPath = staffApiPath === "/api/staff" ? "/api/supabasestaff" : staffApiPath;
-  const effectiveStaffSlotsApiPath = staffSlotsApiPath === "/api/staffSlots" ? "/api/staff-slots" : staffSlotsApiPath;
+  const effectiveStaffSlotsApiPath = staffSlotsApiPath === "/api/staffSlots" || staffSlotsApiPath === "/api/staff-slots" ? "/api/free-slots" : staffSlotsApiPath;
   // Log overrides once on mount (avoid spamming per render)
   useEffect(() => {
     if (servicesApiPath !== effectiveServicesApiPath) {
