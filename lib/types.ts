@@ -10,6 +10,7 @@ export interface Service {
   name: string;
   description?: string;
   durationMinutes: number;
+  imageUrl?: string;
   teamMembers?: TeamMember[];
 }
 
@@ -24,6 +25,7 @@ export interface Staff {
   name: string;
   icon?: string;
   badge?: string;
+  imageUrl?: string;
   /** Supabase Data_barbers row id ("🔒 Row ID") for override joins */
   barberRowId?: string;
   /** Optional list of service IDs this barber supports (from Data_barbers "Services/List") */

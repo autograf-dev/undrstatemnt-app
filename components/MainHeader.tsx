@@ -106,6 +106,8 @@ export interface MainHeaderProps {
   mobileFooterIconSize?: number;
   /** Footer padding (mobile footer only) */
   mobileFooterPadding?: string;
+  /** Hide/fade mobile footer (e.g., when drawer open) */
+  mobileFooterHidden?: boolean;
 }
 
 export default function MainHeader({
@@ -135,6 +137,7 @@ export default function MainHeader({
   mobileFooterActiveIconColor = "#000000",
   mobileFooterIconSize = 24,
   mobileFooterPadding = "0.75rem",
+  mobileFooterHidden = false,
 }: MainHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -364,7 +367,10 @@ export default function MainHeader({
 
         {/* Bottom Navigation Bar - ICONS ONLY */}
         <div
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[95%] max-w-md rounded-2xl shadow-2xl border border-white/30"
+          className={cn(
+            "fixed bottom-4 left-1/2 -translate-x-1/2 w-[95%] max-w-md rounded-2xl shadow-2xl border border-white/30 transition-all duration-300",
+            mobileFooterHidden ? "translate-y-8 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+          )}
           style={{
             backgroundColor: mobileFooterBgColor,
             backdropFilter: "blur(16px) saturate(180%)",

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Staff, Service } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface StaffSelectionStepProps {
   staff: Staff[];
@@ -180,14 +181,20 @@ export function StaffSelectionStep({
                 )}
               >
                 <div className="flex items-center gap-3.5 w-full">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center",
-                    selectedStaff === item.id 
-                      ? "bg-white text-orange-primary" 
-                      : "bg-orange-100 text-orange-primary"
-                  )}>
-                    <User className="w-5 h-5" />
-                  </div>
+                  {item.imageUrl ? (
+                    <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/60">
+                      <Image src={item.imageUrl} alt={item.name} width={40} height={40} className="object-cover w-10 h-10" unoptimized />
+                    </div>
+                  ) : (
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center",
+                      selectedStaff === item.id 
+                        ? "bg-white text-orange-primary" 
+                        : "bg-orange-100 text-orange-primary"
+                    )}>
+                      <User className="w-5 h-5" />
+                    </div>
+                  )}
                   <div className="flex-1">
                     <span className={cn(
                       "text-sm font-semibold",

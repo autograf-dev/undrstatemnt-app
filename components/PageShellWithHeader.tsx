@@ -1,8 +1,9 @@
 "use client";
 
-import { CSSProperties, ReactNode } from "react";
+import { CSSProperties, ReactNode, useEffect, useState } from "react";
 import MainHeader, { HeaderNavItem } from "./MainHeader";
 import { cn } from "@/lib/utils";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 
 export interface PageShellWithHeaderProps {
   className?: string;
@@ -58,6 +59,17 @@ export interface PageShellWithHeaderProps {
   mobileFooterIconSize?: number;
   /** Footer padding (mobile footer only) */
   mobileFooterPadding?: string;
+  // Drawer controls
+  /** Open booking as bottom drawer instead of navigating */
+  useDrawerForBooking?: boolean;
+  /** Drawer title text */
+  drawerTitle?: string;
+  /** Tailwind classes for drawer top corner radius */
+  drawerRadiusClass?: string;
+  /** Drawer background color */
+  drawerBgColor?: string;
+  /** Slot: drawer content (e.g., BookingWidget) */
+  drawerContent?: ReactNode;
   /** Main page content (slot from Plasmic) */
   children?: ReactNode;
 }
@@ -91,10 +103,35 @@ export default function PageShellWithHeader({
   mobileFooterActiveIconColor,
   mobileFooterIconSize,
   mobileFooterPadding,
+  useDrawerForBooking,
+  drawerTitle,
+  drawerRadiusClass,
+  drawerBgColor,
+  drawerContent,
   children,
 }: PageShellWithHeaderProps) {
   // Ensure headerItems is always an array
   const validHeaderItems = Array.isArray(headerItems) ? headerItems : [];
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Intercept booking link to open drawer (mobile footer + any header links)
+  useEffect(() => {
+    if (!useDrawerForBooking) return;
+    if (typeof window === "undefined") return;
+
+    const href = mobileBookingHref || "/booking";
+    const selector = `a[href='${href}']`;
+    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(selector));
+    const onClick = (e: Event) => {
+      e.preventDefault();
+      setDrawerOpen(true);
+      return false;
+    };
+    links.forEach((el) => el.addEventListener("click", onClick));
+    return () => {
+      links.forEach((el) => el.removeEventListener("click", onClick));
+    };
+  }, [useDrawerForBooking, mobileBookingHref]);
 
   return (
     <div className={cn("bg-gray-50", className)} style={style}>
@@ -125,8 +162,37 @@ export default function PageShellWithHeader({
         mobileFooterActiveIconColor={mobileFooterActiveIconColor}
         mobileFooterIconSize={mobileFooterIconSize}
         mobileFooterPadding={mobileFooterPadding}
+        mobileFooterHidden={!!(useDrawerForBooking && drawerOpen)}
       />
       
+      {useDrawerForBooking && (
+        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <DrawerContent
+            roundedClassName={drawerRadiusClass || "rounded-t-2xl"}
+            className="border border-white/30"
+            style={{ backgroundColor: drawerBgColor || "rgba(255,255,255,0.95)" }}
+          >
+            <div className="mx-auto w-full max-w-3xl">
+              <DrawerHeader className="text-left">
+                {drawerTitle && <DrawerTitle>{drawerTitle}</DrawerTitle>}
+              </DrawerHeader>
+              <div className="px-4 pb-4">
+                {drawerContent}
+              </div>
+              <div className="px-4 pb-4">
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(false)}
+                  className="px-4 py-2 rounded-lg border bg-white/70"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
+
       {/* Main content area with top padding for header on desktop, bottom padding for mobile */}
       <main className="pt-24 pb-24 md:pb-8 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">

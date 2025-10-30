@@ -322,6 +322,7 @@ export default function BookingWidget({
               name: s.displayName || s.name || 'Service',
               description: s.description || '',
               durationMinutes: minutes,
+              imageUrl: s.photo || s.image || s.imageUrl || s["Service/Photo"],
             };
           });
         } else {
@@ -341,6 +342,7 @@ export default function BookingWidget({
               name: service.name,
               description: service.description,
               durationMinutes: minutes,
+              imageUrl: service.image || service.photo || service.imageUrl,
               teamMembers: service.teamMembers || []
             };
           });
@@ -437,6 +439,7 @@ export default function BookingWidget({
               id: String(s.ghl_id || s.id),
               name: s.name || s.fullName || 'Staff',
               icon: 'user',
+              imageUrl: s.photo || s.avatarUrl || s.imageUrl,
               barberRowId: s.barberRowId || s['🔒 Row ID'] || undefined,
               services: Array.isArray(s.servicesList)
                 ? s.servicesList.map((v: any) => String(v))

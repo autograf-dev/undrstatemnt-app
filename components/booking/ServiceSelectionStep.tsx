@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
+import Image from "next/image";
 import { 
   Scissors, 
   Heart, 
@@ -228,14 +229,20 @@ export function ServiceSelectionStep({
                     )}
                   >
                     <div className="flex items-center gap-3.5 w-full">
-                      <div className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center",
-                        selectedService === item.id 
-                          ? "bg-white text-orange-primary" 
-                          : "bg-orange-100 text-orange-primary"
-                      )}>
-                        <Scissors className="w-5 h-5" />
-                      </div>
+                      {item.imageUrl ? (
+                        <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/60">
+                          <Image src={item.imageUrl} alt={item.name} width={40} height={40} className="object-cover w-10 h-10" unoptimized />
+                        </div>
+                      ) : (
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center",
+                          selectedService === item.id 
+                            ? "bg-white text-orange-primary" 
+                            : "bg-orange-100 text-orange-primary"
+                        )}>
+                          <Scissors className="w-5 h-5" />
+                        </div>
+                      )}
                       <div className="flex-1">
                         <div className={cn(
                           "text-sm font-semibold",
@@ -291,14 +298,20 @@ export function ServiceSelectionStep({
                       )}
                     >
                       <div className="flex items-center gap-3 w-full">
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center",
-                          selectedService === item.id 
-                            ? "bg-white text-orange-primary" 
-                            : "bg-orange-100 text-orange-primary"
-                        )}>
-                          <Scissors className="w-4 h-4" />
-                        </div>
+                        {item.imageUrl ? (
+                          <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/60">
+                            <Image src={item.imageUrl} alt={item.name} width={32} height={32} className="object-cover w-8 h-8" unoptimized />
+                          </div>
+                        ) : (
+                          <div className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center",
+                            selectedService === item.id 
+                              ? "bg-white text-orange-primary" 
+                              : "bg-orange-100 text-orange-primary"
+                          )}>
+                            <Scissors className="w-4 h-4" />
+                          </div>
+                        )}
                         <div className="flex-1">
                           <div className={cn(
                             "text-sm font-semibold",
