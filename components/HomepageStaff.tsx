@@ -306,7 +306,7 @@ export default function HomepageStaff({
                     <Link
                       key={member.id}
                       href={`/booking?staffId=${member.ghl_id || member.id}`}
-                      className="flex-none rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 snap-center"
+                      className="flex-none rounded-xl overflow-hidden shadow-md mt-4 transition-all duration-300  hover:scale-105 snap-center mb-4"
                       style={{
                         width: `${cardWidth}px`,
                         backgroundColor: cardBgColor,

@@ -1,0 +1,22 @@
+{
+  "name": "Undrstatemnt",
+  "short_name": "Undr",
+  "description": "Undrstatemnt booking and services app",
+  "start_url": "/homepage",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#D97639",
+  "categories": ["lifestyle", "business"],
+  "icons": [
+    { "src": "/favicon.png", "sizes": "64x64", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "shortcuts": [
+    { "name": "Book now", "url": "/booking", "icons": [{ "src": "/favicon.png", "sizes": "64x64" }] },
+    { "name": "Services", "url": "/services", "icons": [{ "src": "/favicon.png", "sizes": "64x64" }] }
+  ]
+}
+
+

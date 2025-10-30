@@ -521,6 +521,12 @@ PLASMIC.registerComponent(PageShellWithHeader, {
     mobileFooterActiveIconColor: { type: "color", description: "[Mobile Footer] Icon color (active)", defaultValue: "#000000" },
     mobileFooterIconSize: { type: "number", description: "[Mobile Footer] Icon size (px)", defaultValue: 24 },
     mobileFooterPadding: { type: "string", description: "[Mobile Footer] Padding (e.g., 0.75rem)", defaultValue: "0.75rem" },
+    // Drawer controls
+    useDrawerForBooking: { type: "boolean", description: "Open booking as bottom drawer when tapping + on mobile", defaultValue: false },
+    drawerTitle: { type: "string", description: "Drawer title (optional)", defaultValue: "Quick Booking" },
+    drawerRadiusClass: { type: "string", description: "Tailwind classes for drawer corner radius", defaultValue: "rounded-t-2xl" },
+    drawerBgColor: { type: "color", description: "Drawer background color", defaultValue: "rgba(255,255,255,0.95)" },
+    drawerContent: { type: "slot", defaultValue: { type: "text", value: "Place your booking widget or custom component here" } },
     children: { type: "slot", defaultValue: { type: "text", value: "Page content here" } },
   },
 });

@@ -33,10 +33,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" style={{ height: 'auto', overflow: 'visible' }}>
+      <head>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#D97639" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Undrstatemnt" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ height: 'auto', minHeight: '100vh', overflow: 'visible' }}
       >
+        {/* PWA service worker registration via client component */}
+        {/* eslint-disable-next-line @typescript-eslint/no-var-requires */}
+        {(() => {
+          const PwaRegister = require('../components/PwaRegister').default;
+          return <PwaRegister />;
+        })()}
         {children}
       </body>
     </html>
