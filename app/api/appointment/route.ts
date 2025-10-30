@@ -1,47 +1,3 @@
-    // Send detailed webhook for table mutation
-    try {
-      const detailedPayload = {
-        appID: "VAC7eZY8vOOl4KZYEWF6",
-        mutations: [
-          {
-            kind: "add-row-to-table",
-            tableName: "native-table-17B93ocF1HmbC5Wge9ta",
-            columnValues: {
-              vJ042: (params.startTime ? new Date(params.startTime).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }).replace(/-/g, '') : ""),
-              kqZs5: params.bookingType || "Booking/Type",
-              "8C8HP": booking.id || booking.cal_com_id || "",
-              mNuL2: params.cancelUrl || "Booking/Cancel",
-              VPfiU: params.modifyUrl || "Booking/Modify",
-              "8265X": params.notifyUrl || "Booking/Notify",
-              tN30J: params.appointmentStatus || booking.appointmentStatus || "Confirmed",
-              wQ3qg: params.bookedBy || "Booking/Booked By",
-              wF0cN: params.customerId || params.contactId || "",
-              aPXKv: params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || "",
-              Ul1Xb: params.customerPhone || "",
-              Ppy2M: params.customerEmail || "",
-              xAwbe: params.staffId || params.assignedUserId || "",
-              JE35N: params.serviceId || "",
-              jIXWb: params.customPrice || "",
-              b3MEu: params.serviceName || params.title || "",
-              mN11Y: params.serviceDuration || "",
-              "9qKZ1": booking.id || "",
-              vY5AO: params.startTime || "",
-              MAqsh: params.documentId || "",
-              thd34: params.notes || "",
-              uDzPy: params.paymentId || "",
-              "4HFxg": "column1"
-            }
-          }
-        ]
-      };
-      await fetch("https://primary-rmsi-production2.up.railway.app/webhook-test/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(detailedPayload)
-      });
-    } catch (e) {
-      console.error("Detailed webhook send failed:", (e as Error).message);
-    }
 import { NextResponse } from 'next/server';
 import { getValidAccessToken } from '@/lib/server/tokens';
 import { saveEventToDB } from '@/lib/server/appointments';
@@ -122,6 +78,37 @@ export async function GET(req: Request) {
     params.customerFirstName = picker('customerFirstName', 'first_name');
     params.customerLastName = picker('customerLastName', 'last_name');
 
+    // --- Fix: Always use ghl_id from staff table as assignedUserId if staffName is provided ---
+    if ((!params.assignedUserId || params.assignedUserId.length < 10) && params.staffName) {
+      try {
+        // Lazy import to avoid top-level import cost
+        const { getSupabaseServiceClient } = await import('@/lib/server/supabase');
+        const supabase = getSupabaseServiceClient();
+        // Try to match staffName to name, firstname, or lastname (case-insensitive, trimmed)
+        const { data: staff, error } = await supabase
+          .from('staff')
+          .select('ghl_id, name, firstname, lastname')
+          .ilike('name', `%${params.staffName.trim()}%`);
+        if (error) throw error;
+        let match = staff && staff.length > 0 ? staff[0] : null;
+        // Fallback: try firstname/lastname if not found
+        if (!match && params.staffName) {
+          const { data: staff2 } = await supabase
+            .from('staff')
+            .select('ghl_id, name, firstname, lastname')
+            .or(`firstname.ilike.%${params.staffName.trim()}%,lastname.ilike.%${params.staffName.trim()}%`);
+          if (staff2 && staff2.length > 0) match = staff2[0];
+        }
+        if (match && match.ghl_id) {
+          params.assignedUserId = match.ghl_id;
+        } else {
+          return NextResponse.json({ error: 'Could not find the correct barber ID. Please contact support.' }, { status: 400, headers: cors() });
+        }
+      } catch (e) {
+        return NextResponse.json({ error: 'Could not find the correct barber ID. Please contact support.' }, { status: 400, headers: cors() });
+      }
+    }
+
     if (!params.contactId || !params.calendarId || !params.startTime || !params.endTime) {
       return NextResponse.json({ error: 'Missing required parameters: contactId, calendarId, startTime, endTime' }, { status: 400, headers: cors() });
     }
@@ -141,8 +128,6 @@ export async function GET(req: Request) {
       assignedUserId: params.assignedUserId,
       apptId: booking?.id,
     };
-
-
 
     // Send to webhook (simple)
     try {
