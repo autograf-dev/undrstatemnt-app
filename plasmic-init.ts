@@ -36,6 +36,14 @@ PLASMIC.registerComponent(BookingWidget, {
     serviceCardActiveBg: { type: "color", description: "Active service card background", defaultValue: "" },
     serviceCardActiveText: { type: "color", description: "Active service card text color", defaultValue: "" },
     serviceCardActiveBorderColor: { type: "color", description: "Active service card border color", defaultValue: "" },
+    spinnerColor: { type: "color", description: "Loading spinner color", defaultValue: "#D97639" },
+    serviceTitleColor: { type: "color", description: "Service title color", defaultValue: "#111827" },
+    serviceDurationColor: { type: "color", description: "Service duration color", defaultValue: "#4b5563" },
+    staffNameColor: { type: "color", description: "Staff name color", defaultValue: "#B45309" },
+    navPrimaryBg: { type: "color", description: "Primary button background", defaultValue: "#D97639" },
+    navPrimaryText: { type: "color", description: "Primary button text", defaultValue: "#ffffff" },
+    navSecondaryBorder: { type: "color", description: "Secondary button border", defaultValue: "#e5e7eb" },
+    navSecondaryText: { type: "color", description: "Secondary button text", defaultValue: "#111827" },
     // API Configuration
     servicesApiPath: { 
       type: "choice", 

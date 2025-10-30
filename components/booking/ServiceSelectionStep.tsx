@@ -45,6 +45,13 @@ interface ServiceSelectionStepProps {
   serviceCardActiveBg?: string;
   serviceCardActiveText?: string;
   serviceCardActiveBorderColor?: string;
+  serviceTitleColor?: string;
+  serviceDurationColor?: string;
+  // Navigation button styling
+  navPrimaryBg?: string;
+  navPrimaryText?: string;
+  navSecondaryBorder?: string;
+  navSecondaryText?: string;
 }
 
 const getIcon = (iconName: string) => {
@@ -82,6 +89,12 @@ export function ServiceSelectionStep({
   serviceCardActiveBg,
   serviceCardActiveText,
   serviceCardActiveBorderColor,
+  serviceTitleColor,
+  serviceDurationColor,
+  navPrimaryBg,
+  navPrimaryText,
+  navSecondaryBorder,
+  navSecondaryText,
 }: ServiceSelectionStepProps) {
   // Dedupe services by id to avoid React key collisions if callers accidentally pass duplicates
   const uniqueServices = React.useMemo(() => {
@@ -190,42 +203,10 @@ export function ServiceSelectionStep({
         {selectedDepartment && (
           <div>
             {loadingServices ? (
-              <div className="space-y-2 mb-6 stagger-animation">
-                <div className="service-skeleton">
-                  <div className="flex items-center gap-3.5 w-full">
-                    <div className="skeleton-icon"></div>
-                    <div className="flex-1">
-                      <div className="skeleton-text medium"></div>
-                      <div className="flex items-center gap-4 flex-wrap mt-1.5">
-                        <div className="skeleton-text short"></div>
-                        <div className="skeleton-text short"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="service-skeleton">
-                  <div className="flex items-center gap-3.5 w-full">
-                    <div className="skeleton-icon"></div>
-                    <div className="flex-1">
-                      <div className="skeleton-text medium"></div>
-                      <div className="flex items-center gap-4 flex-wrap mt-1.5">
-                        <div className="skeleton-text short"></div>
-                        <div className="skeleton-text short"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="service-skeleton">
-                  <div className="flex items-center gap-3.5 w-full">
-                    <div className="skeleton-icon"></div>
-                    <div className="flex-1">
-                      <div className="skeleton-text medium"></div>
-                      <div className="flex items-center gap-4 flex-wrap mt-1.5">
-                        <div className="skeleton-text short"></div>
-                        <div className="skeleton-text short"></div>
-                      </div>
-                    </div>
-                  </div>
+              <div className="text-center py-8">
+                <div className="inline-flex items-center gap-2">
+                  <div className="loading-spinner" style={{ color: servicePriceColor || '#D97639' }}></div>
+                  <div className="text-gray-500 text-sm font-medium">Loading services...</div>
                 </div>
               </div>
             ) : services.length === 0 ? (
@@ -244,7 +225,7 @@ export function ServiceSelectionStep({
                         onClick={() => onServiceSelect(item.id)}
                         className="rounded-md border bg-white cursor-pointer hover:shadow-sm transition-all"
                         style={{
-                          borderColor: serviceCardBorderColor || '#fed7aa',
+                          borderColor: (selectedService === item.id && serviceCardActiveBorderColor) || serviceCardBorderColor || '#fed7aa',
                           boxShadow: serviceCardShadow || 'none',
                           borderRadius: serviceCardRadius || '0.5rem',
                           padding: serviceCardPadding || '10px',
@@ -261,13 +242,13 @@ export function ServiceSelectionStep({
                           borderStyle: 'solid',
                         }}
                       >
-                        <div className="text-[13px] font-semibold leading-tight line-clamp-2" style={{ color: selectedService === item.id && serviceCardActiveText ? serviceCardActiveText : '#111827' }}>{item.name}</div>
+                        <div className="text-[13px] font-semibold leading-tight line-clamp-2" style={{ color: selectedService === item.id && serviceCardActiveText ? serviceCardActiveText : (serviceTitleColor || '#111827') }}>{item.name}</div>
                         <div className="mt-1 flex items-center justify-between gap-2">
                           <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: servicePriceColor || '#f97316' }}>
                             <Tag className="w-3 h-3" style={{ color: servicePriceIconColor || servicePriceColor || '#f97316' }} />
                             <span>{item.displayPrice || ""}</span>
                           </div>
-                          <div className="inline-flex items-center gap-1 text-[11px]" style={{ color: serviceDurationIconColor || '#4b5563' }}>
+                          <div className="inline-flex items-center gap-1 text-[11px]" style={{ color: serviceDurationColor || serviceDurationIconColor || '#4b5563' }}>
                             <Clock className="w-3 h-3" />
                             <span>{formatDurationMins(item.durationMinutes)} +</span>
                           </div>
@@ -313,6 +294,10 @@ export function ServiceSelectionStep({
             variant="outline"
             size="lg"
             className="flex-1"
+            style={{
+              borderColor: navSecondaryBorder,
+              color: navSecondaryText,
+            }}
             onClick={() => {
               // On mobile, if department is selected, go back to groups
               if (selectedDepartment) {
@@ -331,7 +316,11 @@ export function ServiceSelectionStep({
                 type="submit"
                 size="lg"
                 disabled={!selectedService || loadingGroups}
-                className="flex-1 bg-orange-primary hover:bg-orange-primary text-white"
+                className="flex-1"
+                style={{
+                  backgroundColor: navPrimaryBg || '#D97639',
+                  color: navPrimaryText || '#fff',
+                }}
               >
                 Continue
                 <ArrowRight className="ml-2" />

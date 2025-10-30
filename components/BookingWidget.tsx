@@ -129,6 +129,16 @@ export interface BookingWidgetProps {
   serviceCardActiveBg?: string;
   serviceCardActiveText?: string;
   serviceCardActiveBorderColor?: string;
+  // Loading spinner color
+  spinnerColor?: string;
+  // Fine text colors and nav
+  serviceTitleColor?: string;
+  serviceDurationColor?: string;
+  staffNameColor?: string;
+  navPrimaryBg?: string;
+  navPrimaryText?: string;
+  navSecondaryBorder?: string;
+  navSecondaryText?: string;
 }
 
 const getStepIcon = (stepValue: string) => {
@@ -203,6 +213,14 @@ export default function BookingWidget({
   serviceCardActiveBg,
   serviceCardActiveText,
   serviceCardActiveBorderColor,
+  spinnerColor,
+  serviceTitleColor,
+  serviceDurationColor,
+  staffNameColor,
+  navPrimaryBg,
+  navPrimaryText,
+  navSecondaryBorder,
+  navSecondaryText,
 }: BookingWidgetProps) {
   // Normalize/override legacy API paths coming from Plasmic instances
   const effectiveServicesApiPath = servicesApiPath === "/api/services" ? "/api/supabaseservices" : servicesApiPath;
@@ -1078,6 +1096,12 @@ export default function BookingWidget({
             serviceCardActiveBg={serviceCardActiveBg}
             serviceCardActiveText={serviceCardActiveText}
             serviceCardActiveBorderColor={serviceCardActiveBorderColor}
+            serviceTitleColor={serviceTitleColor}
+            serviceDurationColor={serviceDurationColor}
+            navPrimaryBg={navPrimaryBg}
+            navPrimaryText={navPrimaryText}
+            navSecondaryBorder={navSecondaryBorder}
+            navSecondaryText={navSecondaryText}
           />
         );
       case 'staff':
@@ -1097,6 +1121,11 @@ export default function BookingWidget({
             onPrevious={goToPreviousStep}
             getServiceDuration={getServiceDuration}
             formatDurationMins={formatDurationMins}
+            staffNameColor={staffNameColor}
+            navPrimaryBg={navPrimaryBg}
+            navPrimaryText={navPrimaryText}
+            navSecondaryBorder={navSecondaryBorder}
+            navSecondaryText={navSecondaryText}
           />
         );
       case 'datetime':
@@ -1117,6 +1146,10 @@ export default function BookingWidget({
             getServiceDuration={getServiceDuration}
             formatDurationMins={formatDurationMins}
             onDateChange={fetchSlotsForDate}
+            navPrimaryBg={navPrimaryBg}
+            navPrimaryText={navPrimaryText}
+            navSecondaryBorder={navSecondaryBorder}
+            navSecondaryText={navSecondaryText}
           />
         );
       case 'information':

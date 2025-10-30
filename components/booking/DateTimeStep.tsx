@@ -32,6 +32,10 @@ interface DateTimeStepProps {
   getServiceDuration: (serviceId: string) => number;
   formatDurationMins: (mins: number) => string;
   onDateChange: (dateString: string) => void;
+  navPrimaryBg?: string;
+  navPrimaryText?: string;
+  navSecondaryBorder?: string;
+  navSecondaryText?: string;
 }
 
 export function DateTimeStep({
@@ -49,7 +53,11 @@ export function DateTimeStep({
   selectedService,
   getServiceDuration,
   formatDurationMins,
-  onDateChange
+  onDateChange,
+  navPrimaryBg,
+  navPrimaryText,
+  navSecondaryBorder,
+  navSecondaryText
 }: DateTimeStepProps) {
   const [currentDateIndex, setCurrentDateIndex] = useState(0);
 
@@ -162,29 +170,12 @@ export function DateTimeStep({
             </div>
           </Card>
         ) : (
-          /* Premium loading state for dates */
+          /* Simple loading state for dates */
           <Card className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
             <div className="text-center py-8">
-              <div className="flex items-center justify-center mb-6">
-                <div className="loading-spinner mr-3"></div>
-                <div className="text-gray-500 text-lg font-medium">Loading available dates...</div>
-              </div>
-              <div className="flex justify-center space-x-4 stagger-animation">
-                <div className="date-skeleton">
-                  <div className="skeleton-label"></div>
-                  <div className="skeleton-day"></div>
-                  <div className="skeleton-date"></div>
-                </div>
-                <div className="date-skeleton">
-                  <div className="skeleton-label"></div>
-                  <div className="skeleton-day"></div>
-                  <div className="skeleton-date"></div>
-                </div>
-                <div className="date-skeleton">
-                  <div className="skeleton-label"></div>
-                  <div className="skeleton-day"></div>
-                  <div className="skeleton-date"></div>
-                </div>
+              <div className="inline-flex items-center gap-2">
+                <div className="loading-spinner" />
+                <div className="text-gray-500 text-sm font-medium">Loading available dates...</div>
               </div>
             </div>
           </Card>
@@ -221,23 +212,11 @@ export function DateTimeStep({
                 </div>
               </div>
             ) : loadingSlots || !workingSlotsLoaded ? (
-              /* Premium skeleton loading while fetching slots */
-              <div className="space-y-4 px-4 sm:px-0">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="loading-spinner mr-3"></div>
-                  <div className="text-sm text-gray-600 font-medium">
-                    Loading available slots...
-                  </div>
-                </div>
-                <div className="grid sm:grid-cols-4 sm:gap-4 grid-cols-3 gap-2 stagger-animation">
-                  <div className="time-slot-skeleton"></div>
-                  <div className="time-slot-skeleton"></div>
-                  <div className="time-slot-skeleton"></div>
-                  <div className="time-slot-skeleton"></div>
-                  <div className="time-slot-skeleton"></div>
-                  <div className="time-slot-skeleton"></div>
-                  <div className="time-slot-skeleton"></div>
-                  <div className="time-slot-skeleton"></div>
+              /* Simple loading state while fetching slots */
+              <div className="px-4 sm:px-0 py-8 text-center">
+                <div className="inline-flex items-center gap-2">
+                  <div className="loading-spinner" />
+                  <div className="text-sm text-gray-600 font-medium">Loading available slots...</div>
                 </div>
               </div>
             ) : selectedDate && workingSlotsLoaded && timeSlots.length === 0 ? (
@@ -279,6 +258,7 @@ export function DateTimeStep({
           variant="outline"
           size="lg"
           className="flex-1"
+          style={{ borderColor: navSecondaryBorder, color: navSecondaryText }}
           onClick={onPrevious}
         >
           <ArrowLeft className="mr-2" />
@@ -288,7 +268,8 @@ export function DateTimeStep({
           type="button"
           size="lg"
           disabled={!selectedTimeSlot}
-          className="flex-1 bg-orange-primary hover:bg-orange-primary text-white"
+          className="flex-1"
+          style={{ backgroundColor: navPrimaryBg || '#D97639', color: navPrimaryText || '#fff' }}
           onClick={onSubmit}
         >
           Continue

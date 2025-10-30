@@ -30,6 +30,12 @@ interface StaffSelectionStepProps {
   onPrevious: () => void;
   getServiceDuration: (serviceId: string) => number;
   formatDurationMins: (mins: number) => string;
+  // Styling from Plasmic
+  staffNameColor?: string;
+  navPrimaryBg?: string;
+  navPrimaryText?: string;
+  navSecondaryBorder?: string;
+  navSecondaryText?: string;
 }
 
 export function StaffSelectionStep({
@@ -46,7 +52,12 @@ export function StaffSelectionStep({
   onSubmit,
   onPrevious,
   getServiceDuration,
-  formatDurationMins
+  formatDurationMins,
+  staffNameColor,
+  navPrimaryBg,
+  navPrimaryText,
+  navSecondaryBorder,
+  navSecondaryText
 }: StaffSelectionStepProps) {
   const resetGuestInput = () => {
     onGuestCountChange(1);
@@ -133,33 +144,10 @@ export function StaffSelectionStep({
 
       <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
         {loadingStaff ? (
-          <div className="space-y-4 stagger-animation">
-            <div className="service-skeleton">
-              <div className="flex items-center gap-3.5 w-full">
-                <div className="skeleton-icon"></div>
-                <div className="flex-1">
-                  <div className="skeleton-text medium"></div>
-                  <div className="skeleton-text short"></div>
-                </div>
-              </div>
-            </div>
-            <div className="service-skeleton">
-              <div className="flex items-center gap-3.5 w-full">
-                <div className="skeleton-icon"></div>
-                <div className="flex-1">
-                  <div className="skeleton-text medium"></div>
-                  <div className="skeleton-text short"></div>
-                </div>
-              </div>
-            </div>
-            <div className="service-skeleton">
-              <div className="flex items-center gap-3.5 w-full">
-                <div className="skeleton-icon"></div>
-                <div className="flex-1">
-                  <div className="skeleton-text medium"></div>
-                  <div className="skeleton-text short"></div>
-                </div>
-              </div>
+          <div className="text-center py-8">
+            <div className="inline-flex items-center gap-2">
+              <div className="loading-spinner" />
+              <div className="text-gray-500 text-sm font-medium">Loading staff...</div>
             </div>
           </div>
         ) : (
@@ -194,8 +182,8 @@ export function StaffSelectionStep({
                   <div className="flex-1">
                     <span className={cn(
                       "text-[12px] sm:text-sm font-semibold leading-snug line-clamp-2",
-                      selectedStaff === item.id ? "text-white" : "text-orange-primary"
-                    )}>{item.name}</span>
+                      selectedStaff === item.id ? "text-white" : ""
+                    )} style={{ color: selectedStaff === item.id ? undefined : (staffNameColor || '#B45309') }}>{item.name}</span>
                     {item.badge && (
                       <span className={cn(
                         "hidden sm:inline-block ml-2 sm:ml-3 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium",
@@ -224,6 +212,7 @@ export function StaffSelectionStep({
             size="lg"
             className="flex-1"
             onClick={onPrevious}
+            style={{ borderColor: (navSecondaryBorder), color: navSecondaryText }}
           >
             <ArrowLeft className="mr-2" />
             Previous
@@ -232,7 +221,8 @@ export function StaffSelectionStep({
             type="submit"
             size="lg"
             disabled={!selectedStaff || loadingStaff}
-            className="flex-1 bg-orange-primary hover:bg-orange-primary text-white"
+            className="flex-1"
+            style={{ backgroundColor: navPrimaryBg || '#D97639', color: navPrimaryText || '#fff' }}
           >
             Continue
             <ArrowRight className="ml-2" />
