@@ -26,6 +26,16 @@ PLASMIC.registerComponent(BookingWidget, {
   importPath: "@/components/BookingWidget",
   isDefaultExport: true,
   props: {
+    serviceCardBorderColor: { type: "color", description: "Service card border color", defaultValue: "#fed7aa" },
+    serviceCardShadow: { type: "string", description: "CSS box-shadow for service cards", defaultValue: "none" },
+    serviceCardRadius: { type: "string", description: "Border radius for service cards", defaultValue: "0.5rem" },
+    serviceCardPadding: { type: "string", description: "Padding for service cards", defaultValue: "10px" },
+    servicePriceColor: { type: "color", description: "Price text color", defaultValue: "#f97316" },
+    servicePriceIconColor: { type: "color", description: "Price icon color", defaultValue: "#f97316" },
+    serviceDurationIconColor: { type: "color", description: "Duration text/icon color", defaultValue: "#4b5563" },
+    serviceCardActiveBg: { type: "color", description: "Active service card background", defaultValue: "" },
+    serviceCardActiveText: { type: "color", description: "Active service card text color", defaultValue: "" },
+    serviceCardActiveBorderColor: { type: "color", description: "Active service card border color", defaultValue: "" },
     // API Configuration
     servicesApiPath: { 
       type: "choice", 

@@ -124,6 +124,10 @@ export default function PageShellWithHeader({
     const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(selector));
     const onClick = (e: Event) => {
       e.preventDefault();
+      try {
+        const scroller = document.querySelector('[data-drawer-scroll]') as HTMLElement | null;
+        if (scroller) scroller.scrollTop = 0;
+      } catch {}
       setDrawerOpen(true);
       return false;
     };
@@ -132,6 +136,31 @@ export default function PageShellWithHeader({
       links.forEach((el) => el.removeEventListener("click", onClick));
     };
   }, [useDrawerForBooking, mobileBookingHref]);
+
+  // Reset drawer scroll position to top whenever it opens
+  useEffect(() => {
+    if (!useDrawerForBooking) return;
+    if (!drawerOpen) return;
+    // Measure header height and set CSS var for drawer to stay below header
+    try {
+      const hdr = document.querySelector('header');
+      const h = hdr ? Math.ceil((hdr as HTMLElement).getBoundingClientRect().bottom) : 120;
+      document.documentElement.style.setProperty('--drawer-top-gap', `${h}px`);
+    } catch {}
+    const restoreTop = () => {
+      const scroller = document.querySelector('[data-drawer-scroll]') as HTMLElement | null;
+      if (scroller) {
+        scroller.scrollTop = 0;
+      }
+    };
+    const id = window.setTimeout(() => {
+      restoreTop();
+      requestAnimationFrame(() => {
+        restoreTop();
+      });
+    }, 30);
+    return () => window.clearTimeout(id);
+  }, [drawerOpen, useDrawerForBooking]);
 
   return (
     <div className={cn("bg-gray-50", className)} style={style}>
@@ -173,20 +202,8 @@ export default function PageShellWithHeader({
             style={{ backgroundColor: drawerBgColor || "rgba(255,255,255,0.95)" }}
           >
             <div className="mx-auto w-full max-w-3xl">
-              <DrawerHeader className="text-left">
-                {drawerTitle && <DrawerTitle>{drawerTitle}</DrawerTitle>}
-              </DrawerHeader>
-              <div className="px-4 pb-4">
+              <div className="px-0 sm:px-4 pb-4" key={drawerOpen ? 'open' : 'closed'}>
                 {drawerContent}
-              </div>
-              <div className="px-4 pb-4">
-                <button
-                  type="button"
-                  onClick={() => setDrawerOpen(false)}
-                  className="px-4 py-2 rounded-lg border bg-white/70"
-                >
-                  Close
-                </button>
               </div>
             </div>
           </DrawerContent>

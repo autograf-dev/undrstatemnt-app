@@ -97,14 +97,14 @@ export function DateTimeStep({
 
   return (
     <div className="service-selection-container">
-      <div className="text-center mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-3xl font-bold mb-2 sm:mb-3">Select Date & Time</h2>
-        <p className="text-sm sm:text-lg font-medium">Choose your preferred appointment slot</p>
+      <div className="text-center mb-4 sm:mb-8">
+        <h2 className="text-xl sm:text-3xl font-bold mb-1 sm:mb-3">Select Date & Time</h2>
+        <p className="hidden sm:block text-sm sm:text-lg font-medium">Choose your preferred appointment slot</p>
       </div>
 
       {/* MST timezone indicator */}
-      <div className="text-center mb-4">
-        <div className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide">
+      <div className="hidden sm:block text-center mb-4">
+        <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
           TIME ZONE: MOUNTAIN TIME - EDMONTON (GMT-06:00)
         </div>
       </div>
@@ -125,7 +125,7 @@ export function DateTimeStep({
               </Button>
               
               {/* Show 2 dates on mobile, 3 on larger screens - use full width */}
-              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mx-2 sm:mx-4 stagger-animation">
+              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4 mx-2 sm:mx-4 stagger-animation">
                 {visibleDates.map((dateInfo) => (
                   <div
                     key={dateInfo.dateString}
@@ -135,13 +135,11 @@ export function DateTimeStep({
                       onDateChange(dateInfo.dateString); // Trigger slot refresh
                     }}
                     className={cn(
-                      "date-card smooth-transition",
+                      "date-card smooth-transition p-2 sm:p-4",
                       selectedDate?.dateString === dateInfo.dateString && "selected"
                     )}
                   >
-                    <div className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5 sm:mb-1">
-                      {dateInfo.label}
-                    </div>
+                    <div className="hidden sm:block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{dateInfo.label}</div>
                     <div className="font-bold text-sm sm:text-lg text-black">
                       {dateInfo.dayName}
                     </div>
@@ -194,21 +192,21 @@ export function DateTimeStep({
         
         {/* Time slots section */}
         <div className="space-y-4">
-          <Card className="bg-white rounded-xl border border-gray-200 p-0 sm:p-6 shadow-sm min-h-[400px] smooth-transition">
+          <Card className="bg-white rounded-xl border border-gray-200 p-0 pt-2 px-2 pb-2 sm:p-6 shadow-sm smooth-transition">
             {/* Show slots immediately if available */}
             {timeSlots.length > 0 ? (
               <div className="space-y-4 fade-in px-4 sm:px-0">
-                <div className="flex items-center justify-center mb-4">
+                <div className="hidden sm:flex items-center justify-center mb-4">
                   <div className="text-sm text-gray-600 font-medium">
                     Available time slots for {selectedDate?.dayName}
                   </div>
                 </div>
-                <div className="grid sm:grid-cols-4 sm:gap-4 grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-2 stagger-animation">
+                <div className="grid sm:grid-cols-4 sm:gap-4 grid-cols-3 gap-2 pr-2 stagger-animation">
                   {timeSlots.map((slot) => (
                     <button
                       key={slot.time}
                       className={cn(
-                        "time-slot-button smooth-transition",
+                        "time-slot-button smooth-transition text-[12px] sm:text-[10px] py-2 sm:py-1.5 whitespace-nowrap leading-none",
                         selectedTimeSlot === slot.time && "selected"
                       )}
                       onClick={() => {
@@ -231,7 +229,7 @@ export function DateTimeStep({
                     Loading available slots...
                   </div>
                 </div>
-                <div className="grid sm:grid-cols-4 sm:gap-4 grid-cols-2 gap-3 stagger-animation">
+                <div className="grid sm:grid-cols-4 sm:gap-4 grid-cols-3 gap-2 stagger-animation">
                   <div className="time-slot-skeleton"></div>
                   <div className="time-slot-skeleton"></div>
                   <div className="time-slot-skeleton"></div>
@@ -258,15 +256,17 @@ export function DateTimeStep({
           </Card>
           
           {selectedTimeSlot && (
-            <Card className="p-4 bg-orange-50 rounded-xl border border-orange-200">
-              <div className="text-center">
-                <div className="font-bold text-black text-lg">Selected Time</div>
-                <div className="text-orange-primary font-semibold">{selectedTimeSlot} MST</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  {selectedDate ? formatDateForDisplay(selectedDate.dateString) : ''}
+            <div className="hidden sm:block">
+              <Card className="p-4 bg-orange-50 rounded-xl border border-orange-200">
+                <div className="text-center">
+                  <div className="font-bold text-black text-lg">Selected Time</div>
+                  <div className="text-orange-primary font-semibold">{selectedTimeSlot} MST</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {selectedDate ? formatDateForDisplay(selectedDate.dateString) : ''}
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           )}
         </div>
       </div>

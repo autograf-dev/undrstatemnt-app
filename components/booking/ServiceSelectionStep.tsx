@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
 import Image from "next/image";
-import { 
+import {
   Scissors, 
   Heart, 
   User, 
@@ -16,9 +16,9 @@ import {
   ArrowLeft,
   ArrowRight,
   Clock,
-  Users,
   CheckCircle
 } from "lucide-react";
+import { Tag } from "lucide-react";
 import { Department, Service } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +34,17 @@ interface ServiceSelectionStepProps {
   onSubmit: () => void;
   cameFromUrlParam: boolean;
   onGoBack: () => void;
+  // Styling from Plasmic/parent
+  serviceCardBorderColor?: string;
+  serviceCardShadow?: string;
+  serviceCardRadius?: string;
+  serviceCardPadding?: string;
+  servicePriceColor?: string;
+  servicePriceIconColor?: string;
+  serviceDurationIconColor?: string;
+  serviceCardActiveBg?: string;
+  serviceCardActiveText?: string;
+  serviceCardActiveBorderColor?: string;
 }
 
 const getIcon = (iconName: string) => {
@@ -60,7 +71,17 @@ export function ServiceSelectionStep({
   loadingServices,
   onSubmit,
   cameFromUrlParam,
-  onGoBack
+  onGoBack,
+  serviceCardBorderColor,
+  serviceCardShadow,
+  serviceCardRadius,
+  serviceCardPadding,
+  servicePriceColor,
+  servicePriceIconColor,
+  serviceDurationIconColor,
+  serviceCardActiveBg,
+  serviceCardActiveText,
+  serviceCardActiveBorderColor,
 }: ServiceSelectionStepProps) {
   // Dedupe services by id to avoid React key collisions if callers accidentally pass duplicates
   const uniqueServices = React.useMemo(() => {
@@ -216,69 +237,43 @@ export function ServiceSelectionStep({
               <>
                 {/* Desktop: 3-column grid */}
                 <div className="hidden sm:block">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 stagger-animation">
-                {uniqueServices.map((item) => (
-                  <div
-                    key={item.id}
-                        onClick={() => {
-                          onServiceSelect(item.id);
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-3 stagger-animation">
+                    {uniqueServices.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => onServiceSelect(item.id)}
+                        className="rounded-md border bg-white cursor-pointer hover:shadow-sm transition-all"
+                        style={{
+                          borderColor: serviceCardBorderColor || '#fed7aa',
+                          boxShadow: serviceCardShadow || 'none',
+                          borderRadius: serviceCardRadius || '0.5rem',
+                          padding: serviceCardPadding || '10px',
+                          backgroundColor:
+                            selectedService === item.id && serviceCardActiveBg
+                              ? serviceCardActiveBg
+                              : undefined,
+                          color:
+                            selectedService === item.id && serviceCardActiveText
+                              ? serviceCardActiveText
+                              : undefined,
+                          outline: 'none',
+                          borderWidth: 1,
+                          borderStyle: 'solid',
                         }}
-                    className={cn(
-                      "service-card smooth-transition flex items-center justify-between",
-                      selectedService === item.id && "selected"
-                    )}
-                  >
-                    <div className="flex items-center gap-3.5 w-full">
-                      {item.imageUrl ? (
-                        <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/60">
-                          <Image src={item.imageUrl} alt={item.name} width={40} height={40} className="object-cover w-10 h-10" unoptimized />
-                        </div>
-                      ) : (
-                        <div className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center",
-                          selectedService === item.id 
-                            ? "bg-white text-orange-primary" 
-                            : "bg-orange-100 text-orange-primary"
-                        )}>
-                          <Scissors className="w-5 h-5" />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <div className={cn(
-                          "text-sm font-semibold",
-                          selectedService === item.id ? "text-white" : "text-orange-primary"
-                        )}>{item.name}</div>
-                        <div className="mt-1 flex items-center gap-3 flex-wrap">
-                          <span className={cn(
-                            "inline-flex items-center gap-1 text-xs",
-                            selectedService === item.id ? "text-white" : "text-orange-primary"
-                          )}>
-                            <Clock className={cn(
-                              "w-3.5 h-3.5",
-                              selectedService === item.id ? "text-white" : "text-orange-primary"
-                            )} />
-                            {formatDurationMins(item.durationMinutes)}
-                          </span>
-                          <span className={cn(
-                            "inline-flex items-center gap-1 text-[11px]",
-                            selectedService === item.id ? "text-white" : "text-orange-primary"
-                          )}>
-                            <Users className={cn(
-                              "w-3.5 h-3.5",
-                              selectedService === item.id ? "text-white" : "text-orange-primary"
-                            )} />
-                            {item.teamMembers?.length ?? 0} staff available
-                          </span>
+                      >
+                        <div className="text-[13px] font-semibold leading-tight line-clamp-2" style={{ color: selectedService === item.id && serviceCardActiveText ? serviceCardActiveText : '#111827' }}>{item.name}</div>
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: servicePriceColor || '#f97316' }}>
+                            <Tag className="w-3 h-3" style={{ color: servicePriceIconColor || servicePriceColor || '#f97316' }} />
+                            <span>{item.displayPrice || ""}</span>
+                          </div>
+                          <div className="inline-flex items-center gap-1 text-[11px]" style={{ color: serviceDurationIconColor || '#4b5563' }}>
+                            <Clock className="w-3 h-3" />
+                            <span>{formatDurationMins(item.durationMinutes)} +</span>
+                          </div>
                         </div>
                       </div>
-                      {selectedService === item.id && (
-                        <div className="text-white">
-                          <CheckCircle className="w-5 h-5" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                    ))}
                   </div>
                 </div>
 
@@ -289,62 +284,19 @@ export function ServiceSelectionStep({
                   {uniqueServices.map((item) => (
                     <div
                       key={item.id}
-                      onClick={() => {
-                        onServiceSelect(item.id);
-                      }}
-                      className={cn(
-                        "service-card smooth-transition flex items-center justify-between p-2 rounded-lg border relative",
-                        selectedService === item.id && "selected"
-                      )}
+                      onClick={() => onServiceSelect(item.id)}
+                      className="rounded-md border border-orange-200 bg-white p-2"
                     >
-                      <div className="flex items-center gap-3 w-full">
-                        {item.imageUrl ? (
-                          <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/60">
-                            <Image src={item.imageUrl} alt={item.name} width={32} height={32} className="object-cover w-8 h-8" unoptimized />
-                          </div>
-                        ) : (
-                          <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center",
-                            selectedService === item.id 
-                              ? "bg-white text-orange-primary" 
-                              : "bg-orange-100 text-orange-primary"
-                          )}>
-                            <Scissors className="w-4 h-4" />
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <div className={cn(
-                            "text-sm font-semibold",
-                            selectedService === item.id ? "text-white" : "text-orange-primary"
-                          )}>{item.name}</div>
-                          <div className="flex items-center gap-3 mt-0.5">
-                            <div className={cn(
-                              "inline-flex items-center gap-1 text-xs",
-                              selectedService === item.id ? "text-white" : "text-orange-primary"
-                            )}>
-                              <Clock className={cn(
-                                "w-3 h-3",
-                                selectedService === item.id ? "text-white" : "text-orange-primary"
-                              )} />
-                              {formatDurationMins(item.durationMinutes)}
-                            </div>
-                            <div className={cn(
-                              "inline-flex items-center gap-1 text-xs",
-                              selectedService === item.id ? "text-white" : "text-orange-primary"
-                            )}>
-                              <Users className={cn(
-                                "w-3 h-3",
-                                selectedService === item.id ? "text-white" : "text-orange-primary"
-                              )} />
-                              {item.teamMembers?.length ?? 0} staff
-                            </div>
-                          </div>
+                      <div className="text-[12px] font-semibold text-black leading-tight line-clamp-2">{item.name}</div>
+                      <div className="mt-0.5 flex items-center justify-between gap-1">
+                        <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-orange-500 tracking-wide">
+                          <Tag className="w-3 h-3" />
+                          <span>{item.displayPrice || ""}</span>
                         </div>
-                        {selectedService === item.id && (
-                          <div className="text-white">
-                            <CheckCircle className="w-4 h-4" />
-                          </div>
-                        )}
+                        <div className="inline-flex items-center gap-1 text-[10px] text-gray-600">
+                          <Clock className="w-3 h-3" />
+                          <span>{formatDurationMins(item.durationMinutes)} +</span>
+                        </div>
                       </div>
                     </div>
                   ))}

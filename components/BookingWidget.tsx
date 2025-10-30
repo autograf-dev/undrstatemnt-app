@@ -118,6 +118,17 @@ export interface BookingWidgetProps {
   stepperInactiveColor?: string;
   /** Stepper color - Completed */
   stepperCompletedColor?: string;
+  // Service card styling (Plasmic-managed)
+  serviceCardBorderColor?: string;
+  serviceCardShadow?: string;
+  serviceCardRadius?: string;
+  serviceCardPadding?: string;
+  servicePriceColor?: string;
+  servicePriceIconColor?: string;
+  serviceDurationIconColor?: string;
+  serviceCardActiveBg?: string;
+  serviceCardActiveText?: string;
+  serviceCardActiveBorderColor?: string;
 }
 
 const getStepIcon = (stepValue: string) => {
@@ -181,6 +192,17 @@ export default function BookingWidget({
   stepperActiveColor = "#D97639",
   stepperInactiveColor = "#e5e7eb",
   stepperCompletedColor = "#10b981",
+  // Service card styling
+  serviceCardBorderColor,
+  serviceCardShadow,
+  serviceCardRadius,
+  serviceCardPadding,
+  servicePriceColor,
+  servicePriceIconColor,
+  serviceDurationIconColor,
+  serviceCardActiveBg,
+  serviceCardActiveText,
+  serviceCardActiveBorderColor,
 }: BookingWidgetProps) {
   // Normalize/override legacy API paths coming from Plasmic instances
   const effectiveServicesApiPath = servicesApiPath === "/api/services" ? "/api/supabaseservices" : servicesApiPath;
@@ -1046,6 +1068,16 @@ export default function BookingWidget({
             onSubmit={handleServiceSubmit}
             cameFromUrlParam={cameFromUrlParam}
             onGoBack={() => setSelectedDepartment('all')}
+            serviceCardBorderColor={serviceCardBorderColor}
+            serviceCardShadow={serviceCardShadow}
+            serviceCardRadius={serviceCardRadius}
+            serviceCardPadding={serviceCardPadding}
+            servicePriceColor={servicePriceColor}
+            servicePriceIconColor={servicePriceIconColor}
+            serviceDurationIconColor={serviceDurationIconColor}
+            serviceCardActiveBg={serviceCardActiveBg}
+            serviceCardActiveText={serviceCardActiveText}
+            serviceCardActiveBorderColor={serviceCardActiveBorderColor}
           />
         );
       case 'staff':
