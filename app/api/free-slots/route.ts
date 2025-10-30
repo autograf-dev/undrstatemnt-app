@@ -29,6 +29,18 @@ function ymdInTZ(date: Date) {
   return `${y}-${m}-${d}`;
 }
 
+function normalizeYmdToken(token: string): string | null {
+  const digits = String(token || '').replace(/\D/g, '');
+  if (digits.length === 8) return digits;
+  if (digits.length === 7) {
+    const y = digits.slice(0, 4);
+    const m = digits.slice(4, 6);
+    const d = digits.slice(6);
+    return `${y}${m}${d.padStart(2, '0')}`;
+  }
+  return null;
+}
+
 function minutesInTZ(date: Date) {
   const dtf = new Intl.DateTimeFormat('en-CA', {
     timeZone: TARGET_TZ,
@@ -187,61 +199,137 @@ export async function GET(req: Request) {
       if (barberData && String(barberData?.['Sunday/Day Off']).toLowerCase().includes('day off')) barberWeekendIndexes.push(0);
     }
 
-    // Time off: read directly from the resolved Data_barbers row
+    // Time off: combine from Data_barbers and public.time_off (full-day leaves)
+    // Also consider ghl_id from userId even if no Data_barbers row is found
     let timeOffList: { start: Date; end: Date }[] = [];
-    if (hasBarber) {
+    if (hasBarber || userId) {
+      // 1) From Data_barbers field (YYYYMMDD comma list)
       const raw = (resolvedBarberData as any)?.['Time Off/Unavailable Dates'] as string | undefined;
       if (raw) {
-        const items = String(raw).split(',').map((s) => s.trim()).filter((s) => /^\d{8}$/.test(s));
-        timeOffList = items.map((v) => {
+        const items = String(raw).split(',').map((s) => normalizeYmdToken(s.trim())).filter(Boolean) as string[];
+        for (const v of items) {
           const y = v.slice(0, 4), m = v.slice(4, 6), d = v.slice(6, 8);
-          return { start: new Date(`${y}-${m}-${d}T00:00:00`), end: new Date(`${y}-${m}-${d}T23:59:59`) };
-        });
+          timeOffList.push({ start: new Date(`${y}-${m}-${d}T00:00:00`), end: new Date(`${y}-${m}-${d}T23:59:59`) });
+        }
+      }
+      // 2) From time_off table:
+      try {
+        const barberRowId: string | undefined = (resolvedBarberData as any)?.['\uD83D\uDD12 Row ID'] || (resolvedBarberData as any)?.['🔒 Row ID'];
+        const barberGhlId: string | undefined = (resolvedBarberData as any)?.['GHL_id'];
+        let offRows: any[] = [];
+        // Always fetch by provided userId (ghl_id)
+        if (userId) {
+          const { data } = await supabase.from('time_off').select('*').eq('ghl_id', userId);
+          if (Array.isArray(data)) offRows = offRows.concat(data as any[]);
+        }
+        // If barber has a different ghl_id, include those
+        if (barberGhlId && barberGhlId !== userId) {
+          const { data } = await supabase.from('time_off').select('*').eq('ghl_id', barberGhlId);
+          if (Array.isArray(data)) offRows = offRows.concat(data as any[]);
+        }
+        // Include by Barber/ID if available
+        if (barberRowId) {
+          const { data } = await supabase.from('time_off').select('*').eq('Barber/ID', barberRowId);
+          if (Array.isArray(data)) offRows = offRows.concat(data as any[]);
+        }
+        for (const row of offRows) {
+          // Prefer Dates/Unavailable (comma list of YYYYMMDD)
+          const datesList: string | undefined = (row as any)['Dates/Unavailable'];
+          if (datesList) {
+            const ids = String(datesList).split(',').map(s => normalizeYmdToken(s.trim())).filter(Boolean) as string[];
+            for (const v of ids) {
+              const y = v.slice(0, 4), m = v.slice(4, 6), d = v.slice(6, 8);
+              timeOffList.push({ start: new Date(`${y}-${m}-${d}T00:00:00`), end: new Date(`${y}-${m}-${d}T23:59:59`) });
+            }
+            continue;
+          }
+          // Fallback: Event/Start, Event/End as locale strings
+          const startRaw = (row as any)['Event/Start'];
+          const endRaw = (row as any)['Event/End'];
+          if (startRaw && endRaw) {
+            const s = new Date(startRaw);
+            const e = new Date(endRaw);
+            if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
+              // Convert range to per-day entries
+              const cur = new Date(Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate()));
+              const last = new Date(Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), e.getUTCDate()));
+              while (cur <= last) {
+                const y = cur.getUTCFullYear();
+                const m = String(cur.getUTCMonth() + 1).padStart(2, '0');
+                const d = String(cur.getUTCDate()).padStart(2, '0');
+                timeOffList.push({ start: new Date(`${y}-${m}-${d}T00:00:00`), end: new Date(`${y}-${m}-${d}T23:59:59`) });
+                cur.setUTCDate(cur.getUTCDate() + 1);
+              }
+            }
+          }
+        }
+      } catch {
+        // ignore time_off failures
       }
     }
     const isDateInTimeOff = (date: Date) => {
       const dayKey = ymdInTZ(date);
       for (const p of timeOffList) {
         const s = ymdInTZ(p.start); const e = ymdInTZ(p.end);
-        if (dayKey >= s && dayKey < e) return true;
+        // Treat the end date as inclusive so single-day entries are respected
+        if (dayKey >= s && dayKey <= e) return true;
       }
       return false;
     };
 
-    // Time blocks: match by barber's GHL_id, request userId, or Barber/ID (Data_barbers row id)
+    // Time blocks: merge from time_block (singular) and time_blocks (plural)
     let timeBlockList: any[] = [];
-    if (hasBarber) {
+    if (hasBarber || userId) {
       const barberRowId: string | undefined = (resolvedBarberData as any)?.['\uD83D\uDD12 Row ID'] || (resolvedBarberData as any)?.['🔒 Row ID'];
       const barberGhlId: string | undefined = (resolvedBarberData as any)?.['GHL_id'];
-      let blockData: any[] | null = null;
+      let blockData: any[] = [];
       try {
-        const filters: string[] = [];
-        // eq on ghl_id using either resolved barberGhlId or provided userId
-        if (barberGhlId) filters.push(`ghl_id.eq.${barberGhlId}`);
-        if (userId) filters.push(`ghl_id.eq.${userId}`);
-        if (barberRowId) filters.push(`Barber/ID.eq.${barberRowId}`);
-        if (filters.length > 0) {
-          const { data } = await supabase
-            .from('time_block')
-            .select('*')
-            .or(filters.join(','));
-          if (Array.isArray(data)) blockData = data;
-        } else {
-          const { data } = await supabase.from('time_block').select('*');
-          if (Array.isArray(data)) blockData = data;
+        if (userId) {
+          const { data } = await supabase.from('time_block').select('*').eq('ghl_id', userId);
+          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
         }
-      } catch (_) {
-        blockData = [];
-      }
+        if (barberGhlId && barberGhlId !== userId) {
+          const { data } = await supabase.from('time_block').select('*').eq('ghl_id', barberGhlId);
+          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+        }
+        if (barberRowId) {
+          const { data } = await supabase.from('time_block').select('*').eq('Barber/ID', barberRowId);
+          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+        }
+      } catch (_) {}
+      // Also attempt plural table time_blocks
+      try {
+        if (userId) {
+          const { data } = await supabase.from('time_blocks').select('*').eq('ghl_id', userId);
+          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+        }
+        if (barberGhlId && barberGhlId !== userId) {
+          const { data } = await supabase.from('time_blocks').select('*').eq('ghl_id', barberGhlId);
+          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+        }
+        if (barberRowId) {
+          const { data } = await supabase.from('time_blocks').select('*').eq('Barber/ID', barberRowId);
+          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+        }
+      } catch {}
       timeBlockList = (blockData || []).map((item: any) => {
         const raw = item['Block/Recurring'];
         const recurring = raw === true || String(raw).toLowerCase().replace(/["']/g, '') === 'true';
         let recurringDays: string[] = [];
         if (recurring && item['Block/Recurring Day']) recurringDays = String(item['Block/Recurring Day']).split(',').map((d) => d.trim());
+        // Build a stable dateKey (YYYY-MM-DD) without timezone shifts
+        let dateKey: string | null = null;
+        const rawIdDate = item['Block/Date -> ID Check'];
+        if (rawIdDate && /^\d{8}$/.test(String(rawIdDate))) {
+          const v = String(rawIdDate);
+          dateKey = `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
+        } else if (item['Block/Date']) {
+          try { dateKey = ymdInTZ(new Date(item['Block/Date'])); } catch {}
+        }
         return {
           start: parseInt(item['Block/Start']),
           end: parseInt(item['Block/End']),
-          date: item['Block/Date'] || null,
+          date: dateKey,
           recurring,
           recurringDays,
           name: item['Block/Name'] || 'Time Block',
@@ -270,8 +358,8 @@ export async function GET(req: Request) {
           if (typeof list === 'string') list = list.split(',').map((d: string) => d.trim());
           if (list && list.includes(currentDayName)) if (isWithinRangeExclusiveEnd(slotMinutes, block.start, block.end)) return true;
         } else if (block.date) {
-          let key: string | null = null; try { key = ymdInTZ(new Date(block.date)); } catch {}
-          if (key && key === ymdInTZ(slotDate) && isWithinRangeExclusiveEnd(slotMinutes, block.start, block.end)) return true;
+          // Compare using precomputed stable dateKey
+          if (block.date === ymdInTZ(slotDate) && isWithinRangeExclusiveEnd(slotMinutes, block.start, block.end)) return true;
         }
       }
       return false;
@@ -284,6 +372,8 @@ export async function GET(req: Request) {
       const dowNum: number = Number(dayOfWeekInTZ(day));
       const bh = businessHoursMap[dowNum];
       if (!bh) continue;
+      // Skip whole day if marked as time-off for this user/barber
+      if (isDateInTimeOff(day)) continue;
       const openTime = bh.open_time;
       const closeTime = bh.close_time;
 
@@ -291,7 +381,8 @@ export async function GET(req: Request) {
       validMins = validMins.filter((mins) => {
         const end = mins + serviceDurationMinutes;
         if (!hasBarber) return mins >= openTime && end <= closeTime;
-        return mins >= openTime && mins <= closeTime;
+        // With a barber selected, also require service end within store close
+        return mins >= openTime && end <= closeTime;
       });
 
       if (hasBarber) {
