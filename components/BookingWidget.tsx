@@ -876,14 +876,73 @@ export default function BookingWidget({
       const startIsoUtc = toUtcIsoFromEdmonton(selectedDate?.dateString || "", selectedTimeSlot);
       const endIsoUtc = addMinutesIso(startIsoUtc, durationMins);
 
-      // 3) Book appointment (send camelCase and snake_case params for compatibility)
+      // 3) Look up the correct ghl_calendar_id for this service+barber combo
+      let calendarId = "";
+      try {
+        const url = new URL("/api/supabaseservices", window.location.origin);
+        url.searchParams.set("serviceId", selectedService);
+        // Prefer Data_barbers row id if available for override join
+        const selected = staff.find((s) => s.id === selectedStaff);
+        const overrideBarberId = selected?.barberRowId || selectedStaff;
+        if (selectedStaff && selectedStaff !== "any") {
+          url.searchParams.set("barberId", overrideBarberId);
+        }
+        const resp = await fetch(url.toString());
+        const data = await resp.json();
+        // Prefer custom override calendarId if present, else fallback to base
+        calendarId = data?.effective?.calendarId || data?.service?.raw?.["ghl_calendar_id"] || data?.service?.ghl_calendar_id || "";
+        // Some custom rows may have the calendarId in the custom row
+        if (!calendarId && data?.effective?.source === "custom" && data?.effective?.raw?.["ghl_calendar_id"]) {
+          calendarId = data.effective.raw["ghl_calendar_id"];
+        }
+        // Fallback: if still not found, try to get from serviceObj
+        if (!calendarId && (serviceObj as any)?.raw?.["ghl_calendar_id"]) {
+          calendarId = (serviceObj as any).raw["ghl_calendar_id"];
+        }
+      } catch (e) {
+        console.error("Failed to look up ghl_calendar_id for booking:", e);
+      }
+      if (!calendarId) {
+        alert("Could not determine the correct calendar for this service/barber. Please contact support.");
+        setBookingLoading(false);
+        return;
+      }
+
+      // 4) Look up the correct ghl_id for the assigned barber from the staff table
+      let assignedUserId = "";
+      if (selectedStaff && selectedStaff !== "any") {
+        const barberName = staff.find((s) => s.id === selectedStaff)?.name;
+        if (barberName) {
+          try {
+            const staffLookupUrl = new URL("/api/staff-lookup", window.location.origin);
+            staffLookupUrl.searchParams.set("name", barberName);
+            const staffResp = await fetch(staffLookupUrl.toString());
+            const staffData = await staffResp.json();
+            if (staffResp.ok && staffData.ghl_id) {
+              assignedUserId = staffData.ghl_id;
+            } else {
+              console.error("Failed to look up ghl_id for barber:", barberName, staffData);
+              alert("Could not find the correct barber ID. Please contact support.");
+              setBookingLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.error("Error fetching barber ghl_id:", e);
+            alert("Error looking up barber information. Please try again.");
+            setBookingLoading(false);
+            return;
+          }
+        }
+      }
+
+      // 5) Book appointment (send camelCase and snake_case params for compatibility)
       const apptUrl = new URL(appointmentApiPath, window.location.origin);
       const params: Record<string, string> = {
         // identifiers
-        calendarId: selectedService,
-        calendar_id: selectedService,
-        assignedUserId: selectedStaff !== 'any' ? selectedStaff : "",
-        assigned_user_id: selectedStaff !== 'any' ? selectedStaff : "",
+        calendarId,
+        calendar_id: calendarId,
+        assignedUserId,
+        assigned_user_id: assignedUserId,
         contactId: contactId || "",
         contact_id: contactId || "",
         // timing
@@ -895,8 +954,8 @@ export default function BookingWidget({
         title: serviceObj?.name || "Appointment",
         serviceName: serviceObj?.name || "",
         service_name: serviceObj?.name || "",
-  servicePrice: String((effectivePrice ?? 0) || 0),
-  service_price: String((effectivePrice ?? 0) || 0),
+        servicePrice: String((effectivePrice ?? 0) || 0),
+        service_price: String((effectivePrice ?? 0) || 0),
         serviceDuration: String(durationMins || 0),
         service_duration: String(durationMins || 0),
         // staff & customer display names
