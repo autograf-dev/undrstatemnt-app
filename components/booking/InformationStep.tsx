@@ -77,58 +77,58 @@ export function InformationStep({
 
   return (
     <div className="service-selection-container">
-      <div className="flex items-center mb-6">
+      <div className="flex items-center mb-4 sm:mb-6">
         <Button
           variant="ghost"
           size="sm"
           onClick={onPrevious}
-          className="mr-4 text-orange-primary hover:bg-orange-50"
+          className="mr-2 sm:mr-4"
         >
           <ArrowLeft className="text-xl" />
         </Button>
         <div className="text-left lg:text-center flex-1">
-          <h2 className="text-3xl font-bold mb-3 lg:py-2.5">Contact Information</h2>
-          <p className="text-lg font-medium hidden lg:block">Please provide your details to complete the booking</p>
+          <h2 className="text-xl sm:text-3xl font-bold mb-1 sm:mb-3 lg:py-2.5">Contact Information</h2>
+          <p className="hidden lg:block text-lg font-medium">Please provide your details to complete the booking</p>
         </div>
       </div>
       
       {/* Mobile: Single combined summary card at top */}
-      <div className="lg:hidden mb-6">
-        <Card className="p-4 rounded-xl border border-gray-200 bg-white">
-          <h3 className="font-bold text-lg text-black mb-4">Appointment Summary</h3>
-          <div className="space-y-1">
+      <div className="lg:hidden mb-4">
+        <Card className="p-3 rounded-xl border border-gray-200 bg-white">
+          <h3 className="font-bold text-base text-black mb-2">Appointment Summary</h3>
+          <div className="space-y-1.5">
             {/* Date */}
-            <div className="flex items-center gap-1">
-              <Calendar className="text-sm text-orange-primary" />
-              <span className="text-sm font-semibold text-black">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4" />
+              <span className="text-[13px] font-semibold">
                 {formatCalendarDate(selectedDate)}
               </span>
             </div>
             {/* Time and Duration combined */}
-            <div className="flex items-center gap-1">
-              <Clock className="text-sm text-orange-primary" />
-              <span className="text-sm font-semibold text-black">{selectedTimeSlot} MST</span>
-              <span className="text-sm text-gray-700">
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4" />
+              <span className="text-[13px] font-semibold">{selectedTimeSlot} MST</span>
+              <span className="text-[12px] text-gray-700">
                 for {formatDurationMins(getServiceDuration(selectedService?.id || ""))}
               </span>
             </div>
             {/* Service and Staff combined */}
-            <div className="flex items-center gap-1">
-              <Scissors className="text-sm text-orange-primary" />
-              <span className="text-sm font-semibold text-black">{selectedService?.name}</span>
-              <span className="text-sm text-gray-700">with {selectedStaff?.name}</span>
+            <div className="flex items-center gap-1.5">
+              <Scissors className="w-4 h-4" />
+              <span className="text-[13px] font-semibold">{selectedService?.name}</span>
+              <span className="text-[12px] text-gray-700">with {selectedStaff?.name}</span>
             </div>
             {/* Price (if available) */}
             {typeof effectivePrice === 'number' && effectivePrice > 0 && (
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-orange-primary font-semibold">$</span>
-                <span className="text-sm text-gray-700">From ${effectivePrice.toFixed(2)}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] font-semibold">$</span>
+                <span className="text-[12px] text-gray-700">From ${effectivePrice.toFixed(2)}</span>
               </div>
             )}
             {/* Guests */}
-            <div className="flex items-center gap-1">
-              {guestCount > 1 ? <Users className="text-sm text-orange-primary" /> : <User className="text-sm text-orange-primary" />}
-              <span className="text-sm text-gray-700">
+            <div className="flex items-center gap-1.5">
+              {guestCount > 1 ? <Users className="w-4 h-4" /> : <User className="w-4 h-4" />}
+              <span className="text-[12px] text-gray-700">
                 {guestCount} {guestCount === 1 ? 'person' : 'people'}
               </span>
             </div>
@@ -139,15 +139,15 @@ export function InformationStep({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Contact Form */}
         <div className="space-y-6">
-          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 text-black">First Name *</label>
+                <label className="block text-[12px] sm:text-sm font-medium text-black">First Name *</label>
                 <Input
                   value={contactForm.firstName}
                   onChange={(e) => onContactFormChange({ ...contactForm, firstName: e.target.value })}
                   placeholder="First Name"
-                  className="mt-1"
+                  className="mt-1 h-10"
                   required
                 />
                 {validationErrors.firstName && (
@@ -155,12 +155,12 @@ export function InformationStep({
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 text-black">Last Name *</label>
+                <label className="block text-[12px] sm:text-sm font-medium text-black">Last Name *</label>
                 <Input
                   value={contactForm.lastName}
                   onChange={(e) => onContactFormChange({ ...contactForm, lastName: e.target.value })}
                   placeholder="Last Name"
-                  className="mt-1"
+                  className="mt-1 h-10"
                   required
                 />
                 {validationErrors.lastName && (
@@ -171,18 +171,18 @@ export function InformationStep({
             
             {/* Canadian Phone Number with Flag */}
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700 text-black">Phone Number *</label>
+              <label className="block text-[12px] sm:text-sm font-medium text-black">Phone Number *</label>
               <div className="flex items-center phone-input-container">
                 {/* Canadian Flag and +1 Prefix */}
                 <div className="country-code">
                   <img src="/image.png" alt="Canada" className="w-5 h-4 rounded-sm" />
-                  <span className="text-gray-700 font-medium">+1</span>
+                  <span className="font-medium">+1</span>
                 </div>
                 {/* Phone Number Input */}
                 <input
                   value={contactForm.phone}
                   placeholder="(604) 555-1234"
-                  className="flex-1 phone-input"
+                  className="flex-1 phone-input h-10"
                   onChange={handlePhoneChange}
                   required
                   type="tel"
