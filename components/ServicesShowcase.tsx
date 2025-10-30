@@ -52,6 +52,8 @@ export interface ServicesShowcaseProps {
   padding?: string;
   /** Card image height */
   cardImageHeight?: string;
+  /** Optional: callback when a service is selected (for drawer integration) */
+  onServiceSelect?: (serviceId: string) => void;
 }
 
 export default function ServicesShowcase({
@@ -71,6 +73,7 @@ export default function ServicesShowcase({
   bgColor = "white",
   padding = "3rem 2rem",
   cardImageHeight = "200px",
+  onServiceSelect,
 }: ServicesShowcaseProps) {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -268,21 +271,29 @@ export default function ServicesShowcase({
             {/* Horizontal Scrolling Cards */}
             <div className="overflow-x-auto pb-4 -mx-2 px-2">
               <div className="flex gap-6" style={{ minWidth: 'min-content' }}>
-                {group.services.map((service) => (
-                  <Link
-                    key={service.id}
-                    href={`/booking?serviceId=${service.id}`}
-                    className="flex-none w-[320px] rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-105"
-                    style={{
-                      backgroundColor: cardBgColor,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = cardHoverColor;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = cardBgColor;
-                    }}
-                  >
+                {group.services.map((service) => {
+                  const handleClick = (e: React.MouseEvent) => {
+                    if (onServiceSelect) {
+                      e.preventDefault();
+                      onServiceSelect(service.id);
+                    }
+                  };
+                  return (
+                    <Link
+                      key={service.id}
+                      href={onServiceSelect ? '#' : `/booking?serviceId=${service.id}`}
+                      className="flex-none w-[320px] rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-105"
+                      style={{
+                        backgroundColor: cardBgColor,
+                      }}
+                      onClick={handleClick}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = cardHoverColor;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = cardBgColor;
+                      }}
+                    >
                     {/* Service Image */}
                     {service.image_url && (
                       <div
@@ -329,8 +340,9 @@ export default function ServicesShowcase({
                         </p>
                       )}
                     </div>
-                  </Link>
-                ))}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>

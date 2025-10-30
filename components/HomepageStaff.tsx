@@ -16,6 +16,7 @@ interface Staff {
   image_link?: string;
   ghl_id?: string;
   acuity_id?: string;
+  photo?: string; // Added for Data_barbers photo URL
 }
 
 export interface HomepageStaffProps {
@@ -301,7 +302,8 @@ export default function HomepageStaff({
                 {staff.map((member) => {
                   const cardWidth = windowWidth < 768 ? cardWidthMobile : windowWidth < 1024 ? cardWidthTablet : cardWidthDesktop;
                   const imageHeight = windowWidth < 768 ? cardImageHeightMobile : windowWidth < 1024 ? cardImageHeightTablet : cardImageHeightDesktop;
-                  
+                  // Prefer API photo, fallback to image_link for legacy
+                  const photoUrl = member.photo || member.image_link;
                   return (
                     <Link
                       key={member.id}
@@ -323,13 +325,13 @@ export default function HomepageStaff({
                         className="relative w-full overflow-hidden bg-gray-200"
                         style={{ height: `${imageHeight}px` }}
                       >
-                        {member.image_link ? (
+                        {photoUrl ? (
                           <Image
-                            src={member.image_link}
+                            src={photoUrl}
                             alt={member.name}
                             fill
                             className="object-cover"
-                            unoptimized={member.image_link.startsWith('http')}
+                            unoptimized={photoUrl.startsWith('http')}
                           />
                         ) : (
                           <div

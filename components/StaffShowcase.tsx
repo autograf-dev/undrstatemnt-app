@@ -13,6 +13,7 @@ interface Staff {
   email: string;
   phone: string;
   image_link?: string;
+  photo?: string; // Data_barbers photo URL
   ghl_id?: string;
   acuity_id?: string;
 }
@@ -248,13 +249,13 @@ export default function StaffShowcase({
                     className="relative w-full overflow-hidden bg-gray-200"
                     style={{ height: `${imageHeight}px` }}
                   >
-                    {member.image_link ? (
+                    {member.photo || member.image_link ? (
                       <Image
-                        src={member.image_link}
+                        src={member.photo || member.image_link || ''}
                         alt={member.name}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-300"
-                        unoptimized={member.image_link.startsWith('http')}
+                        unoptimized={Boolean((member.photo || member.image_link) && (member.photo || member.image_link)!.startsWith('http'))}
                       />
                     ) : (
                       <div
