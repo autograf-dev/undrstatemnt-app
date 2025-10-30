@@ -11,6 +11,7 @@ export interface Service {
   description?: string;
   durationMinutes: number;
   imageUrl?: string;
+  displayPrice?: string; // e.g., "From $25.00"
   teamMembers?: TeamMember[];
 }
 

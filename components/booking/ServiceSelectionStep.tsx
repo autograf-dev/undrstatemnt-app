@@ -77,7 +77,7 @@ export function ServiceSelectionStep({
   };
 
   return (
-    <div className="service-selection-container">
+    <div className="service-selection-container sm:p-0">
       <div className="text-center mb-3 sm:mb-8">
         <h2 className="text-xl sm:text-3xl font-bold mb-0 sm:mb-3 whitespace-nowrap">Select Your Service</h2>
         <p className="hidden sm:block text-sm sm:text-lg font-medium">Choose a group and a specific service you'd like to book</p>

@@ -323,6 +323,7 @@ export default function BookingWidget({
               description: s.description || '',
               durationMinutes: minutes,
               imageUrl: s.photo || s.image || s.imageUrl || s["Service/Photo"],
+              displayPrice: s.displayPrice || s["Service/Display Price"] || s.priceDisplay || undefined,
             };
           });
         } else {
@@ -343,6 +344,7 @@ export default function BookingWidget({
               description: service.description,
               durationMinutes: minutes,
               imageUrl: service.image || service.photo || service.imageUrl,
+              displayPrice: service.displayPrice || service.priceDisplay,
               teamMembers: service.teamMembers || []
             };
           });
