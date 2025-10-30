@@ -91,7 +91,7 @@ function isWithinRangeExclusiveEnd(minutes: number, start: number, end: number) 
   return minutes >= start && minutes < end;
 }
 
-function buildStaticSlotsMinutes(days: Date[], intervalMinutes = 30) {
+function buildStaticSlotsMinutes(days: Date[], intervalMinutes = 15) {
   const out: Record<string, { minutes: number[] }> = {};
   for (const day of days) {
     const dateKey = ymdInTZ(day);
