@@ -60,8 +60,8 @@ PLASMIC.registerComponent(BookingWidget, {
     staffSlotsApiPath: { 
       type: "choice", 
       description: "API endpoint for staff slots",
-      options: ["/api/staff-slots", "/api/staffSlots"],
-      defaultValue: "/api/staff-slots"
+      options: ["/api/free-slots"],
+      defaultValue: "/api/free-slots"
     },
     customerApiPath: { type: "string", description: "API endpoint for customers", defaultValue: "/api/customer" },
     appointmentApiPath: { type: "string", description: "API endpoint for appointments", defaultValue: "/api/appointment" },
