@@ -337,8 +337,45 @@ export async function GET(req: Request) {
       });
     }
 
-    // Existing bookings: skip for now per request
-    const existingBookings: any[] = [];
+    // Existing bookings from ghl_events: block overlapping slots for assigned barber
+    let existingBookings: { startDayKey: string; startMinutes: number; endMinutes: number }[] = [];
+    try {
+      const dateIds = daysToCheck.map((d) => ymdInTZ(d).replace(/-/g, ''));
+      let q = supabase.from('ghl_events').select('*').in('date_id', dateIds);
+      if (userId) q = q.eq('assigned_user_id', userId);
+      // Do not filter by calendar_id; external calendarId may not match GHL calendar ids
+      const { data } = await q;
+      const rows: any[] = Array.isArray(data) ? (data as any[]) : [];
+      existingBookings = rows.map((row: any) => {
+        // Prefer canonical columns start_time/end_time; fall back to summary only if needed
+        const st = row?.['start_time'] ? new Date(row['start_time']) : null;
+        const et = row?.['end_time'] ? new Date(row['end_time']) : null;
+        let startDayKey = '';
+        let startMinutes = 0;
+        let endMinutes = 0;
+        if (st && et && !isNaN(st.getTime()) && !isNaN(et.getTime())) {
+          startDayKey = ymdInTZ(st);
+          startMinutes = minutesInTZ(st);
+          endMinutes = minutesInTZ(et);
+        } else {
+          // Fallback: try summary JSON
+          const summaryRaw = row?.['summary'];
+          if (summaryRaw) {
+            try {
+              const s = JSON.parse(summaryRaw);
+              if (s?.Date && /^\d{8}$/.test(String(s.Date))) {
+                const v = String(s.Date);
+                startDayKey = `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
+              }
+              if (Number.isFinite(Number(s?.Start))) startMinutes = Number(s.Start);
+              const endBuf = s?.['End (Buffer)'];
+              if (Number.isFinite(Number(endBuf))) endMinutes = Number(endBuf);
+            } catch {}
+          }
+        }
+        return { startDayKey, startMinutes, endMinutes };
+      }).filter((b) => b.startDayKey && Number.isFinite(b.startMinutes) && Number.isFinite(b.endMinutes));
+    } catch {}
 
     const isSlotBooked = (slotDate: Date, slotMinutes: number, durMinutes: number) => {
       const slotDayKey = ymdInTZ(slotDate);
@@ -384,6 +421,11 @@ export async function GET(req: Request) {
         // With a barber selected, also require service end within store close
         return mins >= openTime && end <= closeTime;
       });
+
+      // Always remove times that overlap existing GHL events, regardless of barber lookup
+      if (existingBookings.length > 0) {
+        validMins = validMins.filter((mins) => !isSlotBooked(day, mins, serviceDurationMinutes));
+      }
 
       if (hasBarber) {
         if ((barberWeekendIndexes || []).includes(dowNum)) continue;
