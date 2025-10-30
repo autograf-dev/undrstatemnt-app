@@ -32,6 +32,7 @@ interface StaffSelectionStepProps {
   formatDurationMins: (mins: number) => string;
   // Styling from Plasmic
   staffNameColor?: string;
+  serviceDurationColor?: string;
   navPrimaryBg?: string;
   navPrimaryText?: string;
   navSecondaryBorder?: string;
@@ -54,6 +55,7 @@ export function StaffSelectionStep({
   getServiceDuration,
   formatDurationMins,
   staffNameColor,
+  serviceDurationColor,
   navPrimaryBg,
   navPrimaryText,
   navSecondaryBorder,
@@ -75,14 +77,14 @@ export function StaffSelectionStep({
       {/* Mobile: single compact card with two rows */}
       <div className="sm:hidden mb-3">
         <div className="rounded-xl border border-gray-200 bg-white p-2">
-          <div className="flex items-center justify-between gap-2 text-[13px] font-semibold text-black">
+          <div className="flex items-center justify-between gap-2 text-[13px] font-semibold" style={{ color: staffNameColor || '#391709' }}>
             <div className="truncate">Service: <span className="font-normal text-gray-700">{selectedService?.name || '-'}</span></div>
             <div>Guests: <span className="font-normal text-gray-700">{guestCount}</span></div>
           </div>
           <div className="mt-1 flex items-center justify-between gap-2">
-            <div className="text-[12px] text-orange-primary font-semibold">Duration: {formatDurationMins(getServiceDuration(selectedService?.id || ""))}</div>
+            <div className="text-[12px] font-semibold" style={{ color: serviceDurationColor || '#391709' }}>Duration: {formatDurationMins(getServiceDuration(selectedService?.id || ""))}</div>
             {!showGuestInput ? (
-              <Button size="sm" className="bg-orange-primary hover:bg-orange-primary text-white h-7 px-3 py-1" onClick={() => onShowGuestInputChange(true)}>
+              <Button size="sm" className="h-7 px-3 py-1" style={{ backgroundColor: navPrimaryBg || '#391709', color: navPrimaryText || '#fff' }} onClick={() => onShowGuestInputChange(true)}>
                 <Plus className="mr-1 w-3 h-3" /> Add Guest
               </Button>
             ) : (
@@ -101,9 +103,9 @@ export function StaffSelectionStep({
       <div className="hidden sm:grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-6">
         {/* Service Card */}
         <Card className="text-center p-3 bg-white rounded-xl border border-gray-200">
-          <div className="font-bold text-lg mb-1 text-black">Service</div>
+          <div className="font-bold text-lg mb-1" style={{ color: staffNameColor || '#391709' }}>Service</div>
           <div className="text-base text-gray-700">{selectedService?.name}</div>
-          <div className="text-sm text-orange-primary font-semibold mt-1">
+          <div className="text-sm font-semibold mt-1" style={{ color: serviceDurationColor || '#391709' }}>
             Duration: {formatDurationMins(getServiceDuration(selectedService?.id || ""))}
           </div>
         </Card>
@@ -172,11 +174,9 @@ export function StaffSelectionStep({
                   ) : (
                     <div className={cn(
                       "hidden sm:flex w-10 h-10 rounded-full items-center justify-center",
-                      selectedStaff === item.id 
-                        ? "bg-white text-orange-primary" 
-                        : "bg-orange-100 text-orange-primary"
+                      selectedStaff === item.id ? "bg-white" : ""
                     )}>
-                      <User className="w-5 h-5" />
+                      <User className="w-5 h-5" style={{ color: staffNameColor || '#391709' }} />
                     </div>
                   )}
                   <div className="flex-1">
@@ -187,9 +187,9 @@ export function StaffSelectionStep({
                     {item.badge && (
                       <span className={cn(
                         "hidden sm:inline-block ml-2 sm:ml-3 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium",
-                        selectedStaff === item.id ? "bg-white text-orange-primary" : "bg-orange-primary text-white"
+                        selectedStaff === item.id ? "bg-white" : ""
                       )}>
-                        {item.badge}
+                        <span style={{ color: selectedStaff === item.id ? (staffNameColor || '#391709') : '#fff', backgroundColor: selectedStaff === item.id ? undefined : (navPrimaryBg || '#391709'), padding: '0 6px', borderRadius: '9999px' }}>{item.badge}</span>
                       </span>
                     )}
                   </div>

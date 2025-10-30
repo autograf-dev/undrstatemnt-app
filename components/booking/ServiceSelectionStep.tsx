@@ -133,15 +133,14 @@ export function ServiceSelectionStep({
                     selectedDepartment === item.id && "selected"
                   )}
                 >
-                  <IconComponent className={cn(
-                    "w-4 h-4",
-                    selectedDepartment === item.id ? "text-white" : "text-orange-primary"
-                  )} />
+                  <IconComponent className={cn("w-4 h-4", selectedDepartment === item.id ? "text-white" : "")}
+                    style={{ color: selectedDepartment === item.id ? undefined : (serviceTitleColor || '#391709') }}
+                  />
                   <span className={cn(
                     "text-xs font-medium",
-                    selectedDepartment === item.id ? "text-white" : "text-orange-primary"
+                    selectedDepartment === item.id ? "text-white" : ""
                   )}>
-                    {item.name}
+                    <span style={{ color: selectedDepartment === item.id ? undefined : (serviceTitleColor || '#391709') }}>{item.name}</span>
                   </span>
                 </div>
               );
@@ -167,15 +166,14 @@ export function ServiceSelectionStep({
                         selectedDepartment === item.id && "selected"
                       )}
                     >
-                      <IconComponent className={cn(
-                        "w-4 h-4 mb-1",
-                        selectedDepartment === item.id ? "text-white" : "text-orange-primary"
-                      )} />
+                      <IconComponent className={cn("w-4 h-4 mb-1", selectedDepartment === item.id ? "text-white" : "")}
+                        style={{ color: selectedDepartment === item.id ? undefined : (serviceTitleColor || '#391709') }}
+                      />
                       <span className={cn(
                         "text-xs font-medium text-center leading-tight",
-                        selectedDepartment === item.id ? "text-white" : "text-orange-primary"
+                        selectedDepartment === item.id ? "text-white" : ""
                       )}>
-                        {item.name}
+                        <span style={{ color: selectedDepartment === item.id ? undefined : (serviceTitleColor || '#391709') }}>{item.name}</span>
                       </span>
                     </div>
                   );
@@ -266,15 +264,16 @@ export function ServiceSelectionStep({
                     <div
                       key={item.id}
                       onClick={() => onServiceSelect(item.id)}
-                      className="rounded-md border border-orange-200 bg-white p-2"
+                      className="rounded-md border bg-white p-2"
+                      style={{ borderColor: (selectedService === item.id && serviceCardActiveBorderColor) || serviceCardBorderColor || '#fed7aa' }}
                     >
-                      <div className="text-[12px] font-semibold text-black leading-tight line-clamp-2">{item.name}</div>
+                      <div className="text-[12px] font-semibold leading-tight line-clamp-2" style={{ color: selectedService === item.id && serviceCardActiveText ? serviceCardActiveText : (serviceTitleColor || '#391709') }}>{item.name}</div>
                       <div className="mt-0.5 flex items-center justify-between gap-1">
-                        <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase text-orange-500 tracking-wide">
-                          <Tag className="w-3 h-3" />
+                        <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: servicePriceColor || '#391709' }}>
+                          <Tag className="w-3 h-3" style={{ color: servicePriceIconColor || servicePriceColor || '#391709' }} />
                           <span>{item.displayPrice || ""}</span>
                         </div>
-                        <div className="inline-flex items-center gap-1 text-[10px] text-gray-600">
+                        <div className="inline-flex items-center gap-1 text-[10px]" style={{ color: serviceDurationColor || '#391709' }}>
                           <Clock className="w-3 h-3" />
                           <span>{formatDurationMins(item.durationMinutes)} +</span>
                         </div>
