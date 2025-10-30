@@ -269,17 +269,21 @@ export function ServiceSelectionStep({
                     <div
                       key={item.id}
                       onClick={() => onServiceSelect(item.id)}
-                      className="rounded-md border bg-white p-2"
-                      style={{ borderColor: (selectedService === item.id && serviceCardActiveBorderColor) || serviceCardBorderColor || '#fed7aa' }}
+                      className="rounded-md border p-2"
+                      style={{
+                        borderColor: selectedService === item.id ? resolvedActiveBorder : (serviceCardBorderColor || '#fed7aa'),
+                        backgroundColor: selectedService === item.id ? resolvedActiveBg : '#ffffff',
+                        color: selectedService === item.id ? resolvedActiveText : undefined,
+                      }}
                     >
-                      <div className="text-[12px] font-semibold leading-tight line-clamp-2" style={{ color: selectedService === item.id && serviceCardActiveText ? serviceCardActiveText : (serviceTitleColor || '#391709') }}>{item.name}</div>
+                      <div className="text-[12px] font-semibold leading-tight line-clamp-2" style={{ color: selectedService === item.id ? resolvedActiveText : (serviceTitleColor || '#391709') }}>{item.name}</div>
                       <div className="mt-0.5 flex items-center justify-between gap-1">
-                        <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: servicePriceColor || '#391709' }}>
-                          <Tag className="w-3 h-3" style={{ color: servicePriceIconColor || servicePriceColor || '#391709' }} />
+                        <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: selectedService === item.id ? resolvedActiveText : (servicePriceColor || '#391709') }}>
+                          <Tag className="w-3 h-3" style={{ color: selectedService === item.id ? resolvedActiveText : (servicePriceIconColor || servicePriceColor || '#391709') }} />
                           <span>{item.displayPrice || ""}</span>
                         </div>
-                        <div className="inline-flex items-center gap-1 text-[10px]" style={{ color: serviceDurationColor || '#391709' }}>
-                          <Clock className="w-3 h-3" />
+                        <div className="inline-flex items-center gap-1 text-[10px]" style={{ color: selectedService === item.id ? resolvedActiveText : (serviceDurationColor || '#391709') }}>
+                          <Clock className="w-3 h-3" style={{ color: selectedService === item.id ? resolvedActiveText : undefined }} />
                           <span>{formatDurationMins(item.durationMinutes)} +</span>
                         </div>
                       </div>
