@@ -33,7 +33,8 @@ export interface Staff {
   services?: string[];
   /** When populated, indicates the barber offers the currently selected service via membership or a custom override */
   offersForService?: boolean;
-  photo?: string; // Added for Data_barbers photo URL
+	photo?: string; // Added for Data_barbers photo URL
+}
 
 
 export interface DateInfo {
