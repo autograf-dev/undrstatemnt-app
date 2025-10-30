@@ -226,33 +226,33 @@ export function ServiceSelectionStep({
                       <div
                         key={item.id}
                         onClick={() => onServiceSelect(item.id)}
-                        className="rounded-md border bg-white cursor-pointer hover:shadow-sm transition-all"
+                        className="rounded-md border cursor-pointer hover:shadow-sm transition-all"
                         style={{
-                          borderColor: (selectedService === item.id && serviceCardActiveBorderColor) || serviceCardBorderColor || '#fed7aa',
+                          borderColor: (selectedService === item.id ? resolvedActiveBorder : (serviceCardBorderColor || '#fed7aa')),
                           boxShadow: serviceCardShadow || 'none',
                           borderRadius: serviceCardRadius || '0.5rem',
                           padding: serviceCardPadding || '10px',
                           backgroundColor:
-                            selectedService === item.id && serviceCardActiveBg
-                              ? serviceCardActiveBg
+                            selectedService === item.id
+                              ? resolvedActiveBg
                               : undefined,
                           color:
-                            selectedService === item.id && serviceCardActiveText
-                              ? serviceCardActiveText
+                            selectedService === item.id
+                              ? resolvedActiveText
                               : undefined,
                           outline: 'none',
                           borderWidth: 1,
                           borderStyle: 'solid',
                         }}
                       >
-                        <div className="text-[13px] font-semibold leading-tight line-clamp-2" style={{ color: selectedService === item.id && serviceCardActiveText ? serviceCardActiveText : (serviceTitleColor || '#111827') }}>{item.name}</div>
+                        <div className="text-[13px] font-semibold leading-tight line-clamp-2" style={{ color: selectedService === item.id ? resolvedActiveText : (serviceTitleColor || '#111827') }}>{item.name}</div>
                         <div className="mt-1 flex items-center justify-between gap-2">
-                          <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: servicePriceColor || '#f97316' }}>
-                            <Tag className="w-3 h-3" style={{ color: servicePriceIconColor || servicePriceColor || '#f97316' }} />
+                          <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: selectedService === item.id ? resolvedActiveText : (servicePriceColor || '#f97316') }}>
+                            <Tag className="w-3 h-3" style={{ color: selectedService === item.id ? resolvedActiveText : (servicePriceIconColor || servicePriceColor || '#f97316') }} />
                             <span>{item.displayPrice || ""}</span>
                           </div>
-                          <div className="inline-flex items-center gap-1 text-[11px]" style={{ color: serviceDurationColor || serviceDurationIconColor || '#4b5563' }}>
-                            <Clock className="w-3 h-3" />
+                          <div className="inline-flex items-center gap-1 text-[11px]" style={{ color: selectedService === item.id ? resolvedActiveText : (serviceDurationColor || serviceDurationIconColor || '#4b5563') }}>
+                            <Clock className="w-3 h-3" style={{ color: selectedService === item.id ? resolvedActiveText : undefined }} />
                             <span>{formatDurationMins(item.durationMinutes)} +</span>
                           </div>
                         </div>
