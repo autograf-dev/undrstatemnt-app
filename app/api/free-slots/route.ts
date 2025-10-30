@@ -123,48 +123,54 @@ export async function GET(req: Request) {
 
     const slotsData = buildStaticSlotsMinutes(daysToCheck, 30);
 
-    // Business hours (Trading_hours)
-    const { data: tradingHoursData, error: thError } = await supabase.from('Trading_hours').select('*');
-    if (thError) throw new Error('Failed to fetch trading hours');
-    const nameToIndex: Record<string, number> = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+    // Business hours: use "Trading_hours" table
     const businessHoursMap: Record<number, { open_time: number; close_time: number }> = {};
-    (tradingHoursData || []).forEach((item: any) => {
-      const idx = nameToIndex[item['Day/Name']] ?? undefined;
-      if (idx === undefined) return;
-      const open_time = Number(item['Day/Start'] ?? 0);
-      const close_time = Number(item['Day/End'] ?? 0);
-      if (!Number.isFinite(open_time) || !Number.isFinite(close_time)) return;
-      businessHoursMap[idx] = { open_time, close_time };
-    });
+    {
+      const nameToIndex: Record<string, number> = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+      const { data: tradingHoursData, error: thError } = await supabase.from('Trading_hours').select('*');
+      if (thError) throw new Error('Failed to fetch Trading_hours');
+      (tradingHoursData || []).forEach((item: any) => {
+        const idx = nameToIndex[item['Day/Name']] ?? undefined;
+        if (idx === undefined) return;
+        const openRaw = item['Day/Start'];
+        const closeRaw = item['Day/End'];
+        // If either is null/undefined/NaN, treat day as closed
+        if (openRaw == null || closeRaw == null) return;
+        const open_time = Number(openRaw);
+        const close_time = Number(closeRaw);
+        if (!Number.isFinite(open_time) || !Number.isFinite(close_time)) return;
+        businessHoursMap[idx] = { open_time, close_time };
+      });
+    }
 
     // Barber hours from Data_barbers + simple day-off via zeros or flags
     let barberHoursMap: Record<number, { start: number; end: number }> = {};
     let barberWeekendIndexes: number[] = [];
     let hasBarber = false;
+    let resolvedBarberData: any = null;
     if (userId) {
-      // Try by GHL_id first
+      // Try by GHL_id first, then by User/ID; be lenient on errors
       let barberData: any = null;
-      let barberError: any = null;
-      let barberStatus: number | undefined = undefined;
-      {
-        const { data, error, status } = await supabase
+      try {
+        let res = await supabase
           .from('Data_barbers')
           .select('*')
           .eq('GHL_id', userId)
           .maybeSingle();
-        barberData = data; barberError = error; barberStatus = status;
+        if (res.data) barberData = res.data;
+        if (!barberData) {
+          res = await supabase
+            .from('Data_barbers')
+            .select('*')
+            .eq('User/ID', userId)
+            .maybeSingle();
+          if (res.data) barberData = res.data;
+        }
+      } catch (_) {
+        // swallow and proceed without barber-specific hours
       }
-      if (!barberData) {
-        const { data, error, status } = await supabase
-          .from('Data_barbers')
-          .select('*')
-          .eq('User/ID', userId)
-          .maybeSingle();
-        if (data) { barberData = data; barberError = null; barberStatus = status; }
-        else { barberError = error; barberStatus = status; }
-      }
-      if (barberError && barberStatus !== 406 && barberStatus !== 404) throw new Error('Failed to fetch barber hours');
-      if (barberData) hasBarber = true;
+      if (barberData) { hasBarber = true; resolvedBarberData = barberData; }
+      if (barberData) { hasBarber = true; resolvedBarberData = barberData; }
 
       const dayNameToIndex: Record<string, number> = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
       barberHoursMap = {
@@ -181,28 +187,10 @@ export async function GET(req: Request) {
       if (barberData && String(barberData?.['Sunday/Day Off']).toLowerCase().includes('day off')) barberWeekendIndexes.push(0);
     }
 
-    // Time off
+    // Time off: read directly from the resolved Data_barbers row
     let timeOffList: { start: Date; end: Date }[] = [];
     if (hasBarber) {
-      // Prefer Data_barbers "Time Off/Unavailable Dates" if present (YYYYMMDD list)
-      let dbRow: any = null;
-      {
-        const { data } = await supabase
-          .from('Data_barbers')
-          .select('Time Off/Unavailable Dates')
-          .eq('GHL_id', userId)
-          .maybeSingle();
-        if (data) dbRow = data;
-      }
-      if (!dbRow) {
-        const { data } = await supabase
-          .from('Data_barbers')
-          .select('Time Off/Unavailable Dates')
-          .eq('User/ID', userId)
-          .maybeSingle();
-        if (data) dbRow = data;
-      }
-      const raw = (dbRow && typeof dbRow === 'object' ? (dbRow as Record<string, any>)['Time Off/Unavailable Dates'] : undefined) as string | undefined;
+      const raw = (resolvedBarberData as any)?.['Time Off/Unavailable Dates'] as string | undefined;
       if (raw) {
         const items = String(raw).split(',').map((s) => s.trim()).filter((s) => /^\d{8}$/.test(s));
         timeOffList = items.map((v) => {
@@ -220,10 +208,31 @@ export async function GET(req: Request) {
       return false;
     };
 
-    // Time blocks
+    // Time blocks: match by barber's GHL_id, request userId, or Barber/ID (Data_barbers row id)
     let timeBlockList: any[] = [];
     if (hasBarber) {
-      const { data: blockData } = await supabase.from('time_block').select('*').eq('ghl_id', userId);
+      const barberRowId: string | undefined = (resolvedBarberData as any)?.['\uD83D\uDD12 Row ID'] || (resolvedBarberData as any)?.['🔒 Row ID'];
+      const barberGhlId: string | undefined = (resolvedBarberData as any)?.['GHL_id'];
+      let blockData: any[] | null = null;
+      try {
+        const filters: string[] = [];
+        // eq on ghl_id using either resolved barberGhlId or provided userId
+        if (barberGhlId) filters.push(`ghl_id.eq.${barberGhlId}`);
+        if (userId) filters.push(`ghl_id.eq.${userId}`);
+        if (barberRowId) filters.push(`Barber/ID.eq.${barberRowId}`);
+        if (filters.length > 0) {
+          const { data } = await supabase
+            .from('time_block')
+            .select('*')
+            .or(filters.join(','));
+          if (Array.isArray(data)) blockData = data;
+        } else {
+          const { data } = await supabase.from('time_block').select('*');
+          if (Array.isArray(data)) blockData = data;
+        }
+      } catch (_) {
+        blockData = [];
+      }
       timeBlockList = (blockData || []).map((item: any) => {
         const raw = item['Block/Recurring'];
         const recurring = raw === true || String(raw).toLowerCase().replace(/["']/g, '') === 'true';
@@ -240,26 +249,8 @@ export async function GET(req: Request) {
       });
     }
 
-    // Existing bookings
-    let existingBookings: any[] = [];
-    if (hasBarber) {
-      const { data: bookingsData } = await supabase
-        .from('ghl_appointment')
-        .select('*')
-        .eq('assigned_user_id', userId)
-        .gte('start_time', startOfRange.toISOString())
-        .lte('start_time', endOfRange.toISOString());
-
-      existingBookings = (bookingsData || []).map((b: any) => {
-        const startTime = new Date(b.start_time);
-        const endTime = b.end_time ? new Date(b.end_time) : new Date(startTime.getTime() + (parseInt(b.booking_duration) || 30) * 60000);
-        return {
-          startDayKey: ymdInTZ(startTime),
-          startMinutes: minutesInTZ(startTime),
-          endMinutes: minutesInTZ(endTime),
-        };
-      });
-    }
+    // Existing bookings: skip for now per request
+    const existingBookings: any[] = [];
 
     const isSlotBooked = (slotDate: Date, slotMinutes: number, durMinutes: number) => {
       const slotDayKey = ymdInTZ(slotDate);
