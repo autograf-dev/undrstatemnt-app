@@ -113,6 +113,8 @@ PLASMIC.registerComponent(BookingWidget, {
     stepperActiveColor: { type: "color", description: "Stepper color - Active", defaultValue: "#D97639" },
     stepperInactiveColor: { type: "color", description: "Stepper color - Inactive", defaultValue: "#e5e7eb" },
     stepperCompletedColor: { type: "color", description: "Stepper color - Completed", defaultValue: "#10b981" },
+    // Success step Lottie (upload JSON in Plasmic and bind URL)
+    successLottieUrl: { type: "string", description: "Lottie JSON URL for success step" },
   },
 });
 

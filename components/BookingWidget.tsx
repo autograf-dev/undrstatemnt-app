@@ -139,6 +139,8 @@ export interface BookingWidgetProps {
   navPrimaryText?: string;
   navSecondaryBorder?: string;
   navSecondaryText?: string;
+  /** Lottie JSON URL for success step (upload in Plasmic and bind URL) */
+  successLottieUrl?: string;
 }
 
 const getStepIcon = (stepValue: string) => {
@@ -1233,6 +1235,7 @@ export default function BookingWidget({
         return (
           <SuccessStep
             onReset={resetBooking}
+            lottieUrl={successLottieUrl}
           />
         );
       default:
