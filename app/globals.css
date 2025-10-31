@@ -132,14 +132,14 @@
   
   body {
     @apply bg-background text-foreground;
-    min-height: 100vh;
+    min-height: auto;
     height: auto;
     overflow-y: auto;
     overflow-x: hidden;
   }
   
   #__next {
-    min-height: 100vh;
+    min-height: auto;
     height: auto;
   }
   
@@ -154,12 +154,12 @@
 body > div[style*="height: 100vh"],
 body > div[style*="min-height: 100vh"] {
   height: auto !important;
-  min-height: 100vh !important;
+  min-height: auto !important;
 }
 
 /* Remove min-height only from main page wrapper */
 body > div#__next {
-  min-height: 100vh !important;
+  min-height: auto !important;
   height: auto !important;
 }
 
@@ -167,7 +167,7 @@ body > div#__next {
 #__next,
 .__wab_root-reset {
   height: auto !important;
-  min-height: 100vh !important;
+  min-height: auto !important;
   max-height: none !important;
   overflow-y: visible !important;
 }

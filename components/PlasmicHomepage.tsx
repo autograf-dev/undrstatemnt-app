@@ -1,6 +1,6 @@
 "use client";
 
-import { PlasmicComponent, PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
+import { PlasmicComponent, PlasmicRootProvider } from "@plasmicapp/loader-nextjs/react-server-conditional";
 import { PLASMIC } from "../plasmic-init";
 import { ComponentRenderData } from "@plasmicapp/loader-nextjs";
 import { useEffect } from "react";
@@ -25,46 +25,18 @@ export default function PlasmicHomepage({ plasmicData }: PlasmicHomepageProps) {
       return;
     }
     
-    // Only apply fixes on actual website
+    // Only apply minimal fixes on actual website
     document.documentElement.style.overflow = 'auto';
     document.body.style.overflow = 'auto';
-    document.body.style.minHeight = '100vh';
     document.body.style.height = 'auto';
-    
-    const fix100vh = () => {
-      const allDivs = document.querySelectorAll('body *');
-      allDivs.forEach((el) => {
-        const element = el as HTMLElement;
-        const computedStyle = window.getComputedStyle(element);
-        const inlineStyle = element.getAttribute('style') || '';
-        
-        if (
-          computedStyle.height === '100vh' ||
-          computedStyle.minHeight === '100vh' ||
-          inlineStyle.includes('100vh')
-        ) {
-          if (element.tagName === 'DIV' || element.tagName === 'SECTION' || element.tagName === 'MAIN') {
-            element.style.height = 'auto';
-            element.style.minHeight = '0';
-          }
-        }
-      });
-      
-      const nextChildren = document.querySelectorAll('#__next > div, #__next > div > div, #__next > div > div > div');
-      nextChildren.forEach((el) => {
-        (el as HTMLElement).style.height = 'auto';
-        (el as HTMLElement).style.minHeight = '0';
-      });
-    };
-    
-    fix100vh();
-    const timer1 = setTimeout(fix100vh, 100);
-    const timer2 = setTimeout(fix100vh, 300);
-    
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
+    document.body.style.minHeight = 'auto';
+
+    const nextRoot = document.getElementById('__next') as HTMLElement | null;
+    if (nextRoot) {
+      nextRoot.style.minHeight = 'auto';
+      nextRoot.style.height = 'auto';
+      nextRoot.style.overflow = 'visible';
+    }
   }, []);
   
   return (

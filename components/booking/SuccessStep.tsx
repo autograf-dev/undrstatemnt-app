@@ -8,9 +8,34 @@ interface SuccessStepProps {
   onReset: () => void;
   /** Optional Lottie JSON URL from Plasmic asset (e.g., uploaded file). */
   lottieUrl?: string;
+  /** Show/Hide lottie */
+  showLottie?: boolean;
+  /** Lottie controls */
+  lottieAutoplay?: boolean;
+  lottieLoop?: boolean;
+  lottieSpeed?: number;
+  lottieBackground?: string;
+  lottieHeight?: string;
+  /** Editable text */
+  successTitle?: string;
+  successMessage?: string;
+  /** Show/Hide the info card */
+  showInfoCard?: boolean;
 }
 
-export function SuccessStep({ onReset, lottieUrl }: SuccessStepProps) {
+export function SuccessStep({
+  onReset,
+  lottieUrl,
+  showLottie = true,
+  lottieAutoplay = true,
+  lottieLoop = true,
+  lottieSpeed = 1,
+  lottieBackground = 'transparent',
+  lottieHeight = '220px',
+  successTitle = 'Booking Confirmed! 🎉',
+  successMessage = "Thank you for choosing us! Your appointment has been successfully booked. We're excited to see you soon!",
+  showInfoCard = true,
+}: SuccessStepProps) {
   // Load LottieFiles web component once on client; avoids adding a heavy dependency
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -31,29 +56,27 @@ export function SuccessStep({ onReset, lottieUrl }: SuccessStepProps) {
         {/* Lottie background area */}
         <div className="w-full max-w-md">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {lottieUrl ? (
+          {showLottie && lottieUrl ? (
             // LottieFiles player web component (loaded above); renders only on client
             // @ts-ignore - custom element not in TS lib
             <lottie-player
-              autoplay
-              loop
+              autoplay={lottieAutoplay}
+              loop={lottieLoop}
               mode="normal"
               src={lottieUrl}
-              style={{ width: '100%', height: '220px' }}
-              background="transparent"
-              speed="1"
+              style={{ width: '100%', height: lottieHeight }}
+              background={lottieBackground}
+              speed={String(lottieSpeed)}
             />
           ) : null}
         </div>
         
-        <div className="space-y-4">
-          <h2 className="font-bold text-2xl sm:text-3xl">Booking Confirmed! 🎉</h2>
-          <p className="text-sm sm:text-lg text-gray-700 max-w-md">
-            Thank you for choosing us! Your appointment has been successfully booked. 
-            We're excited to see you soon!
-          </p>
+        <div className="space-y-3">
+          <h2 className="font-bold text-2xl sm:text-3xl">{successTitle}</h2>
+          <p className="text-sm sm:text-lg text-gray-700 max-w-md">{successMessage}</p>
         </div>
         
+        {showInfoCard && (
         <Card className="p-3 sm:p-5 rounded-xl border w-full max-w-md" style={{ backgroundColor: '#f6efeC', borderColor: '#E5D7CF' }}>
           <div className="space-y-2">
             <div className="font-semibold text-[16px] sm:text-[18px]">What's Next?</div>
@@ -64,6 +87,7 @@ export function SuccessStep({ onReset, lottieUrl }: SuccessStepProps) {
             </div>
           </div>
         </Card>
+        )}
 
       </div>
     </div>

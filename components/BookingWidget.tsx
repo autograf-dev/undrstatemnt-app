@@ -141,6 +141,16 @@ export interface BookingWidgetProps {
   navSecondaryText?: string;
   /** Lottie JSON URL for success step (upload in Plasmic and bind URL) */
   successLottieUrl?: string;
+  /** Success step toggles and content */
+  successShowLottie?: boolean;
+  successLottieAutoplay?: boolean;
+  successLottieLoop?: boolean;
+  successLottieSpeed?: number;
+  successLottieBackground?: string;
+  successLottieHeight?: string;
+  successTitle?: string;
+  successMessage?: string;
+  successShowInfoCard?: boolean;
 }
 
 const getStepIcon = (stepValue: string) => {
@@ -165,6 +175,15 @@ export default function BookingWidget({
   appointmentApiPath = "/api/appointment",
   // Success Lottie
   successLottieUrl,
+  successShowLottie = true,
+  successLottieAutoplay = true,
+  successLottieLoop = true,
+  successLottieSpeed = 1,
+  successLottieBackground = "transparent",
+  successLottieHeight = "220px",
+  successTitle = "Booking Confirmed! 🎉",
+  successMessage = "Thank you for choosing us! Your appointment has been successfully booked. We're excited to see you soon!",
+  successShowInfoCard = true,
   // Color Scheme
   primaryColor = "#D97639",
   secondaryColor = "#6b7280",
@@ -1238,6 +1257,15 @@ export default function BookingWidget({
           <SuccessStep
             onReset={resetBooking}
             lottieUrl={successLottieUrl}
+            showLottie={successShowLottie}
+            lottieAutoplay={successLottieAutoplay}
+            lottieLoop={successLottieLoop}
+            lottieSpeed={successLottieSpeed}
+            lottieBackground={successLottieBackground}
+            lottieHeight={successLottieHeight}
+            successTitle={successTitle}
+            successMessage={successMessage}
+            showInfoCard={successShowInfoCard}
           />
         );
       default:

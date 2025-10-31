@@ -23,8 +23,6 @@ import StaffShowcase from "./components/StaffShowcase";
 // Register code components used by Plasmic pages so Studio and runtime can render them
 PLASMIC.registerComponent(BookingWidget, {
   name: "BookingWidget",
-  importPath: "@/components/BookingWidget",
-  isDefaultExport: true,
   props: {
     serviceCardBorderColor: { type: "color", description: "Service card border color", defaultValue: "#fed7aa" },
     serviceCardShadow: { type: "string", description: "CSS box-shadow for service cards", defaultValue: "none" },
@@ -49,25 +47,28 @@ PLASMIC.registerComponent(BookingWidget, {
       type: "choice", 
       description: "API endpoint for services",
       options: ["/api/supabaseservices", "/api/services"],
-      defaultValue: "/api/supabaseservices"
+      defaultValue: "/api/supabaseservices",
+      group: "API",
     },
     staffApiPath: { 
       type: "choice", 
       description: "API endpoint for staff",
       options: ["/api/supabasestaff", "/api/staff"],
-      defaultValue: "/api/supabasestaff"
+      defaultValue: "/api/supabasestaff",
+      group: "API",
     },
     staffSlotsApiPath: { 
       type: "choice", 
       description: "API endpoint for staff slots",
       options: ["/api/free-slots"],
-      defaultValue: "/api/free-slots"
+      defaultValue: "/api/free-slots",
+      group: "API",
     },
-    customerApiPath: { type: "string", description: "API endpoint for customers", defaultValue: "/api/customer" },
-    appointmentApiPath: { type: "string", description: "API endpoint for appointments", defaultValue: "/api/appointment" },
+    customerApiPath: { type: "string", description: "API endpoint for customers", defaultValue: "/api/customer", group: "API" },
+    appointmentApiPath: { type: "string", description: "API endpoint for appointments", defaultValue: "/api/appointment", group: "API" },
     
     // Color Scheme
-    primaryColor: { type: "color", description: "Primary color (buttons, active states)", defaultValue: "#D97639" },
+    primaryColor: { type: "color", description: "Primary color (buttons, active states)", defaultValue: "#D97639", group: "Colors" },
     secondaryColor: { type: "color", description: "Secondary color", defaultValue: "#6b7280" },
     bgColor: { type: "color", description: "Background color", defaultValue: "white" },
     cardBgColor: { type: "color", description: "Card background color", defaultValue: "#ffffff" },
@@ -77,20 +78,20 @@ PLASMIC.registerComponent(BookingWidget, {
     hoverColor: { type: "color", description: "Hover color", defaultValue: "#f9fafb" },
     
     // Typography
-    headingSize: { type: "string", description: "Heading font size (e.g., 1.5rem, 24px)", defaultValue: "1.5rem" },
+    headingSize: { type: "string", description: "Heading font size (e.g., 1.5rem, 24px)", defaultValue: "1.5rem", group: "Typography" },
     subheadingSize: { type: "string", description: "Subheading font size (e.g., 1.125rem, 18px)", defaultValue: "1.125rem" },
     bodyTextSize: { type: "string", description: "Body text font size (e.g., 1rem, 16px)", defaultValue: "1rem" },
     smallTextSize: { type: "string", description: "Small text font size (e.g., 0.875rem, 14px)", defaultValue: "0.875rem" },
     
     // Step Labels
-    step1Label: { type: "string", description: "Step 1 label", defaultValue: "Service" },
+    step1Label: { type: "string", description: "Step 1 label", defaultValue: "Service", group: "Labels" },
     step2Label: { type: "string", description: "Step 2 label", defaultValue: "Staff" },
     step3Label: { type: "string", description: "Step 3 label", defaultValue: "Date & Time" },
     step4Label: { type: "string", description: "Step 4 label", defaultValue: "Information" },
     step5Label: { type: "string", description: "Step 5 label", defaultValue: "Success" },
     
     // Button Text
-    continueButtonText: { type: "string", description: "Continue button text", defaultValue: "Continue" },
+    continueButtonText: { type: "string", description: "Continue button text", defaultValue: "Continue", group: "Labels" },
     backButtonText: { type: "string", description: "Back button text", defaultValue: "Back" },
     submitButtonText: { type: "string", description: "Submit button text", defaultValue: "Submit" },
     bookNowButtonText: { type: "string", description: "Book Now button text", defaultValue: "Book Now" },
@@ -101,26 +102,34 @@ PLASMIC.registerComponent(BookingWidget, {
     showLoadingSpinner: { type: "boolean", description: "Show loading spinner", defaultValue: true },
     
     // Spacing & Layout
-    maxWidth: { type: "string", description: "Container max width (e.g., 1280px)", defaultValue: "1280px" },
+    maxWidth: { type: "string", description: "Container max width (e.g., 1280px)", defaultValue: "1280px", group: "Layout" },
     containerPadding: { type: "string", description: "Container padding (e.g., 2rem)", defaultValue: "2rem" },
     cardBorderRadius: { type: "string", description: "Card border radius (e.g., 0.75rem, 12px)", defaultValue: "0.75rem" },
     buttonBorderRadius: { type: "string", description: "Button border radius (e.g., 0.5rem, 8px)", defaultValue: "0.5rem" },
     cardGap: { type: "string", description: "Card gap/spacing (e.g., 1rem, 16px)", defaultValue: "1rem" },
     
     // Stepper Configuration
-    showStepper: { type: "boolean", description: "Show stepper on desktop", defaultValue: true },
+    showStepper: { type: "boolean", description: "Show stepper on desktop", defaultValue: true, group: "Stepper" },
     showMobileStepIndicator: { type: "boolean", description: "Show step indicator on mobile", defaultValue: true },
     stepperActiveColor: { type: "color", description: "Stepper color - Active", defaultValue: "#D97639" },
     stepperInactiveColor: { type: "color", description: "Stepper color - Inactive", defaultValue: "#e5e7eb" },
-    stepperCompletedColor: { type: "color", description: "Stepper color - Completed", defaultValue: "#10b981" },
-    // Success step Lottie (upload JSON in Plasmic and bind URL)
-    successLottieUrl: { type: "string", description: "Lottie JSON URL for success step" },
+    stepperCompletedColor: { type: "color", description: "Stepper color - Completed", defaultValue: "#10b981", group: "Stepper" },
+    // Success step controls
+    successLottieUrl: { type: "string", displayName: "Success Lottie JSON URL", description: "Upload JSON in Plasmic assets and bind the URL.", group: "Success" },
+    successShowLottie: { type: "boolean", displayName: "Show Lottie", defaultValue: true, group: "Success" },
+    successLottieAutoplay: { type: "boolean", displayName: "Lottie Autoplay", defaultValue: true, group: "Success" },
+    successLottieLoop: { type: "boolean", displayName: "Lottie Loop", defaultValue: true, group: "Success" },
+    successLottieSpeed: { type: "number", displayName: "Lottie Speed", defaultValue: 1, group: "Success" },
+    successLottieBackground: { type: "string", displayName: "Lottie Background", defaultValue: "transparent", group: "Success" },
+    successLottieHeight: { type: "string", displayName: "Lottie Height", defaultValue: "220px", group: "Success" },
+    successTitle: { type: "string", displayName: "Success Title", defaultValue: "Booking Confirmed! 🎉", group: "Success" },
+    successMessage: { type: "string", displayName: "Success Message", defaultValue: "Thank you for choosing us! Your appointment has been successfully booked. We're excited to see you soon!", group: "Success" },
+    successShowInfoCard: { type: "boolean", displayName: "Show Info Card", defaultValue: true, group: "Success" },
   },
 });
 
 PLASMIC.registerComponent(ServiceListWidget, {
   name: "ServiceListWidget",
-  importPath: "@/components/ServiceListWidget",
   props: {
     departmentId: {
       type: "string",
@@ -151,7 +160,6 @@ PLASMIC.registerComponent(ServiceListWidget, {
 
 PLASMIC.registerComponent(StaffListWidget, {
   name: "StaffListWidget",
-  importPath: "@/components/StaffListWidget",
   props: {
     serviceId: {
       type: "string",
@@ -172,7 +180,6 @@ PLASMIC.registerComponent(StaffListWidget, {
 
 PLASMIC.registerComponent(ServicesExplorer, {
   name: "ServicesExplorer",
-  importPath: "@/components/ServicesExplorer",
   props: {
     initialDepartmentId: {
       type: "string",
@@ -200,7 +207,6 @@ import LottiePlayer from "@/components/LottiePlayer";
 
 PLASMIC.registerComponent(ServicesCatalog, {
   name: "ServicesCatalog",
-  importPath: "@/components/ServicesCatalog",
   props: {
     maxPerGroup: {
       type: "number",
@@ -218,7 +224,6 @@ PLASMIC.registerComponent(ServicesCatalog, {
 // Lightweight Lottie player that accepts a JSON URL uploaded via Plasmic assets
 PLASMIC.registerComponent(LottiePlayer, {
   name: "LottiePlayer",
-  importPath: "@/components/LottiePlayer",
   props: {
     src: {
       type: "string",
@@ -241,7 +246,6 @@ PLASMIC.registerComponent(LottiePlayer, {
 
 PLASMIC.registerComponent(MainSidebar, {
   name: "MainSidebar",
-  importPath: "@/components/MainSidebar",
   props: {
     logoSrc: { type: "string", description: "Logo URL", defaultValue: "/next.svg" },
     title: { type: "string", description: "Business name", defaultValue: "UNDERSTATEMNT CO." },
@@ -262,7 +266,6 @@ PLASMIC.registerComponent(MainSidebar, {
 
 PLASMIC.registerComponent(MainSidebar, {
   name: "MainSidebar",
-  importPath: "@/components/MainSidebar",
   props: {
     logoSrc: { 
       type: "imageUrl", 
@@ -337,7 +340,6 @@ PLASMIC.registerComponent(MainSidebar, {
 
 PLASMIC.registerComponent(PageShellShadcn, {
   name: "PageShellShadcn",
-  importPath: "@/components/PageShellShadcn",
   props: {
     logoSrc: { 
       type: "imageUrl", 
@@ -413,7 +415,6 @@ PLASMIC.registerComponent(PageShellShadcn, {
 
 PLASMIC.registerComponent(MainHeader, {
   name: "MainHeader",
-  importPath: "@/components/MainHeader",
   props: {
     logoSrc: { 
       type: "imageUrl", 
@@ -492,7 +493,6 @@ PLASMIC.registerComponent(MainHeader, {
 
 PLASMIC.registerComponent(PageShellWithHeader, {
   name: "PageShellWithHeader",
-  importPath: "@/components/PageShellWithHeader",
   props: {
     logoSrc: { 
       type: "imageUrl", 
@@ -578,7 +578,6 @@ PLASMIC.registerComponent(PageShellWithHeader, {
 
 PLASMIC.registerComponent(HeroSection, {
   name: "HeroSection",
-  importPath: "@/components/HeroSection",
   props: {
     // Logo Controls
     logoSrc: { type: "imageUrl", description: "Logo image", defaultValue: "/next.svg" },
@@ -715,7 +714,6 @@ PLASMIC.registerComponent(HeroSection, {
 
 PLASMIC.registerComponent(OurStory, {
   name: "OurStory",
-  importPath: "@/components/OurStory",
   props: {
     title: { type: "string", description: "Section title", defaultValue: "Our Story" },
     titleSize: { type: "string", description: "Title font size", defaultValue: "2.5rem" },
@@ -744,7 +742,6 @@ PLASMIC.registerComponent(OurStory, {
 
 PLASMIC.registerComponent(CTASection, {
   name: "CTASection",
-  importPath: "@/components/CTASection",
   props: {
     heading: { type: "string", description: "Main heading", defaultValue: "Have a question? Contact us!" },
     headingColor: { type: "color", description: "Heading color", defaultValue: "#1a1a1a" },
@@ -776,7 +773,6 @@ PLASMIC.registerComponent(CTASection, {
 
 PLASMIC.registerComponent(Footer, {
   name: "Footer",
-  importPath: "@/components/Footer",
   props: {
     logoSrc: { type: "imageUrl", description: "Logo image", defaultValue: "/next.svg" },
     logoWidth: { type: "number", description: "Logo width (px)", defaultValue: 60 },
@@ -825,8 +821,6 @@ PLASMIC.registerComponent(Footer, {
 
 PLASMIC.registerComponent(ServicesShowcase, {
   name: "ServicesShowcase",
-  importPath: "@/components/ServicesShowcase",
-  isDefaultExport: true,
   props: {
     title: { type: "string", description: "Section title", defaultValue: "Our Services" },
     titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
@@ -847,8 +841,6 @@ PLASMIC.registerComponent(ServicesShowcase, {
 
 PLASMIC.registerComponent(HomepageStaff, {
   name: "HomepageStaff",
-  importPath: "@/components/HomepageStaff",
-  isDefaultExport: true,
   props: {
     // API Configuration
     apiPath: { 
@@ -913,8 +905,6 @@ PLASMIC.registerComponent(HomepageStaff, {
 
 PLASMIC.registerComponent(HomepageServices, {
   name: "HomepageServices",
-  importPath: "@/components/HomepageServices",
-  isDefaultExport: true,
   props: {
     // API Configuration
     apiPath: { 
@@ -1000,8 +990,6 @@ PLASMIC.registerComponent(HomepageServices, {
 
 PLASMIC.registerComponent(StaffShowcase, {
   name: "StaffShowcase",
-  importPath: "@/components/StaffShowcase",
-  isDefaultExport: true,
   props: {
     // Title Controls
     title: { type: "string", description: "Section title", defaultValue: "Our Professionals" },

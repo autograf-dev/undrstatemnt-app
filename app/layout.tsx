@@ -32,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" style={{ height: 'auto', overflow: 'visible' }}>
+    <html lang="en" style={{ height: 'auto', minHeight: 'auto', overflow: 'visible' }}>
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#D97639" />
@@ -42,7 +42,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ height: 'auto', minHeight: '100vh', overflow: 'visible' }}
+        style={{ height: 'auto', minHeight: 'auto',  overflow: 'visible' }}
       >
         {/* PWA service worker registration via client component */}
         {/* eslint-disable-next-line @typescript-eslint/no-var-requires */}
