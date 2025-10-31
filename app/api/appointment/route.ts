@@ -175,12 +175,13 @@ export async function GET(req: Request) {
         "Service": params.serviceName || params.title || "",
         "Customer": params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || "",
         "CustomerPhone": params.customerPhone || "",
+        "BookingId": booking?.id || "",
         "Date": (params.startTime ? new Date(params.startTime).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }).replace(/-/g, '') : ""),
         "Start": params.startTime ? (new Date(params.startTime).getHours() * 60 + new Date(params.startTime).getMinutes()) : null,
         "End (Buffer)": params.endTime ? (new Date(params.endTime).getHours() * 60 + new Date(params.endTime).getMinutes()) : null,
         "Status ": params.appointmentStatus || booking.appointmentStatus || "Confirmed"
       };
-      await fetch("https://primary-rmsi-production2.up.railway.app/webhook-test/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
+      await fetch("https://primary-rmsi-production2.up.railway.app/webhook/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(webhookPayload)
@@ -225,7 +226,7 @@ export async function GET(req: Request) {
           }
         ]
       };
-      await fetch("https://primary-rmsi-production2.up.railway.app/webhook-test/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
+      await fetch("https://primary-rmsi-production2.up.railway.app/webhook/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(detailedPayload)
