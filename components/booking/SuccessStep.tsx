@@ -16,11 +16,17 @@ interface SuccessStepProps {
   lottieSpeed?: number;
   lottieBackground?: string;
   lottieHeight?: string;
+  /** Lottie render mode */
+  lottieMode?: 'normal' | 'bounce';
   /** Editable text */
   successTitle?: string;
   successMessage?: string;
   /** Show/Hide the info card */
   showInfoCard?: boolean;
+  /** Info card title */
+  infoCardTitle?: string;
+  /** Info card bullet lines */
+  infoBullets?: string[];
 }
 
 export function SuccessStep({
@@ -32,9 +38,16 @@ export function SuccessStep({
   lottieSpeed = 1,
   lottieBackground = 'transparent',
   lottieHeight = '220px',
+  lottieMode = 'normal',
   successTitle = 'Booking Confirmed! 🎉',
   successMessage = "Thank you for choosing us! Your appointment has been successfully booked. We're excited to see you soon!",
   showInfoCard = true,
+  infoCardTitle = "What's Next?",
+  infoBullets = [
+    "You'll receive a confirmation SMS shortly",
+    "We'll send you a reminder 24 hours before",
+    "Call us anytime if you need to reschedule",
+  ],
 }: SuccessStepProps) {
   // Load LottieFiles web component once on client; avoids adding a heavy dependency
   useEffect(() => {
@@ -62,7 +75,7 @@ export function SuccessStep({
             <lottie-player
               autoplay={lottieAutoplay}
               loop={lottieLoop}
-              mode="normal"
+              mode={lottieMode}
               src={lottieUrl}
               style={{ width: '100%', height: lottieHeight }}
               background={lottieBackground}
@@ -79,11 +92,11 @@ export function SuccessStep({
         {showInfoCard && (
         <Card className="p-3 sm:p-5 rounded-xl border w-full max-w-md" style={{ backgroundColor: '#f6efeC', borderColor: '#E5D7CF' }}>
           <div className="space-y-2">
-            <div className="font-semibold text-[16px] sm:text-[18px]">What's Next?</div>
+            <div className="font-semibold text-[16px] sm:text-[18px]">{infoCardTitle}</div>
             <div className="text-xs sm:text-sm text-gray-700 space-y-1 text-left sm:text-center">
-              <p className="text-[13px] sm:text-[15px] font-medium">• You'll receive a confirmation SMS shortly</p>
-              <p className="text-[13px] sm:text-[15px] font-medium">• We'll send you a reminder 24 hours before</p>
-              <p className="text-[13px] sm:text-[15px] font-medium">• Call us anytime if you need to reschedule</p>
+              {Array.isArray(infoBullets) && infoBullets.map((line, idx) => (
+                <p key={idx} className="text-[13px] sm:text-[15px] font-medium">• {line}</p>
+              ))}
             </div>
           </div>
         </Card>

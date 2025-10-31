@@ -148,9 +148,12 @@ export interface BookingWidgetProps {
   successLottieSpeed?: number;
   successLottieBackground?: string;
   successLottieHeight?: string;
+  successLottieMode?: 'normal' | 'bounce';
   successTitle?: string;
   successMessage?: string;
   successShowInfoCard?: boolean;
+  successInfoTitle?: string;
+  successInfoBullets?: string[];
 }
 
 const getStepIcon = (stepValue: string) => {
@@ -181,9 +184,16 @@ export default function BookingWidget({
   successLottieSpeed = 1,
   successLottieBackground = "transparent",
   successLottieHeight = "220px",
+  successLottieMode = 'normal',
   successTitle = "Booking Confirmed! 🎉",
   successMessage = "Thank you for choosing us! Your appointment has been successfully booked. We're excited to see you soon!",
   successShowInfoCard = true,
+  successInfoTitle = "What's Next?",
+  successInfoBullets = [
+    "You'll receive a confirmation SMS shortly",
+    "We'll send you a reminder 24 hours before",
+    "Call us anytime if you need to reschedule",
+  ],
   // Color Scheme
   primaryColor = "#D97639",
   secondaryColor = "#6b7280",
@@ -1263,9 +1273,12 @@ export default function BookingWidget({
             lottieSpeed={successLottieSpeed}
             lottieBackground={successLottieBackground}
             lottieHeight={successLottieHeight}
+        lottieMode={successLottieMode}
             successTitle={successTitle}
             successMessage={successMessage}
             showInfoCard={successShowInfoCard}
+        infoCardTitle={successInfoTitle}
+        infoBullets={successInfoBullets}
           />
         );
       default:

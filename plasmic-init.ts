@@ -24,6 +24,7 @@ import StaffShowcase from "./components/StaffShowcase";
 PLASMIC.registerComponent(BookingWidget, {
   name: "BookingWidget",
   props: {
+    // Service card styles
     serviceCardBorderColor: { type: "color", description: "Service card border color", defaultValue: "#fed7aa" },
     serviceCardShadow: { type: "string", description: "CSS box-shadow for service cards", defaultValue: "none" },
     serviceCardRadius: { type: "string", description: "Border radius for service cards", defaultValue: "0.5rem" },
@@ -42,6 +43,7 @@ PLASMIC.registerComponent(BookingWidget, {
     navPrimaryText: { type: "color", description: "Primary button text", defaultValue: "#ffffff" },
     navSecondaryBorder: { type: "color", description: "Secondary button border", defaultValue: "#e5e7eb" },
     navSecondaryText: { type: "color", description: "Secondary button text", defaultValue: "#111827" },
+    
     // API Configuration
     servicesApiPath: { 
       type: "choice", 
@@ -114,6 +116,7 @@ PLASMIC.registerComponent(BookingWidget, {
     stepperActiveColor: { type: "color", description: "Stepper color - Active", defaultValue: "#D97639" },
     stepperInactiveColor: { type: "color", description: "Stepper color - Inactive", defaultValue: "#e5e7eb" },
     stepperCompletedColor: { type: "color", description: "Stepper color - Completed", defaultValue: "#10b981", group: "Stepper" },
+    
     // Success step controls
     successLottieUrl: { type: "string", displayName: "Success Lottie JSON URL", description: "Upload JSON in Plasmic assets and bind the URL.", group: "Success" },
     successShowLottie: { type: "boolean", displayName: "Show Lottie", defaultValue: true, group: "Success" },
@@ -122,9 +125,22 @@ PLASMIC.registerComponent(BookingWidget, {
     successLottieSpeed: { type: "number", displayName: "Lottie Speed", defaultValue: 1, group: "Success" },
     successLottieBackground: { type: "string", displayName: "Lottie Background", defaultValue: "transparent", group: "Success" },
     successLottieHeight: { type: "string", displayName: "Lottie Height", defaultValue: "220px", group: "Success" },
+    successLottieMode: { type: "choice", displayName: "Lottie Mode", options: ["normal", "bounce"], defaultValue: "normal", group: "Success" },
     successTitle: { type: "string", displayName: "Success Title", defaultValue: "Booking Confirmed! 🎉", group: "Success" },
     successMessage: { type: "string", displayName: "Success Message", defaultValue: "Thank you for choosing us! Your appointment has been successfully booked. We're excited to see you soon!", group: "Success" },
     successShowInfoCard: { type: "boolean", displayName: "Show Info Card", defaultValue: true, group: "Success" },
+    successInfoTitle: { type: "string", displayName: "Info Card Title", defaultValue: "What's Next?", group: "Success" },
+    successInfoBullets: { 
+      type: "array", 
+      displayName: "Info Bullets", 
+      itemType: { type: "string" }, 
+      defaultValue: [
+        "You'll receive a confirmation SMS shortly",
+        "We'll send you a reminder 24 hours before",
+        "Call us anytime if you need to reschedule",
+      ],
+      group: "Success"
+    },
   },
 });
 
@@ -282,7 +298,7 @@ PLASMIC.registerComponent(MainSidebar, {
       description: "Navigation menu items",
       itemType: {
         type: "object",
-        nameFunc: (item: any) => item?.label || "New Menu Item",
+        nameFunc: (item?: { label?: string }) => item?.label ?? "New Menu Item",
         fields: {
           id: { 
             type: "string", 
@@ -356,7 +372,7 @@ PLASMIC.registerComponent(PageShellShadcn, {
       description: "Navigation menu items",
       itemType: {
         type: "object",
-        nameFunc: (item: any) => item?.label || "New Menu Item",
+        nameFunc: (item?: { label?: string }) => item?.label ?? "New Menu Item",
         fields: {
           id: { 
             type: "string", 
@@ -429,7 +445,7 @@ PLASMIC.registerComponent(MainHeader, {
       description: "Navigation menu items",
       itemType: {
         type: "object",
-        nameFunc: (item: any) => item?.label || "New Menu Item",
+        nameFunc: (item?: { label?: string }) => item?.label ?? "New Menu Item",
         fields: {
           label: { 
             type: "string", 
@@ -507,7 +523,7 @@ PLASMIC.registerComponent(PageShellWithHeader, {
       description: "Header navigation items",
       itemType: {
         type: "object",
-        nameFunc: (item: any) => item?.label || "New Menu Item",
+        nameFunc: (item?: { label?: string }) => item?.label ?? "New Menu Item",
         fields: {
           label: { 
             type: "string", 
@@ -788,7 +804,7 @@ PLASMIC.registerComponent(Footer, {
       description: "Social media links",
       itemType: {
         type: "object",
-        nameFunc: (item: any) => item?.platform || "Social Link",
+        nameFunc: (item?: { platform?: string }) => item?.platform ?? "Social Link",
         fields: {
           id: { type: "string", description: "Unique ID", defaultValue: "social" },
           platform: { type: "string", description: "Platform name", defaultValue: "Instagram" },
