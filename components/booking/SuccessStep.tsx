@@ -62,10 +62,6 @@ export function SuccessStep({
   return (
     <div className="service-selection-container">
       <div className="relative flex flex-col items-center justify-center text-center space-y-3 sm:space-y-5 pt-2 sm:pt-4 px-3">
-        {/* Subtle check icon as a badge over the animation for visual confirmation */}
-        <div className="w-[44px] h-[44px] sm:w-[56px] sm:h-[56px] rounded-full flex items-center justify-center shadow-sm" style={{ backgroundColor: '#391709' }}>
-          <CheckCircle className="text-xl sm:text-2xl text-white" />
-        </div>
         {/* Lottie background area */}
         <div className="w-full max-w-md">
           {/* eslint-disable-next-line @next/next/no-img-element */}
