@@ -113,7 +113,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'calendarId is required' }, { status: 400, headers: cors() });
   }
 
-  const serviceDurationMinutes = serviceDurationParam ? parseInt(serviceDurationParam) : 30;
+  let serviceDurationMinutes = serviceDurationParam ? parseInt(serviceDurationParam) : 30;
 
   try {
     const supabase = getSupabaseServiceClient();
@@ -182,7 +182,71 @@ export async function GET(req: Request) {
         // swallow and proceed without barber-specific hours
       }
       if (barberData) { hasBarber = true; resolvedBarberData = barberData; }
-      if (barberData) { hasBarber = true; resolvedBarberData = barberData; }
+
+      // Check for custom duration for this service+barber combination
+      if (barberData && calendarId) {
+        try {
+          const barberRowId: string | undefined = barberData?.['\uD83D\uDD12 Row ID'] || barberData?.['🔒 Row ID'];
+          const barberGhlId: string | undefined = barberData?.['GHL_id'];
+          
+          // Try to find custom duration from Data_Services_Custom
+          let customDuration: number | null = null;
+          
+          // Query by Barber/ID if we have it
+          if (barberRowId) {
+            const { data: customRows } = await supabase
+              .from('Data_Services_Custom')
+              .select('Barber/Duration, Barber/ID, ghl_calendar_id, Service/Lookup')
+              .eq('Barber/ID', barberRowId);
+            
+            if (Array.isArray(customRows) && customRows.length > 0) {
+              // Find matching custom row by calendarId (ghl_calendar_id) or Service/Lookup
+              const match = customRows.find((row: any) => {
+                const calIdMatch = String((row as any)?.['ghl_calendar_id'] || '') === String(calendarId);
+                const lookupMatch = String((row as any)?.['Service/Lookup'] || '') === String(calendarId);
+                return calIdMatch || lookupMatch;
+              });
+              
+              if (match && Number.isFinite(Number((match as any)['Barber/Duration']))) {
+                customDuration = Number((match as any)['Barber/Duration']);
+              }
+            }
+          }
+          
+          // Also try by GHL_id if no match found
+          if (!customDuration && barberGhlId) {
+            // Try querying by ghl_id field
+            const { data: customRowsByGhl } = await supabase
+              .from('Data_Services_Custom')
+              .select('Barber/Duration, Barber/ID, ghl_calendar_id, Service/Lookup, ghl_id')
+              .eq('ghl_id', barberGhlId);
+            
+            if (Array.isArray(customRowsByGhl) && customRowsByGhl.length > 0) {
+              const match = customRowsByGhl.find((row: any) => {
+                const calIdMatch = String((row as any)?.['ghl_calendar_id'] || '') === String(calendarId);
+                const lookupMatch = String((row as any)?.['Service/Lookup'] || '') === String(calendarId);
+                return calIdMatch || lookupMatch;
+              });
+              
+              if (match && Number.isFinite(Number((match as any)['Barber/Duration']))) {
+                customDuration = Number((match as any)['Barber/Duration']);
+              }
+            }
+          }
+          
+          // Use custom duration if found
+          if (customDuration !== null && customDuration > 0) {
+            serviceDurationMinutes = customDuration;
+            console.log(`[free-slots] Using custom duration: ${customDuration} minutes (barber: ${userId}, service: ${calendarId})`);
+          }
+        } catch (err) {
+          // If custom duration lookup fails, continue with default
+          console.error('Error fetching custom duration:', err);
+        }
+      }
+      
+      // Log the final duration being used for slot calculations
+      console.log(`[free-slots] Final service duration for slot calculations: ${serviceDurationMinutes} minutes (userId: ${userId || 'none'}, calendarId: ${calendarId})`);
 
       const dayNameToIndex: Record<string, number> = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
       barberHoursMap = {
@@ -338,43 +402,54 @@ export async function GET(req: Request) {
     }
 
     // Existing bookings from ghl_events: block overlapping slots for assigned barber
+    // Only confirmed bookings block slots; canceled appointments are excluded
     let existingBookings: { startDayKey: string; startMinutes: number; endMinutes: number }[] = [];
     try {
       const dateIds = daysToCheck.map((d) => ymdInTZ(d).replace(/-/g, ''));
       let q = supabase.from('ghl_events').select('*').in('date_id', dateIds);
       if (userId) q = q.eq('assigned_user_id', userId);
+      // Exclude canceled appointments - only confirmed/booked appointments block slots
+      q = q.neq('appointment_status', 'canceled');
       // Do not filter by calendar_id; external calendarId may not match GHL calendar ids
       const { data } = await q;
       const rows: any[] = Array.isArray(data) ? (data as any[]) : [];
-      existingBookings = rows.map((row: any) => {
-        // Prefer canonical columns start_time/end_time; fall back to summary only if needed
-        const st = row?.['start_time'] ? new Date(row['start_time']) : null;
-        const et = row?.['end_time'] ? new Date(row['end_time']) : null;
-        let startDayKey = '';
-        let startMinutes = 0;
-        let endMinutes = 0;
-        if (st && et && !isNaN(st.getTime()) && !isNaN(et.getTime())) {
-          startDayKey = ymdInTZ(st);
-          startMinutes = minutesInTZ(st);
-          endMinutes = minutesInTZ(et);
-        } else {
-          // Fallback: try summary JSON
-          const summaryRaw = row?.['summary'];
-          if (summaryRaw) {
-            try {
-              const s = JSON.parse(summaryRaw);
-              if (s?.Date && /^\d{8}$/.test(String(s.Date))) {
-                const v = String(s.Date);
-                startDayKey = `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
-              }
-              if (Number.isFinite(Number(s?.Start))) startMinutes = Number(s.Start);
-              const endBuf = s?.['End (Buffer)'];
-              if (Number.isFinite(Number(endBuf))) endMinutes = Number(endBuf);
-            } catch {}
+      existingBookings = rows
+        .filter((row: any) => {
+          // Double-check: exclude canceled status even if query filter misses it
+          const status = row?.['appointment_status'] || '';
+          const statusLower = String(status).toLowerCase();
+          return statusLower !== 'canceled';
+        })
+        .map((row: any) => {
+          // Prefer canonical columns start_time/end_time; fall back to summary only if needed
+          const st = row?.['start_time'] ? new Date(row['start_time']) : null;
+          const et = row?.['end_time'] ? new Date(row['end_time']) : null;
+          let startDayKey = '';
+          let startMinutes = 0;
+          let endMinutes = 0;
+          if (st && et && !isNaN(st.getTime()) && !isNaN(et.getTime())) {
+            startDayKey = ymdInTZ(st);
+            startMinutes = minutesInTZ(st);
+            endMinutes = minutesInTZ(et);
+          } else {
+            // Fallback: try summary JSON
+            const summaryRaw = row?.['summary'];
+            if (summaryRaw) {
+              try {
+                const s = JSON.parse(summaryRaw);
+                if (s?.Date && /^\d{8}$/.test(String(s.Date))) {
+                  const v = String(s.Date);
+                  startDayKey = `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
+                }
+                if (Number.isFinite(Number(s?.Start))) startMinutes = Number(s.Start);
+                const endBuf = s?.['End (Buffer)'];
+                if (Number.isFinite(Number(endBuf))) endMinutes = Number(endBuf);
+              } catch {}
+            }
           }
-        }
-        return { startDayKey, startMinutes, endMinutes };
-      }).filter((b) => b.startDayKey && Number.isFinite(b.startMinutes) && Number.isFinite(b.endMinutes));
+          return { startDayKey, startMinutes, endMinutes };
+        })
+        .filter((b) => b.startDayKey && Number.isFinite(b.startMinutes) && Number.isFinite(b.endMinutes));
     } catch {}
 
     const isSlotBooked = (slotDate: Date, slotMinutes: number, durMinutes: number) => {
@@ -443,6 +518,10 @@ export async function GET(req: Request) {
       validMins.sort((a, b) => a - b);
       if (validMins.length > 0) filteredSlots[dateKey] = validMins.map(displayFromMinutes);
     }
+
+    // Log summary of slots calculated
+    const totalSlots = Object.values(filteredSlots).reduce((sum, slots) => sum + slots.length, 0);
+    console.log(`[free-slots] Slots calculation complete - Duration: ${serviceDurationMinutes} minutes | Total slots found: ${totalSlots} | Dates with slots: ${Object.keys(filteredSlots).length}`);
 
     return NextResponse.json({
       calendarId,
