@@ -32,6 +32,7 @@ export async function saveEventToDB(booking: any) {
     payment_status: booking.paymentStatus ?? null,
     date_id: dateIdInTz(booking.startTime),
     glide_row_id: glideRowId,
+    customer_phone_number: booking.customerPhone || null,
     raw: booking.raw ?? booking ?? {},
   };
   const { data, error } = await supabase.from('ghl_events').insert([mapped]).select();

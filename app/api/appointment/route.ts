@@ -74,9 +74,34 @@ export async function GET(req: Request) {
     params.servicePrice = picker('servicePrice', 'booking_price');
     params.staffName = picker('staffName', 'assigned_barber_name');
     params.paymentStatus = picker('paymentStatus', 'payment_status');
-    params.customerName = picker('customerName', 'customer_name');
-    params.customerFirstName = picker('customerFirstName', 'first_name');
-    params.customerLastName = picker('customerLastName', 'last_name');
+  params.customerName = picker('customerName', 'customer_name');
+  params.customerFirstName = picker('customerFirstName', 'first_name');
+  params.customerLastName = picker('customerLastName', 'last_name');
+  params.customerPhone = picker('customerPhone', 'phone');
+  // DEBUG: Log incoming phone
+  console.log('[appointment] incoming customerPhone:', params.customerPhone);
+    // If customerPhone is missing, fetch from HighLevel contact, but always prefer user input
+    if ((!params.customerPhone || params.customerPhone.length < 8) && params.contactId) {
+      try {
+        const accessToken = await (await import('@/lib/server/tokens')).getValidAccessToken();
+        const resp = await fetch('https://services.leadconnectorhq.com/contacts/' + params.contactId, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Version: '2021-04-15',
+            'Content-Type': 'application/json',
+          },
+        });
+        if (resp.ok) {
+          const contact = await resp.json();
+          params.customerPhone = contact.phone || contact.phoneNumber || params.customerPhone || '';
+        }
+      } catch (e) {
+        console.error('Failed to fetch customer phone from HighLevel:', e);
+      }
+    }
+    // DEBUG: Log final phone before webhook
+    console.log('[appointment] final customerPhone for webhook:', params.customerPhone);
 
     // --- Fix: Always use ghl_id from staff table as assignedUserId if staffName is provided ---
     if ((!params.assignedUserId || params.assignedUserId.length < 10) && params.staffName) {
@@ -130,16 +155,17 @@ export async function GET(req: Request) {
 
     // Enrich and save to DB
     const enhanced = {
-      serviceName: params.serviceName,
-      serviceDuration: params.serviceDuration ? Number(params.serviceDuration) : undefined,
-      servicePrice: params.servicePrice ? Number(params.servicePrice) : undefined,
-      staffName: params.staffName,
-      paymentStatus: params.paymentStatus,
-      customerName: params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || undefined,
-      startTime: params.startTime,
-      endTime: params.endTime,
-      assignedUserId: params.assignedUserId,
-      apptId: booking?.id,
+  serviceName: params.serviceName,
+  serviceDuration: params.serviceDuration ? Number(params.serviceDuration) : undefined,
+  servicePrice: params.servicePrice ? Number(params.servicePrice) : undefined,
+  staffName: params.staffName,
+  paymentStatus: params.paymentStatus,
+  customerName: params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || undefined,
+  customerPhone: params.customerPhone || '',
+  startTime: params.startTime,
+  endTime: params.endTime,
+  assignedUserId: params.assignedUserId,
+  apptId: booking?.id,
     };
 
     // Send to webhook (simple)
@@ -148,6 +174,7 @@ export async function GET(req: Request) {
         "Barber": params.staffName || params.assignedUserName || "",
         "Service": params.serviceName || params.title || "",
         "Customer": params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || "",
+        "CustomerPhone": params.customerPhone || "",
         "Date": (params.startTime ? new Date(params.startTime).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }).replace(/-/g, '') : ""),
         "Start": params.startTime ? (new Date(params.startTime).getHours() * 60 + new Date(params.startTime).getMinutes()) : null,
         "End (Buffer)": params.endTime ? (new Date(params.endTime).getHours() * 60 + new Date(params.endTime).getMinutes()) : null,

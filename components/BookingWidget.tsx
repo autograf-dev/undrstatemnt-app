@@ -1083,6 +1083,7 @@ export default function BookingWidget({
         staffName,
         customerFirstName,
         customerLastName,
+        customerPhone: contactForm.phone.replace(/\D/g, ""),
       };
 
       Object.entries(params).forEach(([k, v]) => {
