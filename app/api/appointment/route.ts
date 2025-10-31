@@ -56,195 +56,204 @@ async function createAppointment(params: Record<string, any>) {
 export async function OPTIONS() { return new NextResponse('', { headers: cors() }); }
 
 export async function GET(req: Request) {
-  try {
-    const url = new URL(req.url);
-    const params: Record<string, any> = {};
+  const url = new URL(req.url);
+  const params: Record<string, any> = {};
 
-    const p = (k: string) => url.searchParams.get(k) || undefined;
-    const picker = (...keys: string[]) => keys.map((k) => url.searchParams.get(k)).find((v) => v !== null && v !== '') || undefined;
+  const p = (k: string) => url.searchParams.get(k) || undefined;
+  const picker = (...keys: string[]) => keys.map((k) => url.searchParams.get(k)).find((v) => v !== null && v !== '') || undefined;
 
-    params.contactId = picker('contactId', 'contact_id');
-    params.calendarId = picker('calendarId', 'calendar_id');
-    params.assignedUserId = picker('assignedUserId', 'assigned_user_id');
-    params.startTime = picker('startTime', 'start_time');
-    params.endTime = picker('endTime', 'end_time');
-    params.title = p('title') || 'Booking from website';
-    params.serviceName = picker('serviceName', 'service_name');
-    params.serviceDuration = picker('serviceDuration', 'booking_duration');
-    params.servicePrice = picker('servicePrice', 'booking_price');
-    params.staffName = picker('staffName', 'assigned_barber_name');
-    params.paymentStatus = picker('paymentStatus', 'payment_status');
+  params.contactId = picker('contactId', 'contact_id');
+  params.calendarId = picker('calendarId', 'calendar_id');
+  params.assignedUserId = picker('assignedUserId', 'assigned_user_id');
+  params.startTime = picker('startTime', 'start_time');
+  params.endTime = picker('endTime', 'end_time');
+  params.title = p('title') || 'Booking from website';
+  params.serviceName = picker('serviceName', 'service_name');
+  params.serviceDuration = picker('serviceDuration', 'booking_duration');
+  params.servicePrice = picker('servicePrice', 'booking_price');
+  params.staffName = picker('staffName', 'assigned_barber_name');
+  params.paymentStatus = picker('paymentStatus', 'payment_status');
   params.customerName = picker('customerName', 'customer_name');
   params.customerFirstName = picker('customerFirstName', 'first_name');
   params.customerLastName = picker('customerLastName', 'last_name');
   params.customerPhone = picker('customerPhone', 'phone');
   // DEBUG: Log incoming phone
   console.log('[appointment] incoming customerPhone:', params.customerPhone);
-    // If customerPhone is missing, fetch from HighLevel contact, but always prefer user input
-    if ((!params.customerPhone || params.customerPhone.length < 8) && params.contactId) {
-      try {
-        const accessToken = await (await import('@/lib/server/tokens')).getValidAccessToken();
-        const resp = await fetch('https://services.leadconnectorhq.com/contacts/' + params.contactId, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            Version: '2021-04-15',
-            'Content-Type': 'application/json',
-          },
-        });
-        if (resp.ok) {
-          const contact = await resp.json();
-          params.customerPhone = contact.phone || contact.phoneNumber || params.customerPhone || '';
-        }
-      } catch (e) {
-        console.error('Failed to fetch customer phone from HighLevel:', e);
+  // If customerPhone is missing, fetch from HighLevel contact, but always prefer user input
+  if ((!params.customerPhone || params.customerPhone.length < 8) && params.contactId) {
+    try {
+      const accessToken = await (await import('@/lib/server/tokens')).getValidAccessToken();
+      const resp = await fetch('https://services.leadconnectorhq.com/contacts/' + params.contactId, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Version: '2021-04-15',
+          'Content-Type': 'application/json',
+        },
+      });
+      if (resp.ok) {
+        const contact = await resp.json();
+        params.customerPhone = contact.phone || contact.phoneNumber || params.customerPhone || '';
       }
+    } catch (e) {
+      console.error('Failed to fetch customer phone from HighLevel:', e);
     }
-    // DEBUG: Log final phone before webhook
-    console.log('[appointment] final customerPhone for webhook:', params.customerPhone);
+  }
+  // DEBUG: Log final phone before webhook
+  console.log('[appointment] final customerPhone for webhook:', params.customerPhone);
 
-    // --- Fix: Always use ghl_id from staff table as assignedUserId if staffName is provided ---
-    if ((!params.assignedUserId || params.assignedUserId.length < 10) && params.staffName) {
-      try {
-        // Lazy import to avoid top-level import cost
-        const { getSupabaseServiceClient } = await import('@/lib/server/supabase');
-        const supabase = getSupabaseServiceClient();
-        // Try to match staffName to name, firstname, or lastname (case-insensitive, trimmed)
-        const { data: staff, error } = await supabase
+  // --- Fix: Always use ghl_id from staff table as assignedUserId if staffName is provided ---
+  if ((!params.assignedUserId || params.assignedUserId.length < 10) && params.staffName) {
+    try {
+      // Lazy import to avoid top-level import cost
+      const { getSupabaseServiceClient } = await import('@/lib/server/supabase');
+      const supabase = getSupabaseServiceClient();
+      // Try to match staffName to name, firstname, or lastname (case-insensitive, trimmed)
+      const { data: staff, error } = await supabase
+        .from('staff')
+        .select('ghl_id, name, firstname, lastname')
+        .ilike('name', `%${params.staffName.trim()}%`);
+      if (error) throw error;
+      let match = staff && staff.length > 0 ? staff[0] : null;
+      // Fallback: try firstname/lastname if not found
+      if (!match && params.staffName) {
+        const { data: staff2 } = await supabase
           .from('staff')
           .select('ghl_id, name, firstname, lastname')
-          .ilike('name', `%${params.staffName.trim()}%`);
-        if (error) throw error;
-        let match = staff && staff.length > 0 ? staff[0] : null;
-        // Fallback: try firstname/lastname if not found
-        if (!match && params.staffName) {
-          const { data: staff2 } = await supabase
-            .from('staff')
-            .select('ghl_id, name, firstname, lastname')
-            .or(`firstname.ilike.%${params.staffName.trim()}%,lastname.ilike.%${params.staffName.trim()}%`);
-          if (staff2 && staff2.length > 0) match = staff2[0];
-        }
-        if (match && match.ghl_id) {
-          params.assignedUserId = match.ghl_id;
-        } else {
-          return NextResponse.json({ error: 'Could not find the correct barber ID. Please contact support.' }, { status: 400, headers: cors() });
-        }
-      } catch (e) {
+          .or(`firstname.ilike.%${params.staffName.trim()}%,lastname.ilike.%${params.staffName.trim()}%`);
+        if (staff2 && staff2.length > 0) match = staff2[0];
+      }
+      if (match && match.ghl_id) {
+        params.assignedUserId = match.ghl_id;
+      } else {
         return NextResponse.json({ error: 'Could not find the correct barber ID. Please contact support.' }, { status: 400, headers: cors() });
       }
+    } catch (e) {
+      return NextResponse.json({ error: 'Could not find the correct barber ID. Please contact support.' }, { status: 400, headers: cors() });
     }
+  }
 
-    if (!params.contactId || !params.calendarId || !params.startTime || !params.endTime) {
-      return NextResponse.json({ error: 'Missing required parameters: contactId, calendarId, startTime, endTime' }, { status: 400, headers: cors() });
-    }
+  if (!params.contactId || !params.calendarId || !params.startTime || !params.endTime) {
+    return NextResponse.json({ error: 'Missing required parameters: contactId, calendarId, startTime, endTime' }, { status: 400, headers: cors() });
+  }
 
-    try {
-      console.log('[appointment] booking with params', {
-        calendarId: params.calendarId,
-        assignedUserId: params.assignedUserId,
-        contactId: params.contactId,
-        startTime: params.startTime,
-        endTime: params.endTime,
-        staffName: params.staffName,
-        serviceName: params.serviceName,
-        serviceDuration: params.serviceDuration,
-      });
-    } catch {}
+  try {
+    console.log('[appointment] booking with params', {
+      calendarId: params.calendarId,
+      assignedUserId: params.assignedUserId,
+      contactId: params.contactId,
+      startTime: params.startTime,
+      endTime: params.endTime,
+      staffName: params.staffName,
+      serviceName: params.serviceName,
+      serviceDuration: params.serviceDuration,
+    });
+  } catch {}
 
-    const booking = await createAppointment(params);
+  // Helper to get minutes since midnight in America/Edmonton
+  function getMinutesInEdmonton(dateString: string): number | null {
+    if (!dateString) return null;
+    const d = new Date(dateString);
+    const edmonton = new Date(d.toLocaleString('en-US', { timeZone: 'America/Edmonton' }));
+    return edmonton.getHours() * 60 + edmonton.getMinutes();
+  }
 
+  let booking;
+  let enhanced;
+  try {
+    booking = await createAppointment(params);
     // Enrich and save to DB
-    const enhanced = {
-  serviceName: params.serviceName,
-  serviceDuration: params.serviceDuration ? Number(params.serviceDuration) : undefined,
-  servicePrice: params.servicePrice ? Number(params.servicePrice) : undefined,
-  staffName: params.staffName,
-  paymentStatus: params.paymentStatus,
-  customerName: params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || undefined,
-  customerPhone: params.customerPhone || '',
-  startTime: params.startTime,
-  endTime: params.endTime,
-  assignedUserId: params.assignedUserId,
-  apptId: booking?.id,
+    enhanced = {
+      serviceName: params.serviceName,
+      serviceDuration: params.serviceDuration ? Number(params.serviceDuration) : undefined,
+      servicePrice: params.servicePrice ? Number(params.servicePrice) : undefined,
+      staffName: params.staffName,
+      paymentStatus: params.paymentStatus,
+      customerName: params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || undefined,
+      customerPhone: params.customerPhone || '',
+      startTime: params.startTime,
+      endTime: params.endTime,
+      assignedUserId: params.assignedUserId,
+      apptId: booking?.id,
     };
-
-    // Send to webhook (simple)
-    try {
-      const webhookPayload = {
-        "Barber": params.staffName || params.assignedUserName || "",
-        "Service": params.serviceName || params.title || "",
-        "Customer": params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || "",
-        "CustomerPhone": params.customerPhone || "",
-        "BookingId": booking?.id || "",
-        "Date": (params.startTime ? new Date(params.startTime).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }).replace(/-/g, '') : ""),
-        "Start": params.startTime ? (new Date(params.startTime).getHours() * 60 + new Date(params.startTime).getMinutes()) : null,
-        "End (Buffer)": params.endTime ? (new Date(params.endTime).getHours() * 60 + new Date(params.endTime).getMinutes()) : null,
-        "Status ": params.appointmentStatus || booking.appointmentStatus || "Confirmed"
-      };
-      await fetch("https://primary-rmsi-production2.up.railway.app/webhook/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(webhookPayload)
-      });
-    } catch (e) {
-      console.error("Webhook send failed:", (e as Error).message);
-    }
-
-    // Send detailed webhook for table mutation
-    try {
-      const detailedPayload = {
-        appID: "VAC7eZY8vOOl4KZYEWF6",
-        mutations: [
-          {
-            kind: "add-row-to-table",
-            tableName: "native-table-17B93ocF1HmbC5Wge9ta",
-            columnValues: {
-              vJ042: (params.startTime ? new Date(params.startTime).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }).replace(/-/g, '') : ""),
-              kqZs5: params.bookingType || "Booking/Type",
-              "8C8HP": booking.id || booking.cal_com_id || "",
-              mNuL2: params.cancelUrl || "Booking/Cancel",
-              VPfiU: params.modifyUrl || "Booking/Modify",
-              "8265X": params.notifyUrl || "Booking/Notify",
-              tN30J: params.appointmentStatus || booking.appointmentStatus || "Confirmed",
-              wQ3qg: params.bookedBy || "Booking/Booked By",
-              wF0cN: params.customerId || params.contactId || "",
-              aPXKv: params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || "",
-              Ul1Xb: params.customerPhone || "",
-              Ppy2M: params.customerEmail || "",
-              xAwbe: params.staffId || params.assignedUserId || "",
-              JE35N: params.serviceId || "",
-              jIXWb: params.customPrice || "",
-              b3MEu: params.serviceName || params.title || "",
-              mN11Y: params.serviceDuration || "",
-              "9qKZ1": booking.id || "",
-              vY5AO: params.startTime || "",
-              MAqsh: params.documentId || "",
-              thd34: params.notes || "",
-              uDzPy: params.paymentId || "",
-              "4HFxg": "column1"
-            }
-          }
-        ]
-      };
-      await fetch("https://primary-rmsi-production2.up.railway.app/webhook/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(detailedPayload)
-      });
-    } catch (e) {
-      console.error("Detailed webhook send failed:", (e as Error).message);
-    }
-
-    try { await saveEventToDB({ ...booking, ...enhanced }); } catch (e) { console.error('DB save failed:', (e as Error).message); }
-
-    try {
-      console.log('[appointment] booking created', { id: booking?.id, status: booking?.appointmentStatus, assignedUserId: params.assignedUserId });
-    } catch {}
-    return NextResponse.json({ message: '✅ Booking success', response: booking }, { headers: cors() });
   } catch (err: any) {
     console.error('❌ Booking failed:', err?.message || err);
     return NextResponse.json({ error: 'Booking failed', details: err?.message || 'Unknown' }, { status: 500, headers: cors() });
   }
+
+  // Send to webhook (simple)
+  try {
+    const webhookPayload = {
+      "Barber": params.staffName || params.assignedUserName || "",
+      "Service": params.serviceName || params.title || "",
+      "Customer": params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || "",
+      "CustomerPhone": params.customerPhone || "",
+      "BookingId": booking?.id || "",
+      "Date": (params.startTime ? new Date(params.startTime).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }).replace(/-/g, '') : ""),
+      "Start": getMinutesInEdmonton(params.startTime),
+      "End (Buffer)": getMinutesInEdmonton(params.endTime),
+      "Status ": params.appointmentStatus || booking.appointmentStatus || "Confirmed"
+    };
+    await fetch("https://primary-rmsi-production2.up.railway.app/webhook/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(webhookPayload)
+    });
+  } catch (e) {
+    console.error("Webhook send failed:", (e as Error).message);
+  }
+
+  // Send detailed webhook for table mutation
+  try {
+    const detailedPayload = {
+      appID: "VAC7eZY8vOOl4KZYEWF6",
+      mutations: [
+        {
+          kind: "add-row-to-table",
+          tableName: "native-table-17B93ocF1HmbC5Wge9ta",
+          columnValues: {
+            vJ042: (params.startTime ? new Date(params.startTime).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }).replace(/-/g, '') : ""),
+            kqZs5: params.bookingType || "Booking/Type",
+            "8C8HP": booking.id || booking.cal_com_id || "",
+            mNuL2: params.cancelUrl || "Booking/Cancel",
+            VPfiU: params.modifyUrl || "Booking/Modify",
+            "8265X": params.notifyUrl || "Booking/Notify",
+            tN30J: params.appointmentStatus || booking.appointmentStatus || "Confirmed",
+            wQ3qg: params.bookedBy || "Booking/Booked By",
+            wF0cN: params.customerId || params.contactId || "",
+            aPXKv: params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || "",
+            Ul1Xb: params.customerPhone || "",
+            Ppy2M: params.customerEmail || "",
+            xAwbe: params.staffId || params.assignedUserId || "",
+            JE35N: params.serviceId || "",
+            jIXWb: params.customPrice || "",
+            b3MEu: params.serviceName || params.title || "",
+            mN11Y: params.serviceDuration || "",
+            "9qKZ1": booking.id || "",
+            vY5AO: params.startTime || "",
+            MAqsh: params.documentId || "",
+            thd34: params.notes || "",
+            uDzPy: params.paymentId || "",
+            "4HFxg": "column1"
+          }
+        }
+      ]
+    };
+    await fetch("https://primary-rmsi-production2.up.railway.app/webhook/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(detailedPayload)
+    });
+  } catch (e) {
+    console.error("Detailed webhook send failed:", (e as Error).message);
+  }
+
+  try { await saveEventToDB({ ...booking, ...enhanced }); } catch (e) { console.error('DB save failed:', (e as Error).message); }
+
+  try {
+    console.log('[appointment] booking created', { id: booking?.id, status: booking?.appointmentStatus, assignedUserId: params.assignedUserId });
+  } catch {}
+  return NextResponse.json({ message: '✅ Booking success', response: booking }, { headers: cors() });
 }
 
 export async function POST(req: Request) {
