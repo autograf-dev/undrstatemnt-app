@@ -2,22 +2,12 @@
 
 import { Card } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface SuccessStepProps {
   onReset: () => void;
-  /** Optional Lottie JSON URL from Plasmic asset (e.g., uploaded file). */
-  lottieUrl?: string;
-  /** Show/Hide lottie */
-  showLottie?: boolean;
-  /** Lottie controls */
-  lottieAutoplay?: boolean;
+  /** Loop control for the success animation */
   lottieLoop?: boolean;
-  lottieSpeed?: number;
-  lottieBackground?: string;
-  lottieHeight?: string;
-  /** Lottie render mode */
-  lottieMode?: 'normal' | 'bounce';
   /** Editable text */
   successTitle?: string;
   successMessage?: string;
@@ -31,14 +21,7 @@ interface SuccessStepProps {
 
 export function SuccessStep({
   onReset,
-  lottieUrl,
-  showLottie = true,
-  lottieAutoplay = true,
   lottieLoop = true,
-  lottieSpeed = 1,
-  lottieBackground = 'transparent',
-  lottieHeight = '220px',
-  lottieMode = 'normal',
   successTitle = 'Booking Confirmed! 🎉',
   successMessage = "Thank you for choosing us! Your appointment has been successfully booked. We're excited to see you soon!",
   showInfoCard = true,
@@ -49,8 +32,10 @@ export function SuccessStep({
     "Call us anytime if you need to reschedule",
   ],
 }: SuccessStepProps) {
+  const [isClient, setIsClient] = useState(false);
   // Load LottieFiles web component once on client; avoids adding a heavy dependency
   useEffect(() => {
+    setIsClient(true);
     if (typeof window === 'undefined') return;
     const hasPlayer = document.querySelector('script[data-lottie-player]');
     if (hasPlayer) return;
@@ -64,20 +49,20 @@ export function SuccessStep({
       <div className="relative flex flex-col items-center justify-center text-center space-y-3 sm:space-y-5 pt-2 sm:pt-4 px-3">
         {/* Lottie background area */}
         <div className="w-full max-w-md">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {showLottie && lottieUrl ? (
-            // LottieFiles player web component (loaded above); renders only on client
+          {isClient ? (
             // @ts-ignore - custom element not in TS lib
             <lottie-player
-              autoplay={lottieAutoplay}
+              autoplay
               loop={lottieLoop}
-              mode={lottieMode}
-              src={lottieUrl}
-              style={{ width: '100%', height: lottieHeight }}
-              background={lottieBackground}
-              speed={String(lottieSpeed)}
+              mode="normal"
+              src="/lottie.json"
+              style={{ width: '100%', height: '220px' }}
+              background="transparent"
+              speed="1"
             />
-          ) : null}
+          ) : (
+            <div style={{ width: '100%', height: '220px' }} />
+          )}
         </div>
         
         <div className="space-y-3">

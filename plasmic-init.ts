@@ -117,15 +117,8 @@ PLASMIC.registerComponent(BookingWidget, {
     stepperInactiveColor: { type: "color", description: "Stepper color - Inactive", defaultValue: "#e5e7eb" },
     stepperCompletedColor: { type: "color", description: "Stepper color - Completed", defaultValue: "#10b981", group: "Stepper" },
     
-    // Success step controls
-    successLottieUrl: { type: "string", displayName: "Success Lottie JSON URL", description: "Upload JSON in Plasmic assets and bind the URL.", group: "Success" },
-    successShowLottie: { type: "boolean", displayName: "Show Lottie", defaultValue: true, group: "Success" },
-    successLottieAutoplay: { type: "boolean", displayName: "Lottie Autoplay", defaultValue: true, group: "Success" },
+    // Success step controls (Lottie loop only)
     successLottieLoop: { type: "boolean", displayName: "Lottie Loop", defaultValue: true, group: "Success" },
-    successLottieSpeed: { type: "number", displayName: "Lottie Speed", defaultValue: 1, group: "Success" },
-    successLottieBackground: { type: "string", displayName: "Lottie Background", defaultValue: "transparent", group: "Success" },
-    successLottieHeight: { type: "string", displayName: "Lottie Height", defaultValue: "220px", group: "Success" },
-    successLottieMode: { type: "choice", displayName: "Lottie Mode", options: ["normal", "bounce"], defaultValue: "normal", group: "Success" },
     successTitle: { type: "string", displayName: "Success Title", defaultValue: "Booking Confirmed! 🎉", group: "Success" },
     successMessage: { type: "string", displayName: "Success Message", defaultValue: "Thank you for choosing us! Your appointment has been successfully booked. We're excited to see you soon!", group: "Success" },
     successShowInfoCard: { type: "boolean", displayName: "Show Info Card", defaultValue: true, group: "Success" },

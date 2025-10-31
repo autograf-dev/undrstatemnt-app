@@ -139,16 +139,8 @@ export interface BookingWidgetProps {
   navPrimaryText?: string;
   navSecondaryBorder?: string;
   navSecondaryText?: string;
-  /** Lottie JSON URL for success step (upload in Plasmic and bind URL) */
-  successLottieUrl?: string;
-  /** Success step toggles and content */
-  successShowLottie?: boolean;
-  successLottieAutoplay?: boolean;
+  /** Success step: loop control only */
   successLottieLoop?: boolean;
-  successLottieSpeed?: number;
-  successLottieBackground?: string;
-  successLottieHeight?: string;
-  successLottieMode?: 'normal' | 'bounce';
   successTitle?: string;
   successMessage?: string;
   successShowInfoCard?: boolean;
@@ -176,15 +168,8 @@ export default function BookingWidget({
   staffSlotsApiPath = "/api/free-slots",
   customerApiPath = "/api/customer",
   appointmentApiPath = "/api/appointment",
-  // Success Lottie
-  successLottieUrl,
-  successShowLottie = true,
-  successLottieAutoplay = true,
+  // Success Lottie (loop only)
   successLottieLoop = true,
-  successLottieSpeed = 1,
-  successLottieBackground = "transparent",
-  successLottieHeight = "220px",
-  successLottieMode = 'normal',
   successTitle = "Booking Confirmed! 🎉",
   successMessage = "Thank you for choosing us! Your appointment has been successfully booked. We're excited to see you soon!",
   successShowInfoCard = true,
@@ -1266,19 +1251,12 @@ export default function BookingWidget({
         return (
           <SuccessStep
             onReset={resetBooking}
-            lottieUrl={successLottieUrl}
-            showLottie={successShowLottie}
-            lottieAutoplay={successLottieAutoplay}
             lottieLoop={successLottieLoop}
-            lottieSpeed={successLottieSpeed}
-            lottieBackground={successLottieBackground}
-            lottieHeight={successLottieHeight}
-        lottieMode={successLottieMode}
             successTitle={successTitle}
             successMessage={successMessage}
             showInfoCard={successShowInfoCard}
-        infoCardTitle={successInfoTitle}
-        infoBullets={successInfoBullets}
+            infoCardTitle={successInfoTitle}
+            infoBullets={successInfoBullets}
           />
         );
       default:
