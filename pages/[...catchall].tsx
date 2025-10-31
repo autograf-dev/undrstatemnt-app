@@ -16,7 +16,10 @@ import { PLASMIC } from '../plasmic-init';
 export const getStaticPaths: GetStaticPaths = async () => {
   const pages = await PLASMIC.fetchPages();
   // Exclude root (/) because App Router handles the root route in this project.
-  const nonRootPages = (pages || []).filter((p: any) => p.path && p.path !== '/');
+  const nonRootPages = (pages || [])
+    .filter((p: any) => p.path && p.path !== '/')
+    // Exclude problematic pages that require browser-only APIs during prerender
+    .filter((p: any) => p.path !== '/homepage');
   return {
     paths: nonRootPages.map((page: any) => ({
       params: { catchall: page.path.substring(1).split('/') }
