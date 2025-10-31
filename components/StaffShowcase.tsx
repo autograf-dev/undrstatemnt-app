@@ -2,8 +2,10 @@
 
 import { CSSProperties, useState, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
+// no navigation; we use button cards
 import { cn } from "@/lib/utils";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 
 interface Staff {
   id: string;
@@ -132,6 +134,13 @@ export default function StaffShowcase({
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [windowWidth, setWindowWidth] = useState(0);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelLoading, setPanelLoading] = useState(false);
+  const [panelError, setPanelError] = useState<string | null>(null);
+  const [barberName, setBarberName] = useState("");
+  const [barberBio, setBarberBio] = useState("");
+  const [barberPhoto, setBarberPhoto] = useState("");
+  const [services, setServices] = useState<{ id: string; name: string; photo?: string; duration?: number | null; price?: number | null }[]>([]);
 
   // Track window width for responsive behavior
   useEffect(() => {
@@ -164,6 +173,130 @@ export default function StaffShowcase({
     fetchStaff();
   }, []);
 
+  async function openBarberPanel(member: Staff) {
+    try {
+      setPanelOpen(true);
+      setPanelLoading(true);
+      setPanelError(null);
+      setBarberName("");
+      setBarberBio("");
+      setBarberPhoto("");
+
+      // Fetch all barbers and match by GHL_id first, then by id
+      const resp = await fetch("/api/data_barbers", { cache: "no-store" });
+      if (!resp.ok) throw new Error(`Failed to fetch barber profile (${resp.status})`);
+      const rows: any[] = await resp.json();
+      const effectiveId = String(member.ghl_id || member.id || "");
+      const match = (rows || []).find((r: any) => {
+        const candidates = [r?.["GHL_id"], r?.["User/ID"], r?.id, r?.["🔒 Row ID"], r?.["Row ID"], r?.row_id]
+          .map((v: any) => (v != null ? String(v) : ""));
+        return candidates.includes(effectiveId);
+      });
+      if (!match) throw new Error("Barber profile not found");
+
+      setBarberName(match?.["Barber/Name"] || member.name || "");
+      setBarberBio(match?.["Barber/Bio"] || "");
+      setBarberPhoto(match?.["Barber/Photo"] || member.photo || member.image_link || "");
+
+      // Load services strictly from Services/List (CSV of ghl_calendar_id)
+      const serviceIds = String(match?.["Services/List"] || "")
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter(Boolean);
+
+      if (serviceIds.length === 0) {
+        setServices([]);
+      } else {
+        // Fetch base and custom in parallel
+        const [servicesResp, customResp] = await Promise.all([
+          fetch("/api/data_services", { cache: "no-store" }),
+          fetch("/api/data_services_custom", { cache: "no-store" }).catch(() => null as any),
+        ]);
+
+        const svcRows: any[] = servicesResp?.ok ? await servicesResp.json() : [];
+        const customRows: any[] = customResp && customResp.ok ? await customResp.json() : [];
+
+        const svcMap = new Map<string, any>();
+        for (const r of svcRows || []) {
+          const calKey = String(r?.["ghl_calendar_id"] || "");
+          const rowKey = String(r?.["🔒 Row ID"] || r?.["Row ID"] || r?.id || r?.row_id || "");
+          if (calKey) svcMap.set(calKey, r);
+          if (rowKey) svcMap.set(rowKey, r);
+        }
+        const barberRowId = String(match?.["🔒 Row ID"] || match?.["Row ID"] || match?.id || match?.row_id || "");
+        const barberNameFromRow = String(match?.["Barber/Name"] || member.name || "");
+        const normalize = (s: any) => String(s ?? "").trim().toLowerCase();
+        const barberNameKey = normalize(barberNameFromRow);
+
+        // Build the union of Services/List + any custom rows for this barber
+        const customForBarber = (customRows || []).filter((c: any) => {
+          const idMatch = String(c?.['Barber/ID'] || '') === barberRowId && barberRowId !== '';
+          const nameMatch = normalize(c?.['Barber/Name Lookup']) === barberNameKey && barberNameKey !== '';
+          return idMatch || nameMatch;
+        });
+        const unionIdsSet = new Set<string>(serviceIds.map((x: string) => String(x)));
+        for (const c of customForBarber) {
+          const cal = String(c?.['ghl_calendar_id'] || '');
+          if (cal) unionIdsSet.add(cal);
+        }
+
+        const prepared: { id: string; name: string; photo?: string; duration?: number | null; price?: number | null }[] = [];
+        for (const sidRaw of Array.from(unionIdsSet)) {
+          const sid = String(sidRaw);
+          const base = svcMap.get(sid);
+          if (!base) continue;
+
+          // Find custom override for this barber+service via ghl_calendar_id and either Barber/ID OR Barber/Name Lookup (fallback)
+          const calId = String(base?.['ghl_calendar_id'] || '');
+          const custom = (customRows || []).find((c: any) => {
+            const calMatch = String(c?.['ghl_calendar_id'] || '') === calId;
+            if (!calMatch) return false;
+            const idMatch = String(c?.['Barber/ID'] || '') === barberRowId && barberRowId !== '';
+            const nameMatch = normalize(c?.['Barber/Name Lookup']) === barberNameKey && barberNameKey !== '';
+            return idMatch || nameMatch;
+          });
+
+          const baseDur = Number(base?.["Service/Display.Mins"]) || Number(base?.["Service/Duration"]) || null;
+          const basePrice = Number(base?.["Service/Default Price"]) || null;
+
+          const duration = custom && Number.isFinite(Number(custom?.['Barber/Duration']))
+            ? Number(custom?.['Barber/Duration'])
+            : baseDur;
+          const price = custom && Number.isFinite(Number(custom?.['Barber/Price']))
+            ? Number(custom?.['Barber/Price'])
+            : basePrice;
+
+          const customLookup = (custom?.["Service/Lookup"] ?? "").toString().trim();
+          const baseDisplayRaw = (base?.["Service/Display Name"] ?? "").toString();
+          const baseNameRaw = (base?.["Service/Name"] ?? "").toString();
+          const baseDisplay = baseDisplayRaw.replace(/^\s+|\s+$/g, "");
+          const baseName = baseNameRaw.replace(/^\s+|\s+$/g, "");
+          const displayInvalid = !baseDisplay || baseDisplay === "\\" || baseDisplay === "\\\\" || baseDisplay.length <= 1;
+          const displayName = customLookup || (!displayInvalid ? baseDisplay : (baseName || "Service"));
+
+          prepared.push({
+            id: sid,
+            name: displayName,
+            photo: base?.["Service/Photo"] || undefined,
+            duration,
+            price,
+          });
+        }
+        try { console.debug('[StaffShowcase] services prepared (desktop path)', { barberRowId, count: prepared.length, ids: serviceIds }); } catch {}
+        try { console.debug('[StaffShowcase] services prepared (mobile path)', { barberRowId, count: prepared.length, ids: serviceIds }); } catch {}
+        setServices(prepared);
+      }
+    } catch (e: any) {
+      setPanelError(e?.message || String(e));
+    } finally {
+      setPanelLoading(false);
+    }
+  }
+
+  function closePanel() {
+    setPanelOpen(false);
+  }
+
   // Build responsive grid classes
   const gridColsClass = `grid-cols-${columnsMobile} md:grid-cols-${columnsTablet} lg:grid-cols-${columnsDesktop}`;
 
@@ -173,6 +306,22 @@ export default function StaffShowcase({
       style={{
         ...style,
         backgroundColor: bgColor,
+      }}
+      onClickCapture={(e) => {
+        // If Plasmic or parent wrappers add an <a> around our card, block navigation
+        let el = e.target as HTMLElement | null;
+        let insideStaffCard = false;
+        while (el) {
+          if (el.getAttribute && el.getAttribute("data-staff-card") === "true") {
+            insideStaffCard = true;
+          }
+          if (el.tagName === "A" && insideStaffCard) {
+            e.preventDefault();
+            e.stopPropagation();
+            break;
+          }
+          el = el.parentElement;
+        }
       }}
     >
       <div className="mx-auto" style={{ maxWidth }}>
@@ -229,19 +378,21 @@ export default function StaffShowcase({
               );
               
               return (
-                <Link
+                <button
                   key={member.id}
-                  href={`/booking?staffId=${member.ghl_id || member.id}`}
-                  className="group overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105"
+                  type="button"
+                  data-staff-card="true"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); openBarberPanel(member); }}
+                  className="text-left w-full group overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105"
                   style={{
                     backgroundColor: cardBgColor,
                     borderRadius: cardBorderRadius,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = cardHoverColor;
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = cardHoverColor;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = cardBgColor;
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = cardBgColor;
                   }}
                 >
                   {/* Staff Image */}
@@ -291,12 +442,184 @@ export default function StaffShowcase({
                       {member.firstname} {member.lastname}
                     </p>
                   </div>
-                </Link>
+                </button>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Desktop: right Sheet; Mobile: Bottom Drawer */}
+      {windowWidth >= 1024 ? (
+        <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
+          <SheetContent
+            side="right"
+            className="z-[1000006] p-0 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.35)] ring-1 ring-black/10 !w-[60vw] !max-w-[60vw]"
+          >
+            <SheetHeader className="px-6 py-4 border-b flex items-center justify-between sticky top-0 bg-white z-[1]">
+              <SheetTitle>Barber Profile</SheetTitle>
+              <SheetClose className="text-2xl leading-none">×</SheetClose>
+            </SheetHeader>
+            <div className="p-6 overflow-y-auto" style={{ height: "calc(100% - 64px)" }}>
+              {panelLoading && <div>Loading…</div>}
+              {panelError && <div className="text-red-600">{panelError}</div>}
+              {!panelLoading && !panelError && (
+                <div className="grid grid-cols-2 gap-8 items-start">
+                  <div className="w-full overflow-hidden rounded-xl bg-gray-100">
+                    {barberPhoto ? (
+                      <img src={barberPhoto} alt={barberName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div className="w-full h-full min-h-[360px] grid place-items-center text-gray-500">No photo</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold mb-3">{barberName || "Barber"}</div>
+                    {barberBio ? (
+                      <p className="leading-relaxed text-[15px] text-gray-800">{barberBio}</p>
+                    ) : (
+                      <p className="text-gray-600">No bio available.</p>
+                    )}
+                    {services.length > 0 && (
+                      <div className="mt-8">
+                        <div className="font-semibold mb-4">Services</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {services.map((s) => {
+                            const durationText = s.duration ? `${s.duration} mins` : "";
+                            const priceText = s.price != null ? `$${s.price.toFixed(2)}` : "";
+                            return (
+                              <div
+                                key={s.id}
+                                className="group rounded-xl border border-gray-200 hover:shadow-lg transition p-3 flex gap-3 bg-white"
+                              >
+                                <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                                  {s.photo ? (
+                                    <img src={s.photo} alt={s.name} className="w-full h-full object-cover" />
+                                  ) : null}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-medium text-[14px] leading-tight break-words">{s.name}</div>
+                                  {durationText && (
+                                    <div className="mt-1 text-[11px] text-gray-600">
+                                      <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5">{durationText}</span>
+                                    </div>
+                                  )}
+                                  {priceText && (
+                                    <div className="mt-1 text-[11px] text-gray-600">
+                                      <span className="inline-flex items-center rounded-md bg-amber-50 text-amber-700 px-2 py-0.5">{priceText}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Hide default close icon from SheetContent to avoid duplicates */}
+            <style>{`button[data-slot="sheet-close"]{display:none !important;}`}</style>
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Drawer open={panelOpen} onOpenChange={setPanelOpen}>
+          <DrawerContent roundedClassName="rounded-t-2xl" className="z-[1000006]">
+            <DrawerHeader className="px-4 py-3 border-b">
+              <DrawerTitle>Barber Profile</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-4 overflow-y-auto" data-drawer-scroll>
+              {panelLoading && <div>Loading…</div>}
+              {panelError && <div className="text-red-600">{panelError}</div>}
+              {!panelLoading && !panelError && (
+                <div className="flex flex-col gap-4">
+                  <div className="w-full aspect-square overflow-hidden rounded-lg bg-gray-100">
+                    {barberPhoto ? (
+                      <img src={barberPhoto} alt={barberName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div className="w-full h-full grid place-items-center text-gray-500">No photo</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold">{barberName || "Barber"}</div>
+                    {services.length > 0 && (
+                      <div className="mt-3">
+                        <div className="font-semibold mb-2">Services</div>
+                      <div className="grid grid-cols-2 gap-3">
+                          {services.map((s) => {
+                            const durationText = s.duration ? `${s.duration} mins` : "";
+                            const priceText = s.price != null ? `$${s.price.toFixed(2)}` : "";
+                            return (
+                            <div key={s.id} className="rounded-xl border border-gray-200 bg-transparent shadow-md p-3 flex gap-3">
+                              <div className="w-14 h-14 rounded-md overflow-hidden bg-gray-100 shrink-0">
+                                  {s.photo ? (
+                                    <img src={s.photo} alt={s.name} className="w-full h-full object-cover" />
+                                  ) : null}
+                                </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-[13px] leading-tight truncate">{s.name}</div>
+                                {durationText && (
+                                  <div className="mt-1 text-[10px] text-gray-600">
+                                    <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5">{durationText}</span>
+                                  </div>
+                                )}
+                                {priceText && (
+                                  <div className="mt-1 text-[10px] text-gray-600">
+                                    <span className="inline-flex items-center rounded-md bg-amber-50 text-amber-700 px-2 py-0.5">{priceText}</span>
+                                  </div>
+                                )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {barberBio ? (
+                      <p className="mt-3 leading-relaxed">{barberBio}</p>
+                    ) : (
+                      <p className="mt-3 text-gray-600">No bio available.</p>
+                    )}
+                  </div>
+                  {/* Keep a secondary services section off on mobile to avoid duplication */}
+                  {false && services.length > 0 && (
+                    <div className="mt-4">
+                      <div className="font-semibold mb-3">Services</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {services.map((s) => {
+                          const durationText = s.duration ? `${s.duration} mins` : "";
+                          const priceText = s.price != null ? `$${s.price.toFixed(2)}` : "";
+                          return (
+                            <div key={s.id} className="rounded-xl border border-gray-200 bg-white p-3 flex gap-3">
+                              <div className="w-14 h-14 rounded-md overflow-hidden bg-gray-100 shrink-0">
+                                {s.photo ? (
+                                  <img src={s.photo} alt={s.name} className="w-full h-full object-cover" />
+                                ) : null}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium truncate">{s.name}</div>
+                                <div className="mt-1 flex items-center gap-2 text-xs text-gray-600">
+                                  {durationText && (
+                                    <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5">{durationText}</span>
+                                  )}
+                                  {priceText && (
+                                    <span className="inline-flex items-center rounded-md bg-amber-50 text-amber-700 px-2 py-0.5">{priceText}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
     </section>
   );
 }

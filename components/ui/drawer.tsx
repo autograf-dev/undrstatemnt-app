@@ -35,7 +35,7 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-[1000003] flex flex-col overflow-hidden border border-white/20 bg-white/90 p-4 shadow-2xl",
+        "fixed inset-x-0 bottom-0 z-[1000003] flex flex-col overflow-hidden bg-white/90 p-4 shadow-2xl",
         "backdrop-blur-xl supports-[backdrop-filter]:bg-white/70",
         roundedClassName,
         className
@@ -48,9 +48,9 @@ const DrawerContent = React.forwardRef<
         top: 'var(--drawer-top-gap)',
         bottom: 0,
         // Slightly shorter sheet on mobile so it never feels full-screen; content will scroll
-        height: 'min(78svh, calc(100svh - var(--drawer-top-gap)))',
+        height: 'calc(100svh - var(--drawer-top-gap))',
         maxHeight: 'calc(100svh - var(--drawer-top-gap))',
-        paddingBottom: "max(16px, env(safe-area-inset-bottom))",
+        paddingBottom: "env(safe-area-inset-bottom)",
       }}
       {...props}
       onOpenAutoFocus={(e) => {

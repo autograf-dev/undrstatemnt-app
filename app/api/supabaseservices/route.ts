@@ -97,7 +97,7 @@ export async function GET(req: Request) {
       // Try multiple possible id column names in sequence
       let serviceRow: any = null;
       // Attempt direct eq() lookups; if any error occurs, don't fail fast — we'll fallback to a full scan next.
-      for (const col of ["glide_row_id", "🔒 Row ID", "id"]) {
+      for (const col of ["glide_row_id", "🔒 Row ID", "id", "ghl_calendar_id"]) {
         const { data, error } = await (supabase as any)
           .from("Data_Services")
           .select("*")
@@ -120,6 +120,7 @@ export async function GET(req: Request) {
               r?.id,
               r?.["Row ID"],
               r?.row_id,
+              r?.["ghl_calendar_id"],
             ]
               .map((v: any) => (v != null ? String(v) : ""));
             return candidates.includes(String(serviceId));
