@@ -19,6 +19,7 @@ import ServicesShowcase from "./components/ServicesShowcase";
 import HomepageStaff from "./components/HomepageStaff";
 import HomepageServices from "./components/HomepageServices";
 import StaffShowcase from "./components/StaffShowcase";
+import BarberProfile from "./components/plasmic/BarberProfile";
 
 // Register code components used by Plasmic pages so Studio and runtime can render them
 PLASMIC.registerComponent(BookingWidget, {
@@ -227,6 +228,15 @@ PLASMIC.registerComponent(ServicesCatalog, {
       description: "Show search input",
       defaultValue: true,
     },
+  },
+});
+
+PLASMIC.registerComponent(BarberProfile as any, {
+  name: "BarberProfile",
+  props: {
+    id: { type: "string", description: "Barber id (🔒 Row ID or User/ID)", defaultValue: "" },
+    className: { type: "class", description: "CSS class from Plasmic" },
+    style: { type: "object", description: "Inline style object" },
   },
 });
 

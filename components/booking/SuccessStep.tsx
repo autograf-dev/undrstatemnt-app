@@ -56,12 +56,12 @@ export function SuccessStep({
               loop={lottieLoop}
               mode="normal"
               src="/lottie.json"
-              style={{ width: '100%', height: '220px' }}
+              style={{ width: '100%', height: '200px' }}
               background="transparent"
               speed="1"
             />
           ) : (
-            <div style={{ width: '100%', height: '220px' }} />
+            <div style={{ width: '100%', height: '200px' }} />
           )}
         </div>
         
