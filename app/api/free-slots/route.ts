@@ -133,7 +133,7 @@ export async function GET(req: Request) {
     const startOfRange = new Date(daysToCheck[0].getFullYear(), daysToCheck[0].getMonth(), daysToCheck[0].getDate(), 0, 0, 0);
     const endOfRange = new Date(daysToCheck[daysToCheck.length - 1].getFullYear(), daysToCheck[daysToCheck.length - 1].getMonth(), daysToCheck[daysToCheck.length - 1].getDate(), 23, 59, 59);
 
-    const slotsData = buildStaticSlotsMinutes(daysToCheck, 30);
+    const slotsData = buildStaticSlotsMinutes(daysToCheck, 15);
 
     // Business hours: use "Trading_hours" table
     const businessHoursMap: Record<number, { open_time: number; close_time: number }> = {};
