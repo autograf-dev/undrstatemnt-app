@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     // Source of truth for service membership is Data_barbers."Services/List"
     const barbersRes = await supabase
       .from('Data_barbers')
-      .select('"User/ID", "GHL_id", "Barber/Name", "🔒 Row ID", "Services/List", "Barber/Photo"');
+      .select('"glide_user_id", "GHL_id", "Barber/Name", "🔒 Row ID", "Services/List", "Barber/Photo"');
 
     if (barbersRes.error) {
       console.error('[supabasestaff] query error:', barbersRes.error);
@@ -119,7 +119,7 @@ export async function GET(req: Request) {
       }
 
       return {
-        id: r?.['GHL_id'] || r?.['User/ID'] || r?.id || r?.userId || r?.user_id || '',
+        id: r?.['GHL_id'] || r?.['glide_user_id'] || r?.id || r?.userId || r?.user_id || '',
         ghl_id: r?.['GHL_id'] || '',
         name: r?.['Barber/Name'] || 'Staff',
         barberRowId,
