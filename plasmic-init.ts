@@ -194,6 +194,7 @@ import HeroSection from "./components/HeroSection";
 import OurStory from "./components/OurStory";
 import CTASection from "./components/CTASection";
 import Footer from "./components/Footer";
+import LottiePlayer from "@/components/LottiePlayer";
 
 PLASMIC.registerComponent(ServicesCatalog, {
   name: "ServicesCatalog",
@@ -208,6 +209,30 @@ PLASMIC.registerComponent(ServicesCatalog, {
       type: "boolean",
       description: "Show search input",
       defaultValue: true,
+    },
+  },
+});
+
+// Lightweight Lottie player that accepts a JSON URL uploaded via Plasmic assets
+PLASMIC.registerComponent(LottiePlayer, {
+  name: "LottiePlayer",
+  importPath: "@/components/LottiePlayer",
+  props: {
+    src: {
+      type: "string",
+      displayName: "Lottie JSON URL",
+      description: "Upload JSON in Plasmic assets and bind its URL here.",
+    },
+    autoplay: { type: "boolean", defaultValue: true },
+    loop: { type: "boolean", defaultValue: true },
+    speed: { type: "number", defaultValue: 1 },
+    background: { type: "string", defaultValue: "transparent" },
+    width: { type: "string", defaultValue: "100%" },
+    height: { type: "string", defaultValue: "220px" },
+    mode: {
+      type: "choice",
+      options: ["normal", "bounce"],
+      defaultValue: "normal",
     },
   },
 });
