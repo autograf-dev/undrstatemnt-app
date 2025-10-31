@@ -27,6 +27,8 @@ export interface Staff {
   icon?: string;
   badge?: string;
   imageUrl?: string;
+  /** GHL ID for API calls (from staff table ghl_id field) */
+  ghlId?: string;
   /** Supabase Data_barbers row id ("🔒 Row ID") for override joins */
   barberRowId?: string;
   /** Optional list of service IDs this barber supports (from Data_barbers "Services/List") */

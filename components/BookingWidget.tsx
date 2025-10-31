@@ -225,8 +225,9 @@ export default function BookingWidget({
   // Normalize/override legacy API paths coming from Plasmic instances
   const effectiveServicesApiPath = servicesApiPath === "/api/services" ? "/api/supabaseservices" : servicesApiPath;
   const effectiveStaffApiPath = staffApiPath === "/api/staff" ? "/api/supabasestaff" : staffApiPath;
-  const effectiveStaffSlotsApiPath = staffSlotsApiPath === "/api/staffSlots" || staffSlotsApiPath === "/api/staff-slots" ? "/api/staff-slots" : staffSlotsApiPath;
+  const effectiveStaffSlotsApiPath = staffSlotsApiPath === "/api/free-slots" || staffSlotsApiPath === "/api/free-slots" ? "/api/free-slots" : staffSlotsApiPath;
   // Log overrides once on mount (avoid spamming per render)
+  console.log('effectiveStaffSlotsApiPath', effectiveStaffSlotsApiPath);
   useEffect(() => {
     if (servicesApiPath !== effectiveServicesApiPath) {
       console.warn('[Booking] Overriding servicesApiPath from', servicesApiPath, 'to', effectiveServicesApiPath);
@@ -273,6 +274,9 @@ export default function BookingWidget({
   const [selectedStaff, setSelectedStaff] = useState<string>("");
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [guestCount, setGuestCount] = useState(1);
+
+  // Normalize a phone number to only digits; server will convert to E.164
+  const digitsOnly = (raw: string): string => (raw || '').replace(/\D/g, '');
   const [showGuestInput, setShowGuestInput] = useState(false);
   
   // Effective overrides (duration/price) for current service+staff
@@ -477,20 +481,26 @@ export default function BookingWidget({
             console.log('[Booking] supabase staff raw length:', Array.isArray(staffList) ? staffList.length : null);
           }
           if (Array.isArray(staffList) && staffList.length) {
-            const allStaff: Staff[] = staffList.map((s: any) => ({
-              id: String(s.ghl_id || s.id),
-              name: s.name || s.fullName || 'Staff',
-              icon: 'user',
-              imageUrl: s.photo || s.avatarUrl || s.imageUrl,
-              barberRowId: s.barberRowId || s['🔒 Row ID'] || undefined,
-              services: Array.isArray(s.servicesList)
-                ? s.servicesList.map((v: any) => String(v))
-                : typeof s.servicesList === 'string'
-                  ? s.servicesList.split(',').map((x: string) => x.trim()).filter(Boolean)
-                  : [],
-              // annotated by API when serviceId is provided
-              offersForService: s.offersForService === true,
-            }));
+            const allStaff: Staff[] = staffList.map((s: any) => {
+              // Only use staff directory fields for ghl id (various casings/paths)
+              const ghlIdRaw = s?.ghl_id || s?.ghlId || s?.['ghlId'] || s?.staff?.ghl_id || s?.staff?.ghlId || s?.user?.ghl_id || s?.user?.ghlId;
+              const ghlId = ghlIdRaw ? String(ghlIdRaw) : undefined;
+              return {
+                id: String(s.id), // Keep UUID id for internal tracking
+                ghlId, // Explicitly store HighLevel user id
+                name: s.name || s.fullName || 'Staff',
+                icon: 'user',
+                imageUrl: s.photo || s.avatarUrl || s.imageUrl,
+                barberRowId: s.barberRowId || s['🔒 Row ID'] || undefined,
+                services: Array.isArray(s.servicesList)
+                  ? s.servicesList.map((v: any) => String(v))
+                  : typeof s.servicesList === 'string'
+                    ? s.servicesList.split(',').map((x: string) => x.trim()).filter(Boolean)
+                    : [],
+                // annotated by API when serviceId is provided
+                offersForService: s.offersForService === true,
+              };
+            });
             const filtered = allStaff.filter((st) =>
               st.offersForService === true || (Array.isArray(st.services) && st.services.includes(String(selectedService)))
             );
@@ -604,7 +614,15 @@ export default function BookingWidget({
       setLoadingSlots(true);
 
       const serviceId = selectedService;
-      const userId = selectedStaff && selectedStaff !== 'any' ? selectedStaff : null;
+      // Match by either UUID id or ghlId, because selection may pass ghlId
+      const selectedStaffObj = staff.find((s) => s.id === selectedStaff || s.ghlId === selectedStaff);
+      const userId = selectedStaff && selectedStaff !== 'any' 
+        ? (selectedStaffObj?.ghlId || selectedStaff) 
+        : null;
+
+      if (typeof window !== 'undefined') {
+        console.log('[BookingWidget] Selected staff ghl_id:', selectedStaffObj?.ghlId || 'not available');
+      }
 
       try {
         const serviceDurationMinutes = getServiceDuration(serviceId);
@@ -618,8 +636,29 @@ export default function BookingWidget({
           apiUrl += `&serviceDuration=${serviceDurationMinutes}`;
         }
         
+        console.log('[BookingWidget] Fetching slots endpoint:', apiUrl);
+        console.log('[BookingWidget] Request params:', {
+          calendarId: serviceId,
+          userId: userId || 'none (any staff)',
+          serviceDuration: serviceDurationMinutes,
+          selectedStaff: selectedStaff,
+          selectedStaffUuid: selectedStaffObj?.id || 'not found',
+          selectedStaffGhlId: selectedStaffObj?.ghlId || 'not available',
+          staffName: selectedStaffObj?.name || 'not found'
+        });
+        
         const response = await fetch(apiUrl);
         const data = await response.json();
+
+        console.log('[BookingWidget] Slots API response:', {
+          url: apiUrl,
+          status: response.status,
+          calendarId: data.calendarId,
+          startDate: data.startDate,
+          targetTimeZone: data.targetTimeZone,
+          datesWithSlots: Object.keys(data.slots || {}).length,
+          slots: data.slots
+        });
 
         if (data.slots && data.calendarId) {
           setWorkingSlots(data.slots);
@@ -878,6 +917,7 @@ export default function BookingWidget({
   };
 
   const handleStaffSelectAndSubmit = (staffId: string) => {
+    console.log('[BookingWidget] Staff selected:', staffId);
     setSelectedStaff(staffId);
     setEffectiveDuration(null);
     setEffectivePrice(null);
@@ -912,8 +952,47 @@ export default function BookingWidget({
       customerUrl.searchParams.set("lastName", contactForm.lastName.trim());
       customerUrl.searchParams.set("phone", contactForm.phone.replace(/\D/g, ""));
       const customerRes = await fetch(customerUrl.toString());
+      if (!customerRes.ok) {
+        const err = await customerRes.json().catch(() => ({} as any));
+        console.error('Customer lookup/create failed:', err);
+        setBookingLoading(false);
+        return;
+      }
       const customerData = await customerRes.json();
-      const contactId = customerData?.contactId || customerData?.id || customerData?.data?.id;
+      let contactId = (
+        customerData?.contactId ||
+        customerData?.id ||
+        customerData?.data?.id ||
+        customerData?.meta?.contactId ||
+        customerData?.contact?.id
+      );
+      // Fallback: sometimes create returns without id surfaced; re-query once to fetch it
+      if (!contactId) {
+        try {
+          const verifyUrl = new URL(customerApiPath, window.location.origin);
+          verifyUrl.searchParams.set("firstName", contactForm.firstName.trim());
+          verifyUrl.searchParams.set("lastName", contactForm.lastName.trim());
+          verifyUrl.searchParams.set("phone", digitsOnly(contactForm.phone));
+          const verifyRes = await fetch(verifyUrl.toString());
+          if (verifyRes.ok) {
+            const verifyData = await verifyRes.json();
+            contactId = (
+              verifyData?.contactId ||
+              verifyData?.id ||
+              verifyData?.data?.id ||
+              verifyData?.meta?.contactId ||
+              verifyData?.contact?.id
+            );
+          }
+        } catch (e) {
+          console.error('Customer verify fetch failed:', e);
+        }
+      }
+      if (!contactId) {
+        console.error('Customer response missing contactId after retry');
+        setBookingLoading(false);
+        return;
+      }
 
       // 2) Compute start/end UTC ISO from selectedDate + selectedTimeSlot (America/Edmonton)
       const serviceObj = services.find((s) => s.id === selectedService);
@@ -957,63 +1036,34 @@ export default function BookingWidget({
         return;
       }
 
-      // 4) Look up the correct ghl_id for the assigned barber from the staff table
+      // 4) Use selected staff id directly as assigned user id (ghl user id)
       let assignedUserId = "";
       if (selectedStaff && selectedStaff !== "any") {
-        const barberName = staff.find((s) => s.id === selectedStaff)?.name;
-        if (barberName) {
-          try {
-            const staffLookupUrl = new URL("/api/staff-lookup", window.location.origin);
-            staffLookupUrl.searchParams.set("name", barberName);
-            const staffResp = await fetch(staffLookupUrl.toString());
-            const staffData = await staffResp.json();
-            if (staffResp.ok && staffData.ghl_id) {
-              assignedUserId = staffData.ghl_id;
-            } else {
-              console.error("Failed to look up ghl_id for barber:", barberName, staffData);
-              alert("Could not find the correct barber ID. Please contact support.");
-              setBookingLoading(false);
-              return;
-            }
-          } catch (e) {
-            console.error("Error fetching barber ghl_id:", e);
-            alert("Error looking up barber information. Please try again.");
-            setBookingLoading(false);
-            return;
-          }
-        }
+        const selectedStaffObj = staff.find((s) => s.id === selectedStaff || s.ghlId === selectedStaff);
+        assignedUserId = selectedStaffObj?.ghlId || selectedStaff;
       }
 
-      // 5) Book appointment (send camelCase and snake_case params for compatibility)
+      // 5) Book appointment (send camelCase params only)
       const apptUrl = new URL(appointmentApiPath, window.location.origin);
+      const serviceName = serviceObj?.name || "";
+      const staffName = (staff.find((s) => s.id === selectedStaff)?.name) || "Any available";
+      const customerFirstName = contactForm.firstName.trim();
+      const customerLastName = contactForm.lastName.trim();
+      const title = `${serviceName || "Appointment"} - ${[customerFirstName, customerLastName].filter(Boolean).join(" ")}`;
+
       const params: Record<string, string> = {
-        // identifiers
         calendarId,
-        calendar_id: calendarId,
         assignedUserId,
-        assigned_user_id: assignedUserId,
-        contactId: contactId || "",
-        contact_id: contactId || "",
-        // timing
+        contactId,
         startTime: startIsoUtc,
-        start_time: startIsoUtc,
         endTime: endIsoUtc,
-        end_time: endIsoUtc,
-        // service metadata
-        title: serviceObj?.name || "Appointment",
-        serviceName: serviceObj?.name || "",
-        service_name: serviceObj?.name || "",
+        title,
+        serviceName,
         servicePrice: String((effectivePrice ?? 0) || 0),
-        service_price: String((effectivePrice ?? 0) || 0),
         serviceDuration: String(durationMins || 0),
-        service_duration: String(durationMins || 0),
-        // staff & customer display names
-        staffName: (staff.find((s) => s.id === selectedStaff)?.name) || "Any available",
-        assigned_barber_name: (staff.find((s) => s.id === selectedStaff)?.name) || "Any available",
-        customerFirstName: contactForm.firstName.trim(),
-        customerLastName: contactForm.lastName.trim(),
-        customer_first_name: contactForm.firstName.trim(),
-        customer_last_name: contactForm.lastName.trim(),
+        staffName,
+        customerFirstName,
+        customerLastName,
       };
 
       Object.entries(params).forEach(([k, v]) => {

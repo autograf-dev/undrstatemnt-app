@@ -96,9 +96,17 @@ export async function GET(req: Request) {
     // Try E.164 first, then raw digits as a fallback
     let found = await findContactByQuery(accessToken, locationId, phoneE164);
     if (!found) found = await findContactByQuery(accessToken, locationId, phoneDigits);
-    if (found) return NextResponse.json(found, { headers: cors() });
+    if (found) {
+      try {
+        console.log('[customer] existing contact found', { contactId: found.id || found.contactId, phone: phoneE164, locationId });
+      } catch {}
+      return NextResponse.json(found, { headers: cors() });
+    }
 
     const created = await createContact(accessToken, locationId, firstName || 'Guest', lastName || 'User', phoneE164);
+    try {
+      console.log('[customer] created new contact', { contactId: created.id || created.contactId, phone: phoneE164, locationId });
+    } catch {}
     return NextResponse.json(created, { headers: cors() });
   } catch (err: any) {
     // If upstream returned structured JSON inside message, try to pass it along

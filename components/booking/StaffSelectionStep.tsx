@@ -158,11 +158,15 @@ export function StaffSelectionStep({
               <div
                 key={item.id}
                 onClick={() => {
-                  onStaffSelect(item.id);
+                  const effectiveId = (item as any).ghlId || item.id;
+                  if (typeof window !== 'undefined') {
+                    console.log('[StaffSelectionStep] Staff clicked:', { name: item.name, uuid: item.id, ghlId: (item as any).ghlId, effectiveId });
+                  }
+                  onStaffSelect(effectiveId);
                 }}
                 className={cn(
                   "staff-card smooth-transition flex items-center justify-between p-2 sm:p-3",
-                  selectedStaff === item.id && "selected"
+                  selectedStaff === ((item as any).ghlId || item.id) && "selected"
                 )}
               >
                 <div className="flex items-center gap-2.5 sm:gap-3.5 w-full">
@@ -182,8 +186,8 @@ export function StaffSelectionStep({
                   <div className="flex-1">
                     <span className={cn(
                       "text-[12px] sm:text-sm font-semibold leading-snug line-clamp-2",
-                      selectedStaff === item.id ? "text-white" : ""
-                    )} style={{ color: selectedStaff === item.id ? undefined : (staffNameColor || '#B45309') }}>{item.name}</span>
+                      selectedStaff === ((item as any).ghlId || item.id) ? "text-white" : ""
+                    )} style={{ color: selectedStaff === ((item as any).ghlId || item.id) ? undefined : (staffNameColor || '#B45309') }}>{item.name}</span>
                     {item.badge && (
                       <span className={cn(
                         "hidden sm:inline-block ml-2 sm:ml-3 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium",
@@ -194,7 +198,7 @@ export function StaffSelectionStep({
                     )}
                   </div>
                 </div>
-                {selectedStaff === item.id && (
+                {selectedStaff === ((item as any).ghlId || item.id) && (
                   <div className="text-white">
                     <CheckCircle className="w-5 h-5" />
                   </div>

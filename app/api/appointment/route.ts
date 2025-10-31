@@ -113,6 +113,19 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Missing required parameters: contactId, calendarId, startTime, endTime' }, { status: 400, headers: cors() });
     }
 
+    try {
+      console.log('[appointment] booking with params', {
+        calendarId: params.calendarId,
+        assignedUserId: params.assignedUserId,
+        contactId: params.contactId,
+        startTime: params.startTime,
+        endTime: params.endTime,
+        staffName: params.staffName,
+        serviceName: params.serviceName,
+        serviceDuration: params.serviceDuration,
+      });
+    } catch {}
+
     const booking = await createAppointment(params);
 
     // Enrich and save to DB
@@ -196,6 +209,9 @@ export async function GET(req: Request) {
 
     try { await saveEventToDB({ ...booking, ...enhanced }); } catch (e) { console.error('DB save failed:', (e as Error).message); }
 
+    try {
+      console.log('[appointment] booking created', { id: booking?.id, status: booking?.appointmentStatus, assignedUserId: params.assignedUserId });
+    } catch {}
     return NextResponse.json({ message: '✅ Booking success', response: booking }, { headers: cors() });
   } catch (err: any) {
     console.error('❌ Booking failed:', err?.message || err);
