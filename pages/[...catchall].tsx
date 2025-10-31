@@ -76,6 +76,8 @@ export const getStaticProps: GetStaticProps = async (context) => {
 export default function CatchallPage(props: { plasmicData?: ComponentRenderData; queryCache?: Record<string, any> }) {
   const { plasmicData, queryCache } = props;
   const router = useRouter();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
   if (!plasmicData || plasmicData.entryCompMetas.length === 0) {
     return <Error statusCode={404} />;
   }
@@ -83,6 +85,7 @@ export default function CatchallPage(props: { plasmicData?: ComponentRenderData;
   return (
     // Pass in the data fetched in getStaticProps as prefetchedData
     <div style={{ height: 'auto', overflow: 'visible' }}>
+      {!mounted ? null : (
       <PlasmicRootProvider
         loader={PLASMIC}
         prefetchedData={plasmicData}
@@ -96,6 +99,7 @@ export default function CatchallPage(props: { plasmicData?: ComponentRenderData;
         }
         <PlasmicComponent component={pageMeta.displayName} />
       </PlasmicRootProvider>
+      )}
     </div>
   );
 }
