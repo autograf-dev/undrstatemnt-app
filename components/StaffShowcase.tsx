@@ -162,18 +162,8 @@ export default function StaffShowcase({
       try {
         const res = await fetch("/api/supabasestaff");
         const data = await res.json();
-        if (Array.isArray(data)) {
-          setStaff(data);
-        } else {
-          setStaff([]);
-          if (data && data.error) {
-            console.error("Staff API error:", data.error);
-          } else {
-            console.error("Staff API returned non-array response", data);
-          }
-        }
+        setStaff(data);
       } catch (error) {
-        setStaff([]);
         console.error("Error fetching staff:", error);
       } finally {
         setLoading(false);
@@ -633,4 +623,3 @@ export default function StaffShowcase({
     </section>
   );
 }
-
