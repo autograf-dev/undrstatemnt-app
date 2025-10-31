@@ -34,11 +34,14 @@ export default function RootLayout({
   return (
     <html lang="en" style={{ height: 'auto', minHeight: 'auto', overflow: 'visible' }}>
       <head>
-        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         <meta name="theme-color" content="#D97639" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Undrstatemnt" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
