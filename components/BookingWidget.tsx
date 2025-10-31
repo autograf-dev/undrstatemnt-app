@@ -996,7 +996,8 @@ export default function BookingWidget({
 
       // 2) Compute start/end UTC ISO from selectedDate + selectedTimeSlot (America/Edmonton)
       const serviceObj = services.find((s) => s.id === selectedService);
-      const durationMins = serviceObj?.durationMinutes || getServiceDuration(selectedService);
+      // Prefer effective/custom duration when available; fallback to service default
+      const durationMins = getServiceDuration(selectedService) || serviceObj?.durationMinutes || 0;
       const startIsoUtc = toUtcIsoFromEdmonton(selectedDate?.dateString || "", selectedTimeSlot);
       const endIsoUtc = addMinutesIso(startIsoUtc, durationMins);
 
