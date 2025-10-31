@@ -163,6 +163,8 @@ export default function BookingWidget({
   staffSlotsApiPath = "/api/free-slots",
   customerApiPath = "/api/customer",
   appointmentApiPath = "/api/appointment",
+  // Success Lottie
+  successLottieUrl,
   // Color Scheme
   primaryColor = "#D97639",
   secondaryColor = "#6b7280",
