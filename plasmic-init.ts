@@ -142,7 +142,7 @@ PLASMIC.registerComponent(BookingWidget, {
       group: "Success"
     },
   },
-});
+} as any);
 
 PLASMIC.registerComponent(ServiceListWidget, {
   name: "ServiceListWidget",
