@@ -6,7 +6,7 @@ type BarberRow = Record<string, any>;
 type ServiceRow = Record<string, any>;
 
 export type BarberProfileProps = {
-  id: string; // Accepts either Data_barbers "🔒 Row ID" or "User/ID"
+  id?: string; // optional; if not provided, derive from URL (/barber/[id])
   className?: string;
   style?: React.CSSProperties;
 };
@@ -44,8 +44,27 @@ function asNumber(val: any): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function getIdFromCurrentUrl(): string | null {
+  try {
+    const href = typeof window !== "undefined" ? window.location.href : "";
+    if (!href) return null;
+    const url = new URL(href);
+    // Prefer query param ?id=...
+    const qp = url.searchParams.get("id");
+    if (qp) return qp;
+    // Fallback: last segment in /barber/[id]
+    const parts = url.pathname.split("/").filter(Boolean);
+    if (parts.length > 1 && parts[0].toLowerCase() === "barber") {
+      return parts[1] || null;
+    }
+    return parts[parts.length - 1] || null;
+  } catch {
+    return null;
+  }
+}
+
 export default function BarberProfile(props: BarberProfileProps) {
-  const { id, className, style } = props;
+  const { id: idProp, className, style } = props;
   const [barber, setBarber] = React.useState<BarberRow | null>(null);
   const [services, setServices] = React.useState<EffectiveService[]>([]);
   const [error, setError] = React.useState<string | null>(null);
@@ -56,11 +75,14 @@ export default function BarberProfile(props: BarberProfileProps) {
     async function run() {
       try {
         setLoading(true);
+        const effectiveId = String(idProp ?? getIdFromCurrentUrl() ?? "");
+        if (!effectiveId) throw new Error("Missing barber id in URL or props");
 
         // 1) Load all barbers and find the matching record by either key
         const barbers: BarberRow[] = await fetchJson("/api/data_barbers");
         const found = (barbers || []).find((b: BarberRow) => {
           const candidates = [
+            b?.["GHL_id"],
             b?.["🔒 Row ID"],
             b?.["Row ID"],
             b?.row_id,
@@ -69,7 +91,7 @@ export default function BarberProfile(props: BarberProfileProps) {
             b?.user_id,
           ]
             .map((v: any) => (v != null ? String(v) : ""));
-          return candidates.includes(String(id));
+          return candidates.includes(String(effectiveId));
         }) || null;
 
         if (!found) {
@@ -99,7 +121,7 @@ export default function BarberProfile(props: BarberProfileProps) {
 
         // 3) Build EffectiveService list, resolving custom overrides via supabaseservices
         const barberId = String(
-          found?.["🔒 Row ID"] ?? found?.["Row ID"] ?? found?.id ?? found?.row_id ?? found?.["User/ID"] ?? ""
+          found?.["🔒 Row ID"] ?? found?.["Row ID"] ?? found?.id ?? found?.row_id ?? found?.["User/ID"] ?? found?.["GHL_id"] ?? ""
         );
         const prepared: EffectiveService[] = [];
         for (const sid of serviceIds) {
