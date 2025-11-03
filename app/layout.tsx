@@ -51,7 +51,11 @@ export default function RootLayout({
         {/* eslint-disable-next-line @typescript-eslint/no-var-requires */}
         {(() => {
           const PwaRegister = require('../components/PwaRegister').default;
-          return <PwaRegister />;
+          const InAppNavGuard = require('../components/InAppNavGuard').default;
+          return <>
+            <PwaRegister />
+            <InAppNavGuard />
+          </>;
         })()}
         {children}
       </body>

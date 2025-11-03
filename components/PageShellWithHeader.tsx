@@ -1,6 +1,7 @@
 "use client";
 
 import { CSSProperties, ReactNode, useEffect, useState, createContext, useContext } from "react";
+import { useRouter } from "next/navigation";
 import MainHeader, { HeaderNavItem } from "./MainHeader";
 import { cn } from "@/lib/utils";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
@@ -131,6 +132,7 @@ export default function PageShellWithHeader({
   // Ensure headerItems is always an array
   const validHeaderItems = Array.isArray(headerItems) ? headerItems : [];
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const router = useRouter();
 
   // Intercept booking link to open drawer (mobile footer + any header links)
   useEffect(() => {
@@ -179,6 +181,32 @@ export default function PageShellWithHeader({
     }, 30);
     return () => window.clearTimeout(id);
   }, [drawerOpen, useDrawerForBooking]);
+
+  // In-app navigation guard for iOS standalone and Plasmic links inside this shell
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isStandalone = (window.navigator as any).standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+    if (!isStandalone) return;
+
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const anchor = target.closest('a') as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute('href') || '';
+      const linkTarget = anchor.getAttribute('target');
+      if (!href || linkTarget === '_blank') return; // allow explicit new tabs
+      try {
+        const url = href.startsWith('http') ? new URL(href) : new URL(href, window.location.origin);
+        if (url.origin !== window.location.origin) return; // external links
+        e.preventDefault();
+        router.push(url.pathname + url.search + url.hash);
+      } catch {}
+    };
+
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, [router]);
 
   const openDrawer = () => setDrawerOpen(true);
   const closeDrawer = () => setDrawerOpen(false);
