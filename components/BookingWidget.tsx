@@ -347,6 +347,19 @@ export default function BookingWidget({
     phone: "",
   });
   const [bookingLoading, setBookingLoading] = useState<boolean>(false);
+  // Fallback display name when staff object is not fully populated
+  const [resolvedStaffName, setResolvedStaffName] = useState<string>("");
+
+  // Derive a single display name we can use everywhere
+  const getDisplayStaffName = (): string => {
+    const byArray = staff.find((s) => s.id === selectedStaff || (s as any).ghlId === selectedStaff)?.name;
+    return (
+      byArray ||
+      bookingContext?.preSelectedStaffName ||
+      resolvedStaffName ||
+      ''
+    );
+  };
   
   // Handle pre-selected service from context (drawer)
   useEffect(() => {
@@ -366,6 +379,25 @@ export default function BookingWidget({
       // Don't clear - let it persist during booking flow
     }
   }, [bookingContext?.preSelectedStaffId]);
+
+  // Handle combined preselection from HomepageStaff service click
+  useEffect(() => {
+    if (
+      bookingContext?.preSelectedServiceId &&
+      bookingContext?.preSelectedStaffId &&
+      bookingContext?.initialStep === 'datetime'
+    ) {
+      setSelectedService(bookingContext.preSelectedServiceId);
+      setSelectedStaff(bookingContext.preSelectedStaffId);
+      if (typeof bookingContext.preSelectedDuration === 'number') {
+        setEffectiveDuration(bookingContext.preSelectedDuration);
+      }
+      if (typeof bookingContext.preSelectedPrice === 'number') {
+        setEffectivePrice(bookingContext.preSelectedPrice);
+      }
+      setCurrentStep('datetime');
+    }
+  }, [bookingContext?.preSelectedServiceId, bookingContext?.preSelectedStaffId, bookingContext?.preSelectedDuration, bookingContext?.preSelectedPrice, bookingContext?.initialStep]);
 
   // Preselect via URL (?serviceId=..., optional ?staffId=...)
   useEffect(() => {
@@ -611,7 +643,10 @@ export default function BookingWidget({
     
     const loadStaff = async () => {
       setLoadingStaff(true);
-      setSelectedStaff("");
+      // Do not clear when arriving with combined preselection for datetime step
+      if (!(bookingContext?.preSelectedStaffId && bookingContext?.initialStep === 'datetime')) {
+        setSelectedStaff("");
+      }
       setStaff([]);
       
       try {
@@ -704,6 +739,24 @@ export default function BookingWidget({
           items.push(...validStaff);
         }
 
+        // Ensure preselected barber exists with a proper name
+        const preId = bookingContext?.preSelectedStaffId;
+        if (preId) {
+          const exists = items.some(s => s.id === preId || (s as any).ghlId === preId);
+          if (!exists) {
+            try {
+              const res = await fetch(`${effectiveStaffApiPath}?id=${encodeURIComponent(preId)}`);
+              const data = await res.json();
+              const derivedName = data?.name || data?.fullName || data?.displayName || [data?.firstName, data?.lastName].filter(Boolean).join(' ') || 'Selected Barber';
+              items.push({ id: preId, name: derivedName, icon: 'user' } as any);
+            } catch {}
+          }
+          // Persist selection if we came for datetime
+          if (bookingContext?.initialStep === 'datetime') {
+            setSelectedStaff(preId);
+          }
+        }
+
         setStaff(items);
         if (typeof window !== 'undefined') {
           console.log('[Booking] final staff count:', items.length);
@@ -747,16 +800,25 @@ export default function BookingWidget({
         
         if (selectedStaff && selectedStaff !== 'any') {
           try {
-            const overrideUrl = new URL('/api/supabaseservices', window.location.origin);
-            overrideUrl.searchParams.set('serviceId', selectedService);
-            const overrideBarberId = selectedStaffObj?.barberRowId || selectedStaff;
-            overrideUrl.searchParams.set('barberId', overrideBarberId);
-            const overrideResp = await fetch(overrideUrl.toString());
-            const overrideData = await overrideResp.json();
-            const eff = overrideData?.effective;
-            if (eff && typeof eff.duration === 'number') customDuration = eff.duration;
-            if (eff && typeof eff.price === 'number') customPrice = eff.price;
-            
+            // If provided via context, use them directly
+            if (
+              bookingContext?.preSelectedServiceId === selectedService &&
+              bookingContext?.preSelectedStaffId === selectedStaff &&
+              (typeof bookingContext?.preSelectedDuration === 'number' || typeof bookingContext?.preSelectedPrice === 'number')
+            ) {
+              customDuration = bookingContext?.preSelectedDuration ?? null;
+              customPrice = bookingContext?.preSelectedPrice ?? null;
+            } else {
+              const overrideUrl = new URL('/api/supabaseservices', window.location.origin);
+              overrideUrl.searchParams.set('serviceId', selectedService);
+              const overrideBarberId = selectedStaffObj?.barberRowId || selectedStaff;
+              overrideUrl.searchParams.set('barberId', overrideBarberId);
+              const overrideResp = await fetch(overrideUrl.toString());
+              const overrideData = await overrideResp.json();
+              const eff = overrideData?.effective;
+              if (eff && typeof eff.duration === 'number') customDuration = eff.duration;
+              if (eff && typeof eff.price === 'number') customPrice = eff.price;
+            }
             // Set the effective overrides
             setEffectiveDuration(customDuration);
             setEffectivePrice(customPrice);
@@ -791,7 +853,7 @@ export default function BookingWidget({
           selectedStaff: selectedStaff,
           selectedStaffUuid: selectedStaffObj?.id || 'not found',
           selectedStaffGhlId: selectedStaffObj?.ghlId || 'not available',
-          staffName: selectedStaffObj?.name || 'not found'
+          staffName: (bookingContext?.preSelectedStaffName || selectedStaffObj?.name || getDisplayStaffName() || 'not found')
         });
         
         const response = await fetch(apiUrl);
@@ -843,6 +905,27 @@ export default function BookingWidget({
 
     loadWorkingSlots();
   }, [selectedService, selectedStaff, effectiveStaffSlotsApiPath]);
+
+  // Resolve staff display name from Data_barbers when coming via GHL id
+  useEffect(() => {
+    const maybeResolve = async () => {
+      try {
+        const staffObj = staff.find((s) => s.id === selectedStaff || (s as any).ghlId === selectedStaff);
+        if (staffObj && staffObj.name) {
+          setResolvedStaffName(staffObj.name);
+          return;
+        }
+        const ghlId = selectedStaff || bookingContext?.preSelectedStaffId;
+        if (!ghlId) return;
+        const resp = await fetch('/api/data_barbers', { cache: 'no-store' });
+        if (!resp.ok) return;
+        const rows: any[] = await resp.json();
+        const match = (rows || []).find((r: any) => String(r?.['GHL_id'] || '') === String(ghlId));
+        if (match && match['Barber/Name']) setResolvedStaffName(String(match['Barber/Name']));
+      } catch {}
+    };
+    maybeResolve();
+  }, [selectedStaff, staff, bookingContext?.preSelectedStaffId]);
 
   const getGroupIcon = (name: string): string => {
     switch (name.toLowerCase()) {
@@ -1069,7 +1152,12 @@ export default function BookingWidget({
   };
 
   const handleStaffSelectAndSubmit = (staffId: string) => {
-    console.log('[BookingWidget] Staff selected:', staffId);
+    try {
+      const selected = staff.find((s) => s.id === staffId || (s as any).ghlId === staffId);
+      console.log('[BookingWidget] Staff selected:', { staffId, name: selected?.name });
+    } catch {
+      console.log('[BookingWidget] Staff selected:', staffId);
+    }
     setSelectedStaff(staffId);
     setEffectiveDuration(null);
     setEffectivePrice(null);
@@ -1207,8 +1295,9 @@ export default function BookingWidget({
 
       // 5) Book appointment (send camelCase params only)
       const apptUrl = new URL(appointmentApiPath, window.location.origin);
-      const serviceName = serviceObj?.name || "";
-      const staffName = (staff.find((s) => s.id === selectedStaff)?.name) || "Any available";
+      const serviceName = serviceObj?.name || bookingContext?.preSelectedServiceName || "";
+      const staffNameDerived = getDisplayStaffName();
+      const staffName = selectedStaff && selectedStaff !== 'any' ? (staffNameDerived || 'Selected Barber') : 'Any available';
       const customerFirstName = contactForm.firstName.trim();
       const customerLastName = contactForm.lastName.trim();
       const title = `${serviceName || "Appointment"} - ${[customerFirstName, customerLastName].filter(Boolean).join(" ")}`;
@@ -1386,7 +1475,7 @@ export default function BookingWidget({
             selectedDate={selectedDate}
             selectedTimeSlot={selectedTimeSlot}
             selectedService={services.find(s => s.id === selectedService)}
-            selectedStaff={staff.find(s => s.id === selectedStaff)}
+            selectedStaff={staff.find(s => s.id === selectedStaff || (s as any).ghlId === selectedStaff)}
             guestCount={guestCount}
             getServiceDuration={getServiceDuration}
             formatDurationMins={formatDurationMins}
@@ -1394,6 +1483,9 @@ export default function BookingWidget({
             isValidCAPhone={isValidCAPhone}
             isFormValid={isFormValid}
             effectivePrice={effectivePrice ?? undefined}
+            effectiveDuration={typeof effectiveDuration === 'number' ? effectiveDuration : undefined}
+            fallbackServiceName={bookingContext?.preSelectedServiceName || undefined}
+            fallbackStaffName={getDisplayStaffName() || undefined}
           />
         );
       case 'success':

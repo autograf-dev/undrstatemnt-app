@@ -34,6 +34,9 @@ interface InformationStepProps {
   isValidCAPhone: (phone: string) => boolean;
   isFormValid: boolean;
   effectivePrice?: number | null;
+  effectiveDuration?: number | null;
+  fallbackServiceName?: string;
+  fallbackStaffName?: string;
 }
 
 export function InformationStep({
@@ -53,7 +56,10 @@ export function InformationStep({
   formatPhoneNumber,
   isValidCAPhone,
   isFormValid,
-  effectivePrice
+  effectivePrice,
+  effectiveDuration,
+  fallbackServiceName,
+  fallbackStaffName
 }: InformationStepProps) {
   const formatCalendarDate = (dateInfo: DateInfo | null): string => {
     if (!dateInfo) return '';
@@ -109,20 +115,20 @@ export function InformationStep({
               <Clock className="w-4 h-4" />
               <span className="text-[13px] font-semibold">{selectedTimeSlot} MST</span>
               <span className="text-[12px] text-gray-700">
-                for {formatDurationMins(getServiceDuration(selectedService?.id || ""))}
+                for {formatDurationMins(typeof effectiveDuration === 'number' && effectiveDuration > 0 ? effectiveDuration : getServiceDuration(selectedService?.id || ""))}
               </span>
             </div>
             {/* Service and Staff combined */}
             <div className="flex items-center gap-1.5">
               <Scissors className="w-4 h-4" />
-              <span className="text-[13px] font-semibold">{selectedService?.name}</span>
-              <span className="text-[12px] text-gray-700">with {selectedStaff?.name}</span>
+              <span className="text-[13px] font-semibold">{selectedService?.name || fallbackServiceName || 'Service'}</span>
+              <span className="text-[12px] text-gray-700">with {selectedStaff?.name || fallbackStaffName || ''}</span>
             </div>
             {/* Price (if available) */}
             {typeof effectivePrice === 'number' && effectivePrice > 0 && (
               <div className="flex items-center gap-1.5">
                 <span className="text-[13px] font-semibold">$</span>
-                <span className="text-[12px] text-gray-700">From ${effectivePrice.toFixed(2)}</span>
+                <span className="text-[12px] text-gray-700">${effectivePrice.toFixed(2)}</span>
               </div>
             )}
             {/* Guests */}
@@ -224,7 +230,7 @@ export function InformationStep({
                 <div className="flex items-center gap-3">
                   <Hourglass className="text-xl text-orange-primary" />
                   <span className="text-gray-700">
-                    {formatDurationMins(getServiceDuration(selectedService?.id || ""))}
+                    {formatDurationMins(typeof effectiveDuration === 'number' && effectiveDuration > 0 ? effectiveDuration : getServiceDuration(selectedService?.id || ""))}
                   </span>
                 </div>
               </div>
@@ -232,15 +238,15 @@ export function InformationStep({
             
             <Card className="p-6 rounded-xl border border-gray-200 bg-white">
               <div className="space-y-3">
-                <div className="font-bold text-lg text-black">{selectedService?.name}</div>
+                <div className="font-bold text-lg text-black">{selectedService?.name || fallbackServiceName || 'Service'}</div>
                 <div className="flex items-center gap-3">
                   <User className="text-xl text-orange-primary" />
-                  <span className="text-gray-700">with {selectedStaff?.name}</span>
+                  <span className="text-gray-700">with {selectedStaff?.name || fallbackStaffName || ''}</span>
                 </div>
                 {typeof effectivePrice === 'number' && effectivePrice > 0 && (
                   <div className="flex items-center gap-3">
                     <span className="text-xl text-orange-primary font-semibold">$</span>
-                    <span className="text-gray-700">From ${effectivePrice.toFixed(2)}</span>
+                    <span className="text-gray-700">${effectivePrice.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-3">
