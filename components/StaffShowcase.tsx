@@ -6,6 +6,8 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
+import { useDrawerControl } from "./PageShellWithHeader";
+import { useBooking } from "@/contexts/BookingContext";
 
 interface Staff {
   id: string;
@@ -140,7 +142,10 @@ export default function StaffShowcase({
   const [barberName, setBarberName] = useState("");
   const [barberBio, setBarberBio] = useState("");
   const [barberPhoto, setBarberPhoto] = useState("");
-  const [services, setServices] = useState<{ id: string; name: string; photo?: string; duration?: number | null; price?: number | null }[]>([]);
+  const [barberId, setBarberId] = useState("");
+  const [services, setServices] = useState<{ id: string; calendarId?: string; name: string; photo?: string; duration?: number | null; price?: number | null }[]>([]);
+  const drawerControl = (() => { try { return useDrawerControl(); } catch { return null; } })();
+  const bookingContext = (() => { try { return useBooking(); } catch { return null; } })();
 
   // Track window width for responsive behavior
   useEffect(() => {
@@ -182,12 +187,14 @@ export default function StaffShowcase({
         setBarberName("");
         setBarberBio("");
         setBarberPhoto("");
+        setBarberId("");
 
         // Fetch all barbers and match by GHL_id first, then by id
         const resp = await fetch("/api/data_barbers", { cache: "no-store" });
         if (!resp.ok) throw new Error(`Failed to fetch barber profile (${resp.status})`);
         const rows: any[] = await resp.json();
         const effectiveId = String(member.ghl_id || member.id || "");
+        setBarberId(effectiveId);
         const match = (rows || []).find((r: any) => {
           const candidates = [r?.["GHL_id"], r?.["User/ID"], r?.id, r?.["🔒 Row ID"], r?.["Row ID"], r?.row_id]
             .map((v: any) => (v != null ? String(v) : ""));
@@ -241,7 +248,7 @@ export default function StaffShowcase({
             if (cal) unionIdsSet.add(cal);
           }
 
-          const prepared: { id: string; name: string; photo?: string; duration?: number | null; price?: number | null }[] = [];
+          const prepared: { id: string; calendarId?: string; name: string; photo?: string; duration?: number | null; price?: number | null }[] = [];
           for (const sidRaw of Array.from(unionIdsSet)) {
             const sid = String(sidRaw);
             const base = svcMap.get(sid);
@@ -277,6 +284,7 @@ export default function StaffShowcase({
 
             prepared.push({
               id: sid,
+              calendarId: calId || undefined,
               name: displayName,
               photo: base?.["Service/Photo"] || undefined,
               duration,
@@ -491,7 +499,18 @@ export default function StaffShowcase({
                             return (
                               <div
                                 key={s.id}
-                                className="group rounded-xl border border-gray-200 hover:shadow-lg transition p-3 flex gap-3 bg-white"
+                                className="group rounded-xl border border-gray-200 hover:shadow-lg transition p-3 flex gap-3 bg-white cursor-pointer"
+                                onClick={() => {
+                                  const calId = (s as any).calendarId || s.id;
+                                  try { console.log('[StaffShowcase] Barber:', barberName); } catch {}
+                                  try {
+                                    if (drawerControl && bookingContext) {
+                                      bookingContext.setPreSelectedServiceAndStaff(String(calId), String(barberId), { duration: s.duration ?? null, price: s.price ?? null, serviceName: s.name || null, staffName: barberName || null });
+                                      drawerControl.openDrawer();
+                                      setPanelOpen(false);
+                                    }
+                                  } catch {}
+                                }}
                               >
                                 <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                                   {s.photo ? (
@@ -553,7 +572,21 @@ export default function StaffShowcase({
                             const durationText = s.duration ? `${s.duration} mins` : "";
                             const priceText = s.price != null ? `$${s.price.toFixed(2)}` : "";
                             return (
-                            <div key={s.id} className="rounded-xl border border-gray-200 bg-transparent shadow-md p-3 flex gap-3">
+                            <div
+                              key={s.id}
+                              className="rounded-xl border border-gray-200 bg-transparent shadow-md p-3 flex gap-3 cursor-pointer"
+                              onClick={() => {
+                                const calId = (s as any).calendarId || s.id;
+                                try { console.log('[StaffShowcase] Barber:', barberName); } catch {}
+                                try {
+                                  if (drawerControl && bookingContext) {
+                                    bookingContext.setPreSelectedServiceAndStaff(String(calId), String(barberId), { duration: s.duration ?? null, price: s.price ?? null, serviceName: s.name || null, staffName: barberName || null });
+                                    drawerControl.openDrawer();
+                                    setPanelOpen(false);
+                                  }
+                                } catch {}
+                              }}
+                            >
                               <div className="w-14 h-14 rounded-md overflow-hidden bg-gray-100 shrink-0">
                                   {s.photo ? (
                                     <img src={s.photo} alt={s.name} className="w-full h-full object-cover" />
@@ -572,7 +605,7 @@ export default function StaffShowcase({
                                   </div>
                                 )}
                                 </div>
-                              </div>
+                            </div>
                             );
                           })}
                         </div>
