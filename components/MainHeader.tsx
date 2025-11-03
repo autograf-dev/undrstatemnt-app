@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
-import { Menu, X, Plus, User } from "lucide-react";
+import { Plus, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -139,7 +138,6 @@ export default function MainHeader({
   mobileFooterPadding = "0.75rem",
   mobileFooterHidden = false,
 }: MainHeaderProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <>
@@ -289,81 +287,8 @@ export default function MainHeader({
                 </span>
               )}
             </Link>
-
-            {/* Menu Toggle */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg transition-all duration-200 active:scale-90"
-              style={{ color: textColor }}
-            >
-              {mobileMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
-            </button>
           </div>
         </div>
-
-        {/* Mobile Menu Dropdown */}
-        {mobileMenuOpen && (
-          <div
-            className="mx-4 mt-2 rounded-2xl shadow-2xl border border-white/30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
-            style={{
-              backgroundColor: bgColor,
-              backdropFilter: "blur(16px) saturate(180%)",
-              WebkitBackdropFilter: "blur(16px) saturate(180%)",
-              boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
-            }}
-          >
-            <nav className="p-2">
-              {items.map((item, idx) => {
-                const isActive = activeHref === item.href;
-                const icon = getIconComponent(item.icon);
-                return (
-                  <Link
-                    key={idx}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      "group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-sm mb-1 overflow-hidden"
-                    )}
-                    style={{
-                      color: isActive ? activeColor : textColor,
-                      backgroundColor: isActive
-                        ? "rgba(0, 0, 0, 0.1)"
-                        : "transparent",
-                      fontWeight: isActive ? "600" : "500",
-                    }}
-                  >
-                    {/* Gradient hover effect */}
-                    <div className={cn(
-                      "absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity duration-150",
-                      !isActive && "bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-orange-500/10"
-                    )} />
-                    
-                    <span className="relative z-10">{icon}</span>
-                    <span className="relative z-10">{item.label}</span>
-                  </Link>
-                );
-              })}
-              {signInLabel && signInHref && (
-                <Link
-                  href={signInHref}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="relative mt-2 flex items-center justify-center px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 overflow-hidden group"
-                  style={{
-                    backgroundColor: buttonBgColor,
-                    color: buttonTextColor,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-active:translate-x-[100%] transition-transform duration-300" />
-                  <span className="relative z-10">{signInLabel}</span>
-                </Link>
-              )}
-            </nav>
-          </div>
-        )}
 
         {/* Bottom Navigation Bar - ICONS ONLY */}
         <div

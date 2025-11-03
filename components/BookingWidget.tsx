@@ -286,6 +286,8 @@ export default function BookingWidget({
   // We're not fetching groups anymore; start as not loading
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [loadingServices, setLoadingServices] = useState(false);
+  // Category tab state - persists across step navigation
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>("all");
   
   // Staff selection state
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -386,6 +388,7 @@ export default function BookingWidget({
               durationMinutes: minutes,
               imageUrl: s.photo || s.image || s.imageUrl || s["Service/Photo"],
               displayPrice: s.displayPrice || s["Service/Display Price"] || s.priceDisplay || undefined,
+              category: s.category || s.categoryList || undefined,
             };
           });
         } else {
@@ -587,40 +590,6 @@ export default function BookingWidget({
     loadStaff();
   }, [selectedService, selectedDepartment, effectiveServicesApiPath, effectiveStaffApiPath, usingSupabaseServices]);
 
-  // Fetch effective duration/price overrides for the selected service + staff
-  useEffect(() => {
-    const resetOverrides = () => {
-      setEffectiveDuration(null);
-      setEffectivePrice(null);
-    };
-    if (!selectedService) { resetOverrides(); return; }
-    if (!selectedStaff || selectedStaff === 'any') { resetOverrides(); return; }
-
-    const loadOverrides = async () => {
-      try {
-        const url = new URL('/api/supabaseservices', window.location.origin);
-        url.searchParams.set('serviceId', selectedService);
-        // Prefer Data_barbers row id if available for override join
-        const selected = staff.find((s) => s.id === selectedStaff);
-        const overrideBarberId = selected?.barberRowId || selectedStaff;
-        url.searchParams.set('barberId', overrideBarberId);
-        const resp = await fetch(url.toString());
-        const data = await resp.json();
-        const eff = data?.effective;
-        if (eff && typeof eff.duration === 'number') setEffectiveDuration(eff.duration);
-        else setEffectiveDuration(null);
-        if (eff && typeof eff.price === 'number') setEffectivePrice(eff.price);
-        else setEffectivePrice(null);
-      } catch (e) {
-        console.error('Error fetching effective overrides:', e);
-        setEffectiveDuration(null);
-        setEffectivePrice(null);
-      }
-    };
-
-    loadOverrides();
-  }, [selectedService, selectedStaff]);
-
   // Load working slots when staff is selected
   useEffect(() => {
     if (!selectedService || !selectedStaff) return;
@@ -643,9 +612,40 @@ export default function BookingWidget({
       }
 
       try {
-        const serviceDurationMinutes = getServiceDuration(serviceId);
+        // First, fetch effective duration/price overrides if staff is selected
+        let customDuration: number | null = null;
+        let customPrice: number | null = null;
         
-          let apiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}`;
+        if (selectedStaff && selectedStaff !== 'any') {
+          try {
+            const overrideUrl = new URL('/api/supabaseservices', window.location.origin);
+            overrideUrl.searchParams.set('serviceId', selectedService);
+            const overrideBarberId = selectedStaffObj?.barberRowId || selectedStaff;
+            overrideUrl.searchParams.set('barberId', overrideBarberId);
+            const overrideResp = await fetch(overrideUrl.toString());
+            const overrideData = await overrideResp.json();
+            const eff = overrideData?.effective;
+            if (eff && typeof eff.duration === 'number') customDuration = eff.duration;
+            if (eff && typeof eff.price === 'number') customPrice = eff.price;
+            
+            // Set the effective overrides
+            setEffectiveDuration(customDuration);
+            setEffectivePrice(customPrice);
+          } catch (e) {
+            console.error('Error fetching effective overrides:', e);
+            setEffectiveDuration(null);
+            setEffectivePrice(null);
+          }
+        } else {
+          setEffectiveDuration(null);
+          setEffectivePrice(null);
+        }
+        
+        // Now fetch slots with the correct duration
+        const service = services.find((s) => s.id === serviceId);
+        const serviceDurationMinutes = customDuration || service?.durationMinutes || 0;
+        
+        let apiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}`;
         if (userId && selectedStaff !== 'any') {
           apiUrl += `&userId=${userId}`;
         }
@@ -713,7 +713,7 @@ export default function BookingWidget({
     };
 
     loadWorkingSlots();
-  }, [selectedService, selectedStaff, effectiveStaffSlotsApiPath, effectiveDuration]);
+  }, [selectedService, selectedStaff, effectiveStaffSlotsApiPath]);
 
   const getGroupIcon = (name: string): string => {
     switch (name.toLowerCase()) {
@@ -1160,6 +1160,8 @@ export default function BookingWidget({
             onSubmit={handleServiceSubmit}
             cameFromUrlParam={cameFromUrlParam}
             onGoBack={() => setSelectedDepartment('all')}
+            selectedCategoryTab={selectedCategoryTab}
+            onCategoryTabChange={setSelectedCategoryTab}
             serviceCardBorderColor={serviceCardBorderColor}
             serviceCardShadow={serviceCardShadow}
             serviceCardRadius={serviceCardRadius}

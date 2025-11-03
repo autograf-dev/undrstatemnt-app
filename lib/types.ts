@@ -13,6 +13,7 @@ export interface Service {
   imageUrl?: string;
   displayPrice?: string; // e.g., "From $25.00"
   teamMembers?: TeamMember[];
+  category?: string; // Service category for filtering
 }
 
 export interface TeamMember {

@@ -16,7 +16,11 @@ import {
   ArrowLeft,
   ArrowRight,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Layers,
+  Palette,
+  Flame,
+  Sparkle
 } from "lucide-react";
 import { Tag } from "lucide-react";
 import { Department, Service } from "@/lib/types";
@@ -34,6 +38,9 @@ interface ServiceSelectionStepProps {
   onSubmit: () => void;
   cameFromUrlParam: boolean;
   onGoBack: () => void;
+  // Category tab state
+  selectedCategoryTab?: string;
+  onCategoryTabChange?: (category: string) => void;
   // Styling from Plasmic/parent
   serviceCardBorderColor?: string;
   serviceCardShadow?: string;
@@ -79,6 +86,8 @@ export function ServiceSelectionStep({
   onSubmit,
   cameFromUrlParam,
   onGoBack,
+  selectedCategoryTab: externalCategoryTab,
+  onCategoryTabChange,
   serviceCardBorderColor,
   serviceCardShadow,
   serviceCardRadius,
@@ -96,12 +105,55 @@ export function ServiceSelectionStep({
   navSecondaryBorder,
   navSecondaryText,
 }: ServiceSelectionStepProps) {
+  // Use external state if provided, otherwise use local state
+  const selectedCategoryTab = externalCategoryTab || "all";
+  
+  // Handle category change
+  const handleCategoryChange = (e: React.MouseEvent, category: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onCategoryTabChange) {
+      onCategoryTabChange(category);
+    }
+  };
+
   // Dedupe services by id to avoid React key collisions if callers accidentally pass duplicates
   const uniqueServices = React.useMemo(() => {
     const map = new Map<string, Service>();
     for (const s of services) map.set(s.id, s);
     return Array.from(map.values());
   }, [services]);
+
+  // Get unique categories from services
+  const serviceCategories = React.useMemo(() => {
+    const categories = new Set<string>();
+    services.forEach(service => {
+      if (service.category) {
+        categories.add(service.category);
+      }
+    });
+    return Array.from(categories).sort();
+  }, [services]);
+
+  // Filter services by selected category tab
+  const filteredServices = React.useMemo(() => {
+    if (selectedCategoryTab === "all") {
+      return uniqueServices;
+    }
+    return uniqueServices.filter(service => service.category === selectedCategoryTab);
+  }, [uniqueServices, selectedCategoryTab]);
+
+  // Get icon for category
+  const getCategoryIcon = (category: string) => {
+    const lowerCategory = category.toLowerCase();
+    if (lowerCategory.includes('hair') || lowerCategory.includes('cut')) return Scissors;
+    if (lowerCategory.includes('color') || lowerCategory.includes('colour')) return Palette;
+    if (lowerCategory.includes('style') || lowerCategory.includes('styling')) return Sparkle;
+    if (lowerCategory.includes('treatment') || lowerCategory.includes('care')) return Droplet;
+    if (lowerCategory.includes('special') || lowerCategory.includes('premium')) return Crown;
+    if (lowerCategory.includes('beard') || lowerCategory.includes('facial')) return User;
+    return Layers;
+  };
   const formatDurationMins = (mins: number): string => {
     const m = Number(mins || 0);
     const h = Math.floor(m / 60);
@@ -202,6 +254,117 @@ export function ServiceSelectionStep({
           )}
         </div>
         
+        {/* Category Tabs - Show when department is selected */}
+        {selectedDepartment && !loadingServices && services.length > 0 && (
+          <div className="mb-6">
+            {/* Desktop: Horizontal scrollable tabs */}
+            <div className="hidden sm:flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {/* All Tab */}
+              <button
+                type="button"
+                onClick={(e) => handleCategoryChange(e, "all")}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition-all duration-200",
+                  selectedCategoryTab === "all"
+                    ? "shadow-md"
+                    : "hover:shadow-sm"
+                )}
+                style={{
+                  backgroundColor: selectedCategoryTab === "all" ? (serviceCardActiveBg || '#391709') : '#f3f4f6',
+                  color: selectedCategoryTab === "all" ? (serviceCardActiveText || '#ffffff') : (serviceTitleColor || '#391709'),
+                  borderWidth: 1,
+                  borderStyle: 'solid',
+                  borderColor: selectedCategoryTab === "all" ? (serviceCardActiveBorderColor || serviceCardActiveBg || '#391709') : '#e5e7eb',
+                }}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>All</span>
+              </button>
+              
+              {/* Category Tabs */}
+              {serviceCategories.map((category) => {
+                const CategoryIcon = getCategoryIcon(category);
+                return (
+                  <button
+                    type="button"
+                    key={category}
+                    onClick={(e) => handleCategoryChange(e, category)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition-all duration-200",
+                      selectedCategoryTab === category
+                        ? "shadow-md"
+                        : "hover:shadow-sm"
+                    )}
+                    style={{
+                      backgroundColor: selectedCategoryTab === category ? (serviceCardActiveBg || '#391709') : '#f3f4f6',
+                      color: selectedCategoryTab === category ? (serviceCardActiveText || '#ffffff') : (serviceTitleColor || '#391709'),
+                      borderWidth: 1,
+                      borderStyle: 'solid',
+                      borderColor: selectedCategoryTab === category ? (serviceCardActiveBorderColor || serviceCardActiveBg || '#391709') : '#e5e7eb',
+                    }}
+                  >
+                    <CategoryIcon className="w-3.5 h-3.5" />
+                    <span>{category}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Mobile: Grid layout with icons in vertical flex */}
+            <div className="sm:hidden grid grid-cols-3 gap-1.5">
+              {/* All Tab */}
+              <button
+                type="button"
+                onClick={(e) => handleCategoryChange(e, "all")}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg font-medium text-[10px] whitespace-nowrap transition-all duration-200",
+                  selectedCategoryTab === "all"
+                    ? "shadow-md"
+                    : "hover:shadow-sm"
+                )}
+                style={{
+                  backgroundColor: selectedCategoryTab === "all" ? (serviceCardActiveBg || '#391709') : '#f3f4f6',
+                  color: selectedCategoryTab === "all" ? (serviceCardActiveText || '#ffffff') : (serviceTitleColor || '#391709'),
+                  borderWidth: 1,
+                  borderStyle: 'solid',
+                  borderColor: selectedCategoryTab === "all" ? (serviceCardActiveBorderColor || serviceCardActiveBg || '#391709') : '#e5e7eb',
+                }}
+              >
+                <Layers className="w-4 h-4" />
+                <span className="truncate text-center leading-tight">All</span>
+              </button>
+              
+              {/* Category Tabs */}
+              {serviceCategories.map((category) => {
+                const CategoryIcon = getCategoryIcon(category);
+                return (
+                  <button
+                    type="button"
+                    key={category}
+                    onClick={(e) => handleCategoryChange(e, category)}
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg font-medium text-[10px] whitespace-nowrap transition-all duration-200",
+                      selectedCategoryTab === category
+                        ? "shadow-md"
+                        : "hover:shadow-sm"
+                    )}
+                    style={{
+                      backgroundColor: selectedCategoryTab === category ? (serviceCardActiveBg || '#391709') : '#f3f4f6',
+                      color: selectedCategoryTab === category ? (serviceCardActiveText || '#ffffff') : (serviceTitleColor || '#391709'),
+                      borderWidth: 1,
+                      borderStyle: 'solid',
+                      borderColor: selectedCategoryTab === category ? (serviceCardActiveBorderColor || serviceCardActiveBg || '#391709') : '#e5e7eb',
+                    }}
+                  >
+                    <CategoryIcon className="w-4 h-4" />
+                    <span className="truncate text-center leading-tight">{category}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Services list for selected group (or 'all') */}
         {selectedDepartment && (
           <div>
@@ -222,7 +385,7 @@ export function ServiceSelectionStep({
                 {/* Desktop: 3-column grid */}
                 <div className="hidden sm:block">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-3 stagger-animation">
-                    {uniqueServices.map((item) => (
+                    {filteredServices.map((item) => (
                       <div
                         key={item.id}
                         onClick={() => onServiceSelect(item.id)}
@@ -265,7 +428,7 @@ export function ServiceSelectionStep({
 
                 {/* Mobile: Single column grid with lesser height */}
                 <div className="sm:hidden grid grid-cols-2 gap-1 mb-2 px-0 stagger-animation">
-                  {uniqueServices.map((item) => (
+                  {filteredServices.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => onServiceSelect(item.id)}
@@ -335,6 +498,16 @@ export function ServiceSelectionStep({
               </Button>
         </div>
       </form>
+
+      <style jsx>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }
