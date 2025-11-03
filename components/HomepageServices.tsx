@@ -152,7 +152,7 @@ export interface HomepageServicesProps {
   /** Card link template (use {id} for service ID) */
   cardLinkTemplate?: string;
   /** Open booking in drawer instead of navigating to page */
-  useDrawerForBooking?: boolean;
+  useDrawerForBooking: boolean;
 }
 
 export default function HomepageServices({
