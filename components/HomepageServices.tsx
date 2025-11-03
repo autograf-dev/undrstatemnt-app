@@ -151,10 +151,11 @@ export interface HomepageServicesProps {
   // Card Click Behavior
   /** Card link template (use {id} for service ID) */
   cardLinkTemplate?: string;
+  /** Open booking in drawer instead of navigating to page */
+  useDrawerForBooking?: boolean;
 }
 
 export default function HomepageServices({
-  // Add a prop to control drawer behavior
   useDrawerForBooking = false,
   className,
   style,
