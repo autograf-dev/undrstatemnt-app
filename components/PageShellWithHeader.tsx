@@ -1,9 +1,27 @@
 "use client";
 
-import { CSSProperties, ReactNode, useEffect, useState } from "react";
+import { CSSProperties, ReactNode, useEffect, useState, createContext, useContext } from "react";
 import MainHeader, { HeaderNavItem } from "./MainHeader";
 import { cn } from "@/lib/utils";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { BookingProvider } from "@/contexts/BookingContext";
+
+// Context for controlling drawer from anywhere
+interface DrawerContextType {
+  openDrawer: () => void;
+  closeDrawer: () => void;
+  isDrawerOpen: boolean;
+}
+
+const DrawerContext = createContext<DrawerContextType | undefined>(undefined);
+
+export function useDrawerControl() {
+  const context = useContext(DrawerContext);
+  if (!context) {
+    throw new Error("useDrawerControl must be used within PageShellWithHeader");
+  }
+  return context;
+}
 
 export interface PageShellWithHeaderProps {
   className?: string;
@@ -162,8 +180,13 @@ export default function PageShellWithHeader({
     return () => window.clearTimeout(id);
   }, [drawerOpen, useDrawerForBooking]);
 
+  const openDrawer = () => setDrawerOpen(true);
+  const closeDrawer = () => setDrawerOpen(false);
+
   return (
-    <div className={cn("bg-gray-50", className)} style={style}>
+    <BookingProvider>
+      <DrawerContext.Provider value={{ openDrawer, closeDrawer, isDrawerOpen: drawerOpen }}>
+        <div className={cn("bg-gray-50", className)} style={style}>
       <MainHeader
         logoSrc={logoSrc}
         logoWidth={logoWidth}
@@ -216,7 +239,9 @@ export default function PageShellWithHeader({
           {children}
         </div>
       </main>
-    </div>
+        </div>
+      </DrawerContext.Provider>
+    </BookingProvider>
   );
 }
 

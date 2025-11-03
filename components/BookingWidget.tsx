@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, type CSSProperties } from "react";
+import { useBooking } from "@/contexts/BookingContext";
 import { Stepper } from "@/components/ui/stepper";
 import { ServiceSelectionStep } from "./booking/ServiceSelectionStep";
 import { StaffSelectionStep } from "./booking/StaffSelectionStep";
@@ -267,7 +268,15 @@ export default function BookingWidget({
     { title: step5Label, icon: "check-circle", value: "success" },
   ];
 
-  const [currentStep, setCurrentStep] = useState<BookingStep>("service");
+  // Get booking context for pre-selection
+  let bookingContext;
+  try {
+    bookingContext = useBooking();
+  } catch {
+    bookingContext = null;
+  }
+
+  const [currentStep, setCurrentStep] = useState<BookingStep>(bookingContext?.initialStep || "service");
   
   // Service selection state
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -281,7 +290,9 @@ export default function BookingWidget({
       return sp.get('serviceId') || sp.get('calendarId') || "";
     } catch { return ""; }
   })() : "";
-  const [selectedService, setSelectedService] = useState<string>(initialSelectedService);
+  const [selectedService, setSelectedService] = useState<string>(
+    bookingContext?.preSelectedServiceId || initialSelectedService
+  );
   const [usingSupabaseServices, setUsingSupabaseServices] = useState<boolean>(false);
   // We're not fetching groups anymore; start as not loading
   const [loadingGroups, setLoadingGroups] = useState(false);
@@ -337,6 +348,16 @@ export default function BookingWidget({
   });
   const [bookingLoading, setBookingLoading] = useState<boolean>(false);
   
+  // Handle pre-selected service from context (drawer)
+  useEffect(() => {
+    if (bookingContext?.preSelectedServiceId) {
+      setSelectedService(bookingContext.preSelectedServiceId);
+      setCurrentStep(bookingContext.initialStep);
+      // Clear the pre-selection after using it
+      bookingContext.clearPreSelection();
+    }
+  }, [bookingContext?.preSelectedServiceId]);
+
   // Preselect via URL (?serviceId=..., optional ?staffId=...)
   useEffect(() => {
     if (typeof window === 'undefined') return;

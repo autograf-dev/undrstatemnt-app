@@ -2,9 +2,10 @@
 
 import { CSSProperties, useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { ChevronLeft, ChevronRight, Search, Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDrawerControl } from "./PageShellWithHeader";
+import { useBooking } from "@/contexts/BookingContext";
 
 interface Service {
   id: string;
@@ -153,6 +154,8 @@ export interface HomepageServicesProps {
 }
 
 export default function HomepageServices({
+  // Add a prop to control drawer behavior
+  useDrawerForBooking = false,
   className,
   style,
   apiPath = "/api/supabaseservices",
@@ -209,7 +212,17 @@ export default function HomepageServices({
   showScrollDots = true,
   scrollDotsColor = "#D97639",
   cardLinkTemplate = "/booking?serviceId={id}",
-}: HomepageServicesProps) {
+}: HomepageServicesProps & { useDrawerForBooking?: boolean }) {
+  // Try to get drawer control - will be undefined if not in PageShellWithHeader
+  let drawerControl;
+  let bookingContext;
+  try {
+    drawerControl = useDrawerForBooking ? useDrawerControl() : null;
+    bookingContext = useDrawerForBooking ? useBooking() : null;
+  } catch {
+    drawerControl = null;
+    bookingContext = null;
+  }
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [windowWidth, setWindowWidth] = useState(0);
@@ -600,17 +613,32 @@ export default function HomepageServices({
                       const cardWidth = getResponsiveValue(cardWidthMobile, cardWidthTablet, cardWidthDesktop);
                       const imageHeight = getResponsiveValue(cardImageHeightMobile, cardImageHeightTablet, cardImageHeightDesktop);
                       
+                      const handleServiceClick = (e: React.MouseEvent) => {
+                        if (useDrawerForBooking && drawerControl && bookingContext) {
+                          e.preventDefault();
+                          bookingContext.setPreSelectedService(service.id, "staff");
+                          drawerControl.openDrawer();
+                        }
+                        // Otherwise, let the link navigate normally
+                      };
+
+                      const CardWrapper = useDrawerForBooking && drawerControl ? "button" : "a";
+                      
                       return (
-                        <Link
+                        <CardWrapper
                           key={service.id}
-                          href={cardLinkTemplate.replace('{id}', service.id)}
+                          {...(useDrawerForBooking && drawerControl 
+                            ? { onClick: handleServiceClick, type: "button" as const }
+                            : { href: cardLinkTemplate.replace('{id}', service.id) }
+                          )}
                           className={cn(
-                            "rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105",
+                            "rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer text-left",
                             isExpanded ? "w-full" : "w-full md:flex-none md:snap-center"
                           )}
                           style={{
                             width: isExpanded ? "auto" : windowWidth >= 768 ? `${cardWidth}px` : undefined,
                             backgroundColor: cardBgColor,
+                            border: "none",
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = cardHoverColor;
@@ -678,7 +706,7 @@ export default function HomepageServices({
                               </p>
                             )}
                           </div>
-                        </Link>
+                        </CardWrapper>
                       );
                     })}
                   </div>
