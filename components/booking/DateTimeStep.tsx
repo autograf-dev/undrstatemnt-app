@@ -60,6 +60,31 @@ export function DateTimeStep({
   navSecondaryText
 }: DateTimeStepProps) {
   const [currentDateIndex, setCurrentDateIndex] = useState(0);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [monthAnchor, setMonthAnchor] = useState<Date | null>(null);
+
+  // Build a quick lookup for available dates (YYYY-MM-DD)
+  const availableSet = new Set((availableDates || []).map(d => d.dateString));
+
+  // Determine the month we are showing
+  const baseDateString = (selectedDate?.dateString) || (availableDates[0]?.dateString) || '';
+  const initialMonth = (() => {
+    if (!baseDateString) return new Date();
+    const [y,m] = baseDateString.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, 1);
+  })();
+  const monthToShow = monthAnchor || initialMonth;
+
+  const startOfMonth = new Date(monthToShow.getFullYear(), monthToShow.getMonth(), 1);
+  const endOfMonth = new Date(monthToShow.getFullYear(), monthToShow.getMonth() + 1, 0);
+  const startWeekday = startOfMonth.getDay(); // 0=Sun
+  const totalDays = endOfMonth.getDate();
+
+  const goMonth = (delta: number) => {
+    const d = new Date(monthToShow);
+    d.setMonth(d.getMonth() + delta);
+    setMonthAnchor(d);
+  };
 
   const visibleDates = availableDates.slice(currentDateIndex, currentDateIndex + (typeof window !== 'undefined' && window.innerWidth < 640 ? 2 : 3));
 
@@ -157,7 +182,16 @@ export function DateTimeStep({
                   </div>
                 ))}
               </div>
-              
+              {/* Mini month calendar toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowMonthPicker(v => !v)}
+                className="p-1 sm:p-2 smooth-transition flex-shrink-0"
+                aria-label="Open calendar"
+              >
+                <Calendar className="text-lg sm:text-xl" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -168,6 +202,62 @@ export function DateTimeStep({
                 <ChevronRight className="text-lg sm:text-xl" />
               </Button>
             </div>
+
+            {/* Month picker panel */}
+            {showMonthPicker && (
+              <div className="px-4 sm:px-0 pb-4">
+                <Card className="p-3 sm:p-4 rounded-xl border border-gray-200 bg-white">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <Button variant="ghost" size="sm" onClick={() => goMonth(-1)} className="p-1"><ChevronLeft /></Button>
+                    <div className="text-sm sm:text-base font-semibold">
+                      {monthToShow.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => goMonth(1)} className="p-1"><ChevronRight /></Button>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1 text-[11px] text-gray-500 mb-1">
+                    {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+                      <div key={d} className="text-center">{d}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {Array.from({ length: startWeekday }).map((_, i) => (
+                      <div key={`pad-${i}`} className="h-8 sm:h-9" />
+                    ))}
+                    {Array.from({ length: totalDays }).map((_, dayIdx) => {
+                      const day = dayIdx + 1;
+                      const y = monthToShow.getFullYear();
+                      const m = String(monthToShow.getMonth() + 1).padStart(2, '0');
+                      const d = String(day).padStart(2, '0');
+                      const iso = `${y}-${m}-${d}`;
+                      const isAvailable = availableSet.has(iso);
+                      const isSelected = selectedDate?.dateString === iso;
+                      return (
+                        <button
+                          key={iso}
+                          disabled={!isAvailable}
+                          onClick={() => {
+                            const match = availableDates.find(x => x.dateString === iso);
+                            if (match) {
+                              onDateSelect(match);
+                              onTimeSlotClear("");
+                              onDateChange(match.dateString);
+                              setShowMonthPicker(false);
+                            }
+                          }}
+                          className={cn(
+                            "h-8 sm:h-9 text-[12px] rounded-md transition-colors",
+                            isAvailable ? "bg-gray-100 hover:bg-gray-200 text-black" : "bg-gray-50 text-gray-300 cursor-not-allowed",
+                            isSelected && "!bg-orange-100 !text-black !font-semibold"
+                          )}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Card>
+              </div>
+            )}
           </Card>
         ) : (
           /* Simple loading state for dates */

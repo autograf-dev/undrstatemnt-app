@@ -250,10 +250,25 @@ export default function PageShellWithHeader({
           <DrawerContent
             roundedClassName={drawerRadiusClass || "rounded-t-2xl"}
             className="border border-white/30"
-            style={{ backgroundColor: drawerBgColor || "rgba(255,255,255,0.95)" }}
+            style={{ 
+              backgroundColor: drawerBgColor || "rgba(255,255,255,0.95)",
+              // Limit drawer height and allow inner scrolling
+              height: 'calc(100vh - var(--drawer-top-gap, 120px))',
+              maxHeight: 'calc(100vh - var(--drawer-top-gap, 120px))',
+              overflow: 'hidden'
+            }}
           >
-            <div className="mx-auto w-full max-w-3xl">
-              <div className="px-0 sm:px-4 pb-4" key={drawerOpen ? 'open' : 'closed'}>
+            <div className="mx-auto w-full max-w-3xl" style={{ height: '100%' }}>
+              <div
+                className="px-0 sm:px-4 pb-4"
+                key={drawerOpen ? 'open' : 'closed'}
+                data-drawer-scroll
+                style={{
+                  height: '100%',
+                  overflowY: 'auto',
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
                 {drawerContent}
               </div>
             </div>

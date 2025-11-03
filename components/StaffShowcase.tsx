@@ -464,14 +464,22 @@ export default function StaffShowcase({
         <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
           <SheetContent
             side="right"
-            className="z-[1000006] p-0 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.35)] ring-1 ring-black/10 !w-[60vw] !max-w-[60vw]"
+            className="z-[1000006] p-0 shadow-[0_10px_40px_rgba(0,0,0,0.35)] ring-1 ring-black/10 !w-[60vw] !max-w-[60vw]"
+            style={{ backgroundColor: "rgba(255,255,255,0.95)" }}
           >
             <SheetHeader className="px-6 py-4 border-b flex items-center justify-between sticky top-0 bg-white z-[1]">
               <SheetTitle>Barber Profile</SheetTitle>
               <SheetClose className="text-2xl leading-none">×</SheetClose>
             </SheetHeader>
             <div className="p-6 overflow-y-auto" style={{ height: "calc(100% - 64px)" }}>
-              {panelLoading && <div>Loading…</div>}
+              {panelLoading && (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center gap-2">
+                    <div className="loading-spinner" />
+                    <div className="text-gray-500 text-sm font-medium">Loading…</div>
+                  </div>
+                </div>
+              )}
               {panelError && <div className="text-red-600">{panelError}</div>}
               {!panelLoading && !panelError && (
                 <div className="grid grid-cols-2 gap-8 items-start">
@@ -546,12 +554,28 @@ export default function StaffShowcase({
         </Sheet>
       ) : (
         <Drawer open={panelOpen} onOpenChange={setPanelOpen}>
-          <DrawerContent roundedClassName="rounded-t-2xl" className="z-[1000006]">
+          <DrawerContent
+            roundedClassName="rounded-t-2xl"
+            className="z-[1000006] border border-white/30"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.95)",
+              height: 'calc(100vh - var(--drawer-top-gap, 120px))',
+              maxHeight: 'calc(100vh - var(--drawer-top-gap, 120px))',
+              overflow: 'hidden'
+            }}
+          >
             <DrawerHeader className="px-4 py-3 border-b">
               <DrawerTitle>Barber Profile</DrawerTitle>
             </DrawerHeader>
-            <div className="px-4 pb-4 overflow-y-auto" data-drawer-scroll>
-              {panelLoading && <div>Loading…</div>}
+            <div className="px-4 pb-4" data-drawer-scroll style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              {panelLoading && (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center gap-2">
+                    <div className="loading-spinner" />
+                    <div className="text-gray-500 text-sm font-medium">Loading…</div>
+                  </div>
+                </div>
+              )}
               {panelError && <div className="text-red-600">{panelError}</div>}
               {!panelLoading && !panelError && (
                 <div className="flex flex-col gap-4">
