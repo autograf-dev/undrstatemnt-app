@@ -57,6 +57,7 @@ function mapServiceRow(row: ServiceRow) {
     barberIds,
     customPriceList: row["Custom/Price List"] || null,
     customPrice: typeof row["Custom/Price"] === "number" ? row["Custom/Price"] : (row["Custom/Price"] ? Number(row["Custom/Price"]) : null),
+    ghl_calendar_id: row["ghl_calendar_id"] || null,
     raw: row,
   };
 }

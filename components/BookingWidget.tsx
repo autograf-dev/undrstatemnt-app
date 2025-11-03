@@ -353,10 +353,19 @@ export default function BookingWidget({
     if (bookingContext?.preSelectedServiceId) {
       setSelectedService(bookingContext.preSelectedServiceId);
       setCurrentStep(bookingContext.initialStep);
-      // Clear the pre-selection after using it
-      bookingContext.clearPreSelection();
+      // Don't clear - let it persist during booking flow
     }
   }, [bookingContext?.preSelectedServiceId]);
+
+  // Handle pre-selected staff from context (HomepageStaff workflow)
+  useEffect(() => {
+    if (bookingContext?.preSelectedStaffId) {
+      console.log('[BookingWidget] Pre-selected staff detected:', bookingContext.preSelectedStaffId);
+      setSelectedStaff(bookingContext.preSelectedStaffId);
+      setCurrentStep("service"); // Start at service selection
+      // Don't clear - let it persist during booking flow
+    }
+  }, [bookingContext?.preSelectedStaffId]);
 
   // Preselect via URL (?serviceId=..., optional ?staffId=...)
   useEffect(() => {
@@ -379,7 +388,7 @@ export default function BookingWidget({
     } catch {}
   }, []);
 
-  // Load services when department is selected
+  // Load services when department is selected OR when staff is pre-selected
   useEffect(() => {
     const loadServices = async () => {
       setLoadingServices(true);
@@ -387,16 +396,113 @@ export default function BookingWidget({
       
       try {
         const start = Date.now();
-        // If selectedDepartment is 'all', load all services; otherwise, filter by department
-        const url = selectedDepartment && selectedDepartment !== 'all'
-          ? `${effectiveServicesApiPath}?id=${selectedDepartment}`
-          : effectiveServicesApiPath;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (typeof window !== 'undefined') {
-          console.log('[Booking] loadServices:', { url, cameFromUrlParam, selectedService, dataSample: Array.isArray(data) ? data.length : Object.keys(data || {}).slice(0, 3) });
-        }
         let serviceItems: Service[] = [];
+        
+        // If pre-selected staff workflow, use same logic as StaffShowcase
+        if (bookingContext?.preSelectedStaffId) {
+          console.log('[BookingWidget] Loading services for pre-selected staff:', bookingContext.preSelectedStaffId);
+          // Fetch barber data from data_barbers API to get Services/List
+          const barbersResp = await fetch('/api/data_barbers', { cache: 'no-store' });
+          const barberRows: any[] = barbersResp?.ok ? await barbersResp.json() : [];
+          
+          const effectiveId = String(bookingContext.preSelectedStaffId || "");
+          const barberMatch = (barberRows || []).find((r: any) => {
+            const candidates = [r?.["GHL_id"], r?.["User/ID"], r?.id, r?.["🔒 Row ID"], r?.["Row ID"], r?.row_id]
+              .map((v: any) => (v != null ? String(v) : ""));
+            return candidates.includes(effectiveId);
+          });
+          
+          if (barberMatch) {
+            // Get Services/List (comma-separated Row IDs)
+            const serviceIds = String(barberMatch?.["Services/List"] || "")
+              .split(",")
+              .map((s: string) => s.trim())
+              .filter(Boolean);
+            
+            console.log('[BookingWidget] Staff Services/List (Row IDs):', serviceIds);
+            
+            // Fetch all services and custom data
+            const [allServicesResp, customResp] = await Promise.all([
+              fetch('/api/data_services', { cache: 'no-store' }),
+              fetch('/api/data_services_custom', { cache: 'no-store' }).catch(() => null),
+            ]);
+            
+            const allSvcRows: any[] = allServicesResp?.ok ? await allServicesResp.json() : [];
+            const customRows: any[] = customResp && customResp.ok ? await customResp.json() : [];
+            
+            // Build map of services by Row ID
+            const svcMap = new Map<string, any>();
+            for (const r of allSvcRows || []) {
+              const rowKey = String(r?.["🔒 Row ID"] || r?.["Row ID"] || r?.id || r?.row_id || "");
+              if (rowKey) svcMap.set(rowKey, r);
+            }
+            
+            const barberGhlId = bookingContext.preSelectedStaffId;
+            const normalize = (s: any) => String(s ?? "").trim().toLowerCase();
+            
+            // Process each service Row ID from Services/List
+            for (const serviceRowId of serviceIds) {
+              const base = svcMap.get(String(serviceRowId));
+              if (!base) {
+                console.warn('[BookingWidget] Service not found for Row ID:', serviceRowId);
+                continue;
+              }
+              
+              const ghlCalendarId = String(base?.["ghl_calendar_id"] || "");
+              console.log('[BookingWidget] Processing service:', { serviceRowId, ghlCalendarId, serviceName: base?.["Service/Name"] });
+              
+              // Find custom override using ghl_calendar_id + barber GHL ID
+              const custom = (customRows || []).find((c: any) => {
+                const calMatch = String(c?.["ghl_calendar_id"] || "") === ghlCalendarId;
+                const barberMatch = String(c?.["Barber/ID"] || "") === barberGhlId;
+                return calMatch && barberMatch;
+              });
+              
+              const baseDur = Number(base?.["Service/Display.Mins"]) || Number(base?.["Service/Duration"]) || 0;
+              const basePrice = Number(base?.["Service/Default Price"]) || 0;
+              
+              const duration = custom && Number.isFinite(Number(custom?.["Barber/Duration"]))
+                ? Number(custom?.["Barber/Duration"])
+                : baseDur;
+              const price = custom && Number.isFinite(Number(custom?.["Barber/Price"]))
+                ? Number(custom?.["Barber/Price"])
+                : basePrice;
+              
+              console.log('[BookingWidget] Service pricing:', { serviceRowId, duration, price, isCustom: !!custom });
+              
+              const baseDisplayRaw = (base?.["Service/Display Name"] ?? "").toString();
+              const baseNameRaw = (base?.["Service/Name"] ?? "").toString();
+              const baseDisplay = baseDisplayRaw.replace(/^\s+|\s+$/g, "");
+              const baseName = baseNameRaw.replace(/^\s+|\s+$/g, "");
+              const displayInvalid = !baseDisplay || baseDisplay === "\\" || baseDisplay === "\\\\" || baseDisplay.length <= 1;
+              const displayName = !displayInvalid ? baseDisplay : (baseName || "Service");
+              const displayPrice = price > 0 ? `From $${price.toFixed(2)}` : `From $${basePrice.toFixed(2)}`;
+              
+              serviceItems.push({
+                id: String(serviceRowId),
+                name: displayName,
+                description: "",
+                durationMinutes: duration,
+                imageUrl: base?.["Service/Photo"] || undefined,
+                displayPrice,
+                category: base?.["Service/Category List"] || base?.["Service/Category"] || undefined,
+              });
+            }
+            
+            console.log('[BookingWidget] Loaded services for staff:', serviceItems.length);
+          }
+        } else {
+          // Normal flow: fetch services from API
+          let url = effectiveServicesApiPath;
+          if (selectedDepartment && selectedDepartment !== 'all') {
+            url = `${effectiveServicesApiPath}?id=${selectedDepartment}`;
+          }
+          const res = await fetch(url);
+          const data = await res.json();
+          if (typeof window !== 'undefined') {
+            console.log('[Booking] loadServices:', { url, cameFromUrlParam, selectedService, dataSample: Array.isArray(data) ? data.length : Object.keys(data || {}).slice(0, 3) });
+          }
+          
         if (Array.isArray(data)) {
           // Supabase services format
           setUsingSupabaseServices(true);
@@ -435,6 +541,8 @@ export default function BookingWidget({
             };
           });
         }
+        } // End of normal flow else block
+        
         // Merge with any previously injected service (from deep-link bootstrap)
         setServices((prev) => {
           const byId = new Map<string, Service>();
@@ -463,7 +571,7 @@ export default function BookingWidget({
     };
 
     loadServices();
-  }, [selectedDepartment, effectiveServicesApiPath, cameFromUrlParam]);
+  }, [selectedDepartment, effectiveServicesApiPath, effectiveStaffApiPath, cameFromUrlParam, bookingContext?.preSelectedStaffId]);
 
   // Ensure selected service has base info when deep-linked via URL (populate duration/name)
   useEffect(() => {
@@ -533,7 +641,7 @@ export default function BookingWidget({
                 name: s.name || s.fullName || 'Staff',
                 icon: 'user',
                 imageUrl: s.photo || s.avatarUrl || s.imageUrl,
-                barberRowId: s.barberRowId || s['🔒 Row ID'] || undefined,
+                barberRowId: s.barberRowId || s[' Row ID'] || undefined,
                 services: Array.isArray(s.servicesList)
                   ? s.servicesList.map((v: any) => String(v))
                   : typeof s.servicesList === 'string'
@@ -946,7 +1054,12 @@ export default function BookingWidget({
     setSelectedService(serviceId);
     setEffectiveDuration(null);
     setEffectivePrice(null);
-    setCurrentStep("staff");
+    // If staff is pre-selected, skip staff selection and go to datetime
+    if (bookingContext?.preSelectedStaffId && selectedStaff) {
+      setCurrentStep("datetime");
+    } else {
+      setCurrentStep("staff");
+    }
   };
 
   const handleStaffSubmit = () => {
@@ -1045,11 +1158,12 @@ export default function BookingWidget({
       try {
         const url = new URL("/api/supabaseservices", window.location.origin);
         url.searchParams.set("serviceId", selectedService);
-        // Prefer Data_barbers row id if available for override join
-        const selected = staff.find((s) => s.id === selectedStaff);
-        const overrideBarberId = selected?.barberRowId || selectedStaff;
+        // Use the same staff ID that we're using for appointment
         if (selectedStaff && selectedStaff !== "any") {
-          url.searchParams.set("barberId", overrideBarberId);
+          // For pre-selected staff, use the GHL ID directly
+          const staffIdForLookup = bookingContext?.preSelectedStaffId ? selectedStaff : (staff.find((s) => s.id === selectedStaff)?.barberRowId || selectedStaff);
+          url.searchParams.set("barberId", staffIdForLookup);
+          console.log('[BookingWidget] Looking up calendar with barberId:', staffIdForLookup);
         }
         const resp = await fetch(url.toString());
         const data = await resp.json();
@@ -1079,8 +1193,16 @@ export default function BookingWidget({
       // 4) Use selected staff id directly as assigned user id (ghl user id)
       let assignedUserId = "";
       if (selectedStaff && selectedStaff !== "any") {
-        const selectedStaffObj = staff.find((s) => s.id === selectedStaff || s.ghlId === selectedStaff);
-        assignedUserId = selectedStaffObj?.ghlId || selectedStaff;
+        // If staff is pre-selected from HomepageStaff, selectedStaff is already the GHL ID
+        if (bookingContext?.preSelectedStaffId) {
+          assignedUserId = selectedStaff;
+          console.log('[BookingWidget] Using pre-selected staff GHL ID:', assignedUserId);
+        } else {
+          // Otherwise, look up in staff array
+          const selectedStaffObj = staff.find((s) => s.id === selectedStaff || s.ghlId === selectedStaff);
+          assignedUserId = selectedStaffObj?.ghlId || selectedStaff;
+          console.log('[BookingWidget] Using staff from array, GHL ID:', assignedUserId);
+        }
       }
 
       // 5) Book appointment (send camelCase params only)
@@ -1110,6 +1232,9 @@ export default function BookingWidget({
       Object.entries(params).forEach(([k, v]) => {
         if (v !== undefined && v !== null) apptUrl.searchParams.set(k, v);
       });
+
+      console.log('[BookingWidget] Appointment endpoint:', apptUrl.toString());
+      console.log('[BookingWidget] Appointment params:', params);
 
       const apptRes = await fetch(apptUrl.toString());
       const apptData = await apptRes.json();

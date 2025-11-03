@@ -2,9 +2,10 @@
 
 import { CSSProperties, useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDrawerControl } from "./PageShellWithHeader";
+import { useBooking } from "@/contexts/BookingContext";
 
 interface Staff {
   id: string;
@@ -145,6 +146,17 @@ export default function HomepageStaff({
   arrowBgColor = "white",
   showScrollDots = true,
 }: HomepageStaffProps) {
+  // Try to get drawer control for booking
+  let drawerControl;
+  let bookingContext;
+  try {
+    drawerControl = useDrawerControl();
+    bookingContext = useBooking();
+  } catch {
+    drawerControl = null;
+    bookingContext = null;
+  }
+
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -242,7 +254,7 @@ export default function HomepageStaff({
             {title}
           </h2>
           {showSeeAll && (
-            <Link
+            <a
               href={seeAllHref}
               className="font-semibold flex items-center gap-2 hover:underline whitespace-nowrap"
               style={{ 
@@ -255,7 +267,7 @@ export default function HomepageStaff({
                 width: windowWidth < 768 ? '16px' : '20px',
                 height: windowWidth < 768 ? '16px' : '20px'
               }} />
-            </Link>
+            </a>
           )}
         </div>
 
@@ -314,14 +326,31 @@ export default function HomepageStaff({
                   const imageHeight = windowWidth < 768 ? cardImageHeightMobile : windowWidth < 1024 ? cardImageHeightTablet : cardImageHeightDesktop;
                   // Prefer API photo, fallback to image_link for legacy
                   const photoUrl = member.photo || member.image_link;
+                  
+                  const handleStaffClick = (e: React.MouseEvent) => {
+                    if (drawerControl && bookingContext) {
+                      e.preventDefault();
+                      // Pre-select staff, start at service step (showing only their services)
+                      bookingContext.setPreSelectedStaff(member.ghl_id || member.id);
+                      drawerControl.openDrawer();
+                    }
+                    // Otherwise, let the link navigate normally
+                  };
+
+                  const CardWrapper = drawerControl ? "button" : "a";
+                  
                   return (
-                    <Link
+                    <CardWrapper
                       key={member.id}
-                      href={`/booking?staffId=${member.ghl_id || member.id}`}
-                      className="flex-none rounded-xl overflow-hidden shadow-md mt-4 transition-all duration-300  hover:scale-105 snap-center mb-4"
+                      {...(drawerControl 
+                        ? { onClick: handleStaffClick, type: "button" as const }
+                        : { href: `/booking?staffId=${member.ghl_id || member.id}` }
+                      )}
+                      className="flex-none rounded-xl overflow-hidden shadow-md mt-4 transition-all duration-300 hover:scale-105 snap-center mb-4 cursor-pointer text-left"
                       style={{
                         width: `${cardWidth}px`,
                         backgroundColor: cardBgColor,
+                        border: "none",
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = cardHoverColor;
@@ -377,7 +406,7 @@ export default function HomepageStaff({
                           {member.firstname} {member.lastname}
                         </p>
                       </div>
-                    </Link>
+                    </CardWrapper>
                   );
                 })}
               </div>
