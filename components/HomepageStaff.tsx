@@ -436,6 +436,7 @@ export default function HomepageStaff({
                   
                   const handleStaffClick = (e: React.MouseEvent) => {
                     e.preventDefault();
+                    try { console.log('[HomepageStaff] Staff clicked:', member.name); } catch {}
                     openBarberPanel(member);
                   };
 

@@ -360,6 +360,14 @@ export default function BookingWidget({
       ''
     );
   };
+
+  // Reset all booking state when the drawer unmounts (closed) or page refresh
+  useEffect(() => {
+    return () => {
+      try { bookingContext?.clearPreSelection(); } catch {}
+      resetBooking();
+    };
+  }, []);
   
   // Handle pre-selected service from context (drawer)
   useEffect(() => {
@@ -747,7 +755,7 @@ export default function BookingWidget({
             try {
               const res = await fetch(`${effectiveStaffApiPath}?id=${encodeURIComponent(preId)}`);
               const data = await res.json();
-              const derivedName = data?.name || data?.fullName || data?.displayName || [data?.firstName, data?.lastName].filter(Boolean).join(' ') || 'Selected Barber';
+              const derivedName = bookingContext?.preSelectedStaffName || data?.name || data?.fullName || data?.displayName || [data?.firstName, data?.lastName].filter(Boolean).join(' ') || 'Selected Barber';
               items.push({ id: preId, name: derivedName, icon: 'user' } as any);
             } catch {}
           }
@@ -910,6 +918,11 @@ export default function BookingWidget({
   useEffect(() => {
     const maybeResolve = async () => {
       try {
+        // If name was provided from the frontend click, use it immediately
+        if (bookingContext?.preSelectedStaffName) {
+          setResolvedStaffName(bookingContext.preSelectedStaffName);
+          return;
+        }
         const staffObj = staff.find((s) => s.id === selectedStaff || (s as any).ghlId === selectedStaff);
         if (staffObj && staffObj.name) {
           setResolvedStaffName(staffObj.name);
@@ -925,7 +938,7 @@ export default function BookingWidget({
       } catch {}
     };
     maybeResolve();
-  }, [selectedStaff, staff, bookingContext?.preSelectedStaffId]);
+  }, [selectedStaff, staff, bookingContext?.preSelectedStaffId, bookingContext?.preSelectedStaffName]);
 
   const getGroupIcon = (name: string): string => {
     switch (name.toLowerCase()) {
@@ -1297,7 +1310,9 @@ export default function BookingWidget({
       const apptUrl = new URL(appointmentApiPath, window.location.origin);
       const serviceName = serviceObj?.name || bookingContext?.preSelectedServiceName || "";
       const staffNameDerived = getDisplayStaffName();
-      const staffName = selectedStaff && selectedStaff !== 'any' ? (staffNameDerived || 'Selected Barber') : 'Any available';
+      const staffName = selectedStaff && selectedStaff !== 'any'
+        ? (bookingContext?.preSelectedStaffName || staffNameDerived || 'Selected Barber')
+        : 'Any available';
       const customerFirstName = contactForm.firstName.trim();
       const customerLastName = contactForm.lastName.trim();
       const title = `${serviceName || "Appointment"} - ${[customerFirstName, customerLastName].filter(Boolean).join(" ")}`;
@@ -1485,7 +1500,7 @@ export default function BookingWidget({
             effectivePrice={effectivePrice ?? undefined}
             effectiveDuration={typeof effectiveDuration === 'number' ? effectiveDuration : undefined}
             fallbackServiceName={bookingContext?.preSelectedServiceName || undefined}
-            fallbackStaffName={getDisplayStaffName() || undefined}
+            fallbackStaffName={bookingContext?.preSelectedStaffName || getDisplayStaffName() || undefined}
           />
         );
       case 'success':
