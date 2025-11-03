@@ -151,12 +151,9 @@ export interface HomepageServicesProps {
   // Card Click Behavior
   /** Card link template (use {id} for service ID) */
   cardLinkTemplate?: string;
-  /** Open booking in drawer instead of navigating to page */
-  useDrawerForBooking: boolean;
 }
 
 export default function HomepageServices({
-  useDrawerForBooking = false,
   className,
   style,
   apiPath = "/api/supabaseservices",
@@ -213,14 +210,15 @@ export default function HomepageServices({
   showScrollDots = true,
   scrollDotsColor = "#D97639",
   cardLinkTemplate = "/booking?serviceId={id}",
-}: HomepageServicesProps & { useDrawerForBooking?: boolean }) {
+}: HomepageServicesProps) {
   // Try to get drawer control - will be undefined if not in PageShellWithHeader
   let drawerControl;
   let bookingContext;
   try {
-    drawerControl = useDrawerForBooking ? useDrawerControl() : null;
-    bookingContext = useDrawerForBooking ? useBooking() : null;
+    drawerControl = useDrawerControl();
+    bookingContext = useBooking();
   } catch {
+    // If not in PageShellWithHeader context, these will be null and cards will use links
     drawerControl = null;
     bookingContext = null;
   }
@@ -615,7 +613,7 @@ export default function HomepageServices({
                       const imageHeight = getResponsiveValue(cardImageHeightMobile, cardImageHeightTablet, cardImageHeightDesktop);
                       
                       const handleServiceClick = (e: React.MouseEvent) => {
-                        if (useDrawerForBooking && drawerControl && bookingContext) {
+                        if (drawerControl && bookingContext) {
                           e.preventDefault();
                           bookingContext.setPreSelectedService(service.id, "staff");
                           drawerControl.openDrawer();
@@ -623,12 +621,12 @@ export default function HomepageServices({
                         // Otherwise, let the link navigate normally
                       };
 
-                      const CardWrapper = useDrawerForBooking && drawerControl ? "button" : "a";
+                      const CardWrapper = drawerControl ? "button" : "a";
                       
                       return (
                         <CardWrapper
                           key={service.id}
-                          {...(useDrawerForBooking && drawerControl 
+                          {...(drawerControl 
                             ? { onClick: handleServiceClick, type: "button" as const }
                             : { href: cardLinkTemplate.replace('{id}', service.id) }
                           )}
