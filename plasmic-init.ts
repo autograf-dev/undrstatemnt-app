@@ -22,6 +22,7 @@ import StaffShowcase from "./components/StaffShowcase";
 import StaffGrid from "./components/StaffGrid";
 import StaffProfilePage from "./components/StaffProfilePage";
 import StaffProfilePageWrapper from "./components/StaffProfilePageWrapper";
+import AppointmentsList from "./components/AppointmentsList";
 // (BarberProfile removed)
 
 // Register code components used by Plasmic pages so Studio and runtime can render them
@@ -1131,4 +1132,21 @@ PLASMIC.registerComponent(StaffProfilePageWrapper, {
     // No props needed - automatically gets slug from URL
   },
   importPath: "@/components/StaffProfilePageWrapper",
+});
+
+PLASMIC.registerComponent(AppointmentsList, {
+  name: "AppointmentsList",
+  props: {
+    title: { type: "string", defaultValue: "Your bookings" },
+    subtitle: { type: "string", defaultValue: "Here's what's coming up. Need to make changes? Just reschedule or cancel below." },
+    emptyText: { type: "string", defaultValue: "No upcoming bookings." },
+    containerMaxWidth: { type: "string", defaultValue: "860px" },
+    brandColor: { type: "color", defaultValue: "#D97639" },
+    cardBgColor: { type: "color", defaultValue: "#ffffff" },
+    borderColor: { type: "color", defaultValue: "#e5e7eb" },
+    textPrimary: { type: "color", defaultValue: "#0f172a" },
+    textMuted: { type: "color", defaultValue: "#6b7280" },
+    chipBg: { type: "color", defaultValue: "#f3f4f6" },
+    showHeader: { type: "boolean", defaultValue: true },
+  },
 });
