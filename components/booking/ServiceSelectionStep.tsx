@@ -70,8 +70,68 @@ const getIcon = (iconName: string) => {
     case 'scissors': return Scissors;
     case 'crown': return Crown;
     case 'sparkles': return Sparkles;
+    case 'sparkle': return Sparkle;
+    case 'palette': return Palette;
     default: return User;
   }
+};
+
+// Smart icon mapping for departments based on name
+const getDepartmentIcon = (departmentName: string): string => {
+  const lowerName = departmentName.toLowerCase();
+  
+  // Haircut related
+  if (lowerName.includes('haircut') || lowerName.includes('hair cut') || lowerName.includes('cut')) {
+    return 'scissors';
+  }
+  
+  // Beard/Facial hair
+  if (lowerName.includes('beard') || lowerName.includes('facial') || lowerName.includes('mustache') || lowerName.includes('moustache')) {
+    return 'user';
+  }
+  
+  // Color/Coloring
+  if (lowerName.includes('color') || lowerName.includes('colour') || lowerName.includes('dye') || lowerName.includes('highlight')) {
+    return 'palette';
+  }
+  
+  // Styling
+  if (lowerName.includes('style') || lowerName.includes('styling') || lowerName.includes('blow') || lowerName.includes('dry')) {
+    return 'sparkle';
+  }
+  
+  // Treatment/Care
+  if (lowerName.includes('treatment') || lowerName.includes('care') || lowerName.includes('condition') || lowerName.includes('therapy')) {
+    return 'droplet';
+  }
+  
+  // Premium/Special
+  if (lowerName.includes('special') || lowerName.includes('premium') || lowerName.includes('luxury') || lowerName.includes('vip')) {
+    return 'crown';
+  }
+  
+  // Hair wash/Shampoo
+  if (lowerName.includes('wash') || lowerName.includes('shampoo') || lowerName.includes('rinse')) {
+    return 'droplet';
+  }
+  
+  // Hair design/Texture
+  if (lowerName.includes('texture') || lowerName.includes('design') || lowerName.includes('wave') || lowerName.includes('perm')) {
+    return 'sparkles';
+  }
+  
+  // Hair extension/Add-ons
+  if (lowerName.includes('extension') || lowerName.includes('add') || lowerName.includes('extra')) {
+    return 'heart';
+  }
+  
+  // Quick/Fast services
+  if (lowerName.includes('quick') || lowerName.includes('express') || lowerName.includes('fast')) {
+    return 'zap';
+  }
+  
+  // Default fallback
+  return 'scissors';
 };
 
 export function ServiceSelectionStep({
@@ -124,11 +184,11 @@ export function ServiceSelectionStep({
     return Array.from(map.values());
   }, [services]);
 
-  // Get unique categories from services
+  // Get unique categories from services, excluding "Haircut, Beard"
   const serviceCategories = React.useMemo(() => {
     const categories = new Set<string>();
     services.forEach(service => {
-      if (service.category) {
+      if (service.category && service.category !== "Haircut, Beard") {
         categories.add(service.category);
       }
     });
@@ -136,22 +196,102 @@ export function ServiceSelectionStep({
   }, [services]);
 
   // Filter services by selected category tab
+  // Services from "Haircut, Beard" category should appear under "All", "Haircut", and "Beard"
   const filteredServices = React.useMemo(() => {
     if (selectedCategoryTab === "all") {
+      // Show all services including "Haircut, Beard"
       return uniqueServices;
     }
-    return uniqueServices.filter(service => service.category === selectedCategoryTab);
+    return uniqueServices.filter(service => {
+      // If service category matches selected tab, include it
+      if (service.category === selectedCategoryTab) {
+        return true;
+      }
+      // If service is from "Haircut, Beard" category, show it under both "Haircut" and "Beard"
+      if (service.category === "Haircut, Beard") {
+        return selectedCategoryTab === "Haircut" || selectedCategoryTab === "Beard";
+      }
+      return false;
+    });
   }, [uniqueServices, selectedCategoryTab]);
 
-  // Get icon for category
+  // Get icon for category - enhanced mapping
   const getCategoryIcon = (category: string) => {
     const lowerCategory = category.toLowerCase();
-    if (lowerCategory.includes('hair') || lowerCategory.includes('cut')) return Scissors;
-    if (lowerCategory.includes('color') || lowerCategory.includes('colour')) return Palette;
-    if (lowerCategory.includes('style') || lowerCategory.includes('styling')) return Sparkle;
-    if (lowerCategory.includes('treatment') || lowerCategory.includes('care')) return Droplet;
-    if (lowerCategory.includes('special') || lowerCategory.includes('premium')) return Crown;
-    if (lowerCategory.includes('beard') || lowerCategory.includes('facial')) return User;
+    
+    // Haircut related
+    if (lowerCategory.includes('haircut') || lowerCategory.includes('hair cut') || 
+        lowerCategory.includes('cut') || lowerCategory.includes('line up') || 
+        lowerCategory.includes('lineup') || lowerCategory.includes('trim')) {
+      return Scissors;
+    }
+    
+    // Beard/Facial hair
+    if (lowerCategory.includes('beard') || lowerCategory.includes('facial') || 
+        lowerCategory.includes('mustache') || lowerCategory.includes('moustache')) {
+      return User;
+    }
+    
+    // Kids/Children
+    if (lowerCategory.includes('kid') || lowerCategory.includes('child') || 
+        lowerCategory.includes('youth') || lowerCategory.includes('junior')) {
+      return Scissors; // Kids also get haircuts
+    }
+    
+    // Perm/Texture/Wave
+    if (lowerCategory.includes('perm') || lowerCategory.includes('texture') || 
+        lowerCategory.includes('wave') || lowerCategory.includes('curl')) {
+      return Sparkles;
+    }
+    
+    // Color/Coloring
+    if (lowerCategory.includes('color') || lowerCategory.includes('colour') || 
+        lowerCategory.includes('dye') || lowerCategory.includes('highlight')) {
+      return Palette;
+    }
+    
+    // Styling
+    if (lowerCategory.includes('style') || lowerCategory.includes('styling') || 
+        lowerCategory.includes('blow') || lowerCategory.includes('dry')) {
+      return Sparkle;
+    }
+    
+    // Treatment/Care
+    if (lowerCategory.includes('treatment') || lowerCategory.includes('care') || 
+        lowerCategory.includes('condition') || lowerCategory.includes('therapy')) {
+      return Droplet;
+    }
+    
+    // Premium/Special
+    if (lowerCategory.includes('special') || lowerCategory.includes('premium') || 
+        lowerCategory.includes('luxury') || lowerCategory.includes('vip')) {
+      return Crown;
+    }
+    
+    // Hair wash/Shampoo
+    if (lowerCategory.includes('wash') || lowerCategory.includes('shampoo') || 
+        lowerCategory.includes('rinse')) {
+      return Droplet;
+    }
+    
+    // Hair design/Texture
+    if (lowerCategory.includes('design') || lowerCategory.includes('texture')) {
+      return Sparkles;
+    }
+    
+    // Hair extension/Add-ons
+    if (lowerCategory.includes('extension') || lowerCategory.includes('add') || 
+        lowerCategory.includes('extra')) {
+      return Heart;
+    }
+    
+    // Quick/Fast services
+    if (lowerCategory.includes('quick') || lowerCategory.includes('express') || 
+        lowerCategory.includes('fast')) {
+      return Zap;
+    }
+    
+    // Default fallback - use Layers for "All" and unknown categories
     return Layers;
   };
   const formatDurationMins = (mins: number): string => {
@@ -180,7 +320,8 @@ export function ServiceSelectionStep({
           {/* Desktop: horizontal scroll */}
           <div className="hidden sm:flex gap-2 overflow-x-visible whitespace-nowrap justify-center">
             {departments.map((item) => {
-              const IconComponent = getIcon(item.icon || 'user');
+              const iconName = item.icon || getDepartmentIcon(item.name);
+              const IconComponent = getIcon(iconName);
               return (
                 <div
                   key={item.id}
@@ -213,7 +354,8 @@ export function ServiceSelectionStep({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {departments.map((item) => {
-                  const IconComponent = getIcon(item.icon || 'user');
+                  const iconName = item.icon || getDepartmentIcon(item.name);
+                  const IconComponent = getIcon(iconName);
                   return (
                     <div
                       key={item.id}

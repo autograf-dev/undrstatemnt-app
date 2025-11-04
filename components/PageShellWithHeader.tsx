@@ -258,6 +258,9 @@ export default function PageShellWithHeader({
               overflow: 'hidden'
             }}
           >
+            <DrawerTitle className="sr-only">
+              {drawerTitle || "Booking"}
+            </DrawerTitle>
             <div className="mx-auto w-full max-w-3xl" style={{ height: '100%' }}>
               <div
                 className="px-0 sm:px-4 pb-4"
