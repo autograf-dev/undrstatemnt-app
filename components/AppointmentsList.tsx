@@ -292,10 +292,9 @@ export default function AppointmentsList({
               </div>
             </div>
             <h1 className="mt-0 font-extrabold tracking-tight text-[20px] sm:text-[24px] lg:text-[28px]">{title}</h1>
-            <p className="mt-1 text-xs sm:text-sm" style={{ color: textMuted }}>{subtitle}</p>
 
             {(contactName || contactPhoneFormatted) && (
-              <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+              <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
                 {contactName && (
                   <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold"
                         style={{ borderColor, background: chipBg, color: textPrimary }}>
@@ -311,6 +310,8 @@ export default function AppointmentsList({
                 )}
               </div>
             )}
+
+            <p className="mt-2 text-xs sm:text-sm" style={{ color: textMuted }}>{subtitle}</p>
           </header>
         )}
 
