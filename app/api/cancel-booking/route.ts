@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServiceClient } from "@/lib/server/supabase";
+import { getValidAccessToken } from "@/lib/server/tokens";
 
 function cors() {
   return {
@@ -15,9 +16,11 @@ export async function OPTIONS() {
 }
 
 async function getAccessToken(): Promise<string | null> {
-  // Prefer env token; optionally dynamically fetch if you have helper later
-  const token = process.env.GHL_ACCESS_TOKEN || process.env.LEADCONNECTOR_TOKEN || null;
-  return token;
+  try {
+    const t = await getValidAccessToken();
+    if (t) return t as any;
+  } catch {}
+  return process.env.GHL_ACCESS_TOKEN || process.env.LEADCONNECTOR_TOKEN || null;
 }
 
 export async function POST(req: Request) {
@@ -59,14 +62,32 @@ export async function POST(req: Request) {
     // Update Supabase table row to cancelled
     const supabase = getSupabaseServiceClient();
     // Attempt to update both a top-level column and the JSON raw.appoinmentStatus if present
-    const updates: Record<string, any> = {
-      appointment_status: "cancelled",
-      updated_at: new Date().toISOString(),
+    // Read existing row to update JSON payload too
+    const { data: existing, error: readErr } = await (supabase as any)
+      .from("ghl_events")
+      .select("*")
+      .eq("id", bookingId)
+      .maybeSingle();
+    if (readErr) {
+      console.error("Supabase read error:", readErr);
+    }
+    const nowIso = new Date().toISOString();
+    const currentRaw = (existing?.raw ?? {}) as Record<string, any>;
+    const newRaw = {
+      ...currentRaw,
+      // normalize a few commonly used keys
+      appoinmentStatus: "cancelled", // existing misspelling used in data
+      appointmentStatus: "cancelled",
+      status: "cancelled",
     };
 
     const { data, error } = await (supabase as any)
       .from("ghl_events")
-      .update(updates)
+      .update({
+        appointment_status: "cancelled",
+        raw: newRaw,
+        updated_at: nowIso,
+      })
       .eq("id", bookingId)
       .select("*")
       .maybeSingle();

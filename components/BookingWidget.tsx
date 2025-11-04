@@ -341,12 +341,25 @@ export default function BookingWidget({
     phone: "",
     optIn: false,
   });
+  const [showContactForm, setShowContactForm] = useState<boolean>(true);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({
     firstName: "",
     lastName: "",
     phone: "",
   });
   const [bookingLoading, setBookingLoading] = useState<boolean>(false);
+  // Prefill contact info for reschedule and show summary-first
+  useEffect(() => {
+    try {
+      const fn = bookingContext?.preSelectedFirstName || "";
+      const ln = bookingContext?.preSelectedLastName || "";
+      const ph = bookingContext?.preSelectedPhone || "";
+      if (fn || ln || ph) {
+        setContactForm((prev) => ({ ...prev, firstName: fn || prev.firstName, lastName: ln || prev.lastName, phone: ph || prev.phone }));
+      }
+      if (bookingContext?.isReschedule) setShowContactForm(false);
+    } catch {}
+  }, [bookingContext?.preSelectedFirstName, bookingContext?.preSelectedLastName, bookingContext?.preSelectedPhone, bookingContext?.isReschedule]);
   // Fallback display name when staff object is not fully populated
   const [resolvedStaffName, setResolvedStaffName] = useState<string>("");
 
@@ -970,15 +983,16 @@ export default function BookingWidget({
     const dates: DateInfo[] = [];
     
     const today = new Date();
-    const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
     const tomorrowDateString = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    // If a min date is preselected (e.g., reschedule next-day after original), honor it
+    const minDateFromContext = (bookingContext?.preSelectedMinDateIso || '').trim();
+    const minDateString = minDateFromContext && minDateFromContext > tomorrowDateString ? minDateFromContext : tomorrowDateString;
     
     if (Object.keys(slots).length > 0) {
       const workingDates = Object.keys(slots)
-        .filter(dateString => dateString >= tomorrowDateString)
+        .filter(dateString => dateString >= minDateString)
         .sort();
       
       workingDates.forEach((dateString, index) => {
@@ -1306,8 +1320,9 @@ export default function BookingWidget({
         }
       }
 
-      // 5) Book appointment (send camelCase params only)
-      const apptUrl = new URL(appointmentApiPath, window.location.origin);
+      // 5) Create vs Update
+      const isReschedule = Boolean(bookingContext?.isReschedule && bookingContext?.preSelectedAppointmentId);
+      const apptUrl = new URL(isReschedule ? "/api/update-appointment" : appointmentApiPath, window.location.origin);
       const serviceName = serviceObj?.name || bookingContext?.preSelectedServiceName || "";
       const staffNameDerived = getDisplayStaffName();
       const staffName = selectedStaff && selectedStaff !== 'any'
@@ -1320,7 +1335,7 @@ export default function BookingWidget({
       const params: Record<string, string> = {
         calendarId,
         assignedUserId,
-        contactId,
+        ...(isReschedule ? {} : { contactId }),
         startTime: startIsoUtc,
         endTime: endIsoUtc,
         title,
@@ -1332,6 +1347,10 @@ export default function BookingWidget({
         customerLastName,
         customerPhone: contactForm.phone.replace(/\D/g, ""),
       };
+      if (isReschedule && bookingContext?.preSelectedAppointmentId) {
+        params.appointmentId = String(bookingContext.preSelectedAppointmentId);
+        params.status = "confirmed";
+      }
 
       Object.entries(params).forEach(([k, v]) => {
         if (v !== undefined && v !== null) apptUrl.searchParams.set(k, v);
@@ -1344,6 +1363,18 @@ export default function BookingWidget({
       const apptData = await apptRes.json();
 
       if (apptRes.ok) {
+        try {
+          const link = `https://undrstatemnt.com/appointments?id=${encodeURIComponent(String(contactId))}`;
+          const updateUrl = new URL('/api/update-contact', window.location.origin);
+          updateUrl.searchParams.set('id', String(contactId));
+          updateUrl.searchParams.set('website', link);
+          console.log('[BookingWidget] Updating contact website:', updateUrl.toString());
+          const updRes = await fetch(updateUrl.toString());
+          const updData = await updRes.json().catch(() => ({}));
+          console.log('[BookingWidget] update-contact response:', updRes.status, updData);
+        } catch (e) {
+          console.warn('[BookingWidget] update-contact failed:', e);
+        }
         setCurrentStep("success");
       } else {
         console.error('Booking error response:', apptData);
@@ -1501,6 +1532,8 @@ export default function BookingWidget({
             effectiveDuration={typeof effectiveDuration === 'number' ? effectiveDuration : undefined}
             fallbackServiceName={bookingContext?.preSelectedServiceName || undefined}
             fallbackStaffName={bookingContext?.preSelectedStaffName || getDisplayStaffName() || undefined}
+            showContactForm={showContactForm}
+            onEditContact={() => setShowContactForm(true)}
           />
         );
       case 'success':

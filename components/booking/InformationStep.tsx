@@ -37,6 +37,9 @@ interface InformationStepProps {
   effectiveDuration?: number | null;
   fallbackServiceName?: string;
   fallbackStaffName?: string;
+  // Reschedule UX
+  showContactForm?: boolean;
+  onEditContact?: () => void;
 }
 
 export function InformationStep({
@@ -59,7 +62,9 @@ export function InformationStep({
   effectivePrice,
   effectiveDuration,
   fallbackServiceName,
-  fallbackStaffName
+  fallbackStaffName,
+  showContactForm = true,
+  onEditContact
 }: InformationStepProps) {
   const formatCalendarDate = (dateInfo: DateInfo | null): string => {
     if (!dateInfo) return '';
@@ -143,9 +148,22 @@ export function InformationStep({
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Contact Form */}
+        {/* Contact Form / Summary-with-edit */}
         <div className="space-y-6">
-          <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
+          {!showContactForm ? (
+            <Card className="p-4 rounded-xl border border-gray-200 bg-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-semibold">Contact</div>
+                  <div className="text-[13px] text-gray-700">{contactForm.firstName} {contactForm.lastName}</div>
+                  <div className="text-[13px] text-gray-700">{contactForm.phone}</div>
+                </div>
+                <Button type="button" onClick={onEditContact} className="ml-4">Edit details</Button>
+              </div>
+            </Card>
+          ) : null}
+
+          <form className={`space-y-5 ${!showContactForm ? 'hidden' : ''}`} onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
               <div>
                 <label className="block text-[12px] sm:text-sm font-medium text-black">First Name *</label>
@@ -200,14 +218,18 @@ export function InformationStep({
             </div>
            
            
-            <button
-              type="submit"
-              disabled={!isFormValid || bookingLoading}
-              className="booking-button w-full font-bold text-white justify-center"
-            >
-              {bookingLoading ? 'Booking Your Appointment...' : 'Book Appointment'}
-            </button>
+            {/* Submit button rendered below for visibility even when form is hidden */}
           </form>
+
+          {/* Visible submit button (works for both edit and reschedule summary-only modes) */}
+          <button
+            type="button"
+            disabled={!isFormValid || bookingLoading}
+            className="booking-button w-full font-bold text-white justify-center"
+            onClick={onSubmit}
+          >
+            {bookingLoading ? 'Booking Your Appointment...' : 'Book Appointment'}
+          </button>
         </div>
         
         {/* Desktop: Appointment Summary */}

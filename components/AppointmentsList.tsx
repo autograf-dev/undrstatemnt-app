@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+// Lightweight inline confirm modal (no external UI dependency)
 
 type Booking = {
   id: string;
@@ -74,6 +75,14 @@ export default function AppointmentsList({
   logoBgColor = "#ffffff",
   logoBorderColor = "#e5e7eb",
 }: AppointmentsListProps) {
+  // Access booking drawer and context if available (same pattern as HomepageStaff)
+  // Wrapped in try/catch to avoid SSR issues if not within PageShellWithHeader
+  let drawerControl: any = null;
+  let bookingContext: any = null;
+  try {
+    drawerControl = require('./PageShellWithHeader').useDrawerControl();
+    bookingContext = require('@/contexts/BookingContext').useBooking();
+  } catch {}
   const [contactId, setContactId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +91,8 @@ export default function AppointmentsList({
   const [contactName, setContactName] = useState<string>("");
   const [contactPhone, setContactPhone] = useState<string>("");
   const [contactPhoneFormatted, setContactPhoneFormatted] = useState<string>("");
+  const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
+  const [bookingIdToCancel, setBookingIdToCancel] = useState<string>("");
 
   useEffect(() => {
     try {
@@ -228,14 +239,24 @@ export default function AppointmentsList({
     return "normal" as const;
   }
 
-  async function handleCancel(bookingId: string) {
+  function promptCancel(bookingId: string) {
+    setBookingIdToCancel(bookingId);
+    setConfirmOpen(true);
+  }
+
+  async function confirmCancel() {
+    const bookingId = bookingIdToCancel;
+    if (!bookingId) { setConfirmOpen(false); return; }
     try {
-      // Confirm dialog
-      if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+      // Optimistic UI: mark as cancelled immediately
+      setBookings((prev) => prev.map((b) => b.id === bookingId ? ({
+        ...b,
+        appointment_status: "cancelled",
+        raw: { ...(b as any).raw, appointmentStatus: "cancelled", appoinmentStatus: "cancelled", status: "cancelled" }
+      }) : b));
       if (onCancelClick) {
         await onCancelClick(bookingId);
       } else {
-        // Default: call our API
         const res = await fetch("/api/cancel-booking", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -244,7 +265,6 @@ export default function AppointmentsList({
         const j = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(j?.error || "Cancel failed");
         setToast("✅ Appointment cancelled.");
-        // Refresh list
         if (contactId) {
           const res2 = await fetch(`/api/fetchBookings?contactId=${encodeURIComponent(contactId)}`, { cache: "no-store" });
           const data2 = await res2.json().catch(() => ({}));
@@ -254,16 +274,60 @@ export default function AppointmentsList({
     } catch (e: any) {
       setToast(e?.message || "Failed to cancel");
     } finally {
+      setConfirmOpen(false);
+      setBookingIdToCancel("");
       setTimeout(() => setToast(null), 2200);
     }
   }
 
-  async function handleReschedule(bookingId: string) {
+  async function handleReschedule(b: any) {
     try {
       if (onRescheduleClick) {
-        await onRescheduleClick(bookingId);
+        await onRescheduleClick(b?.id);
       } else {
-        setToast("Reschedule is coming soon ✨");
+        // Open Booking drawer at Date/Time with preselected values from booking raw
+        const raw = b?.raw || {};
+        const calendarId = raw.calendarId || b?.calendar_id || b?.raw?.ghl_calendar_id || b?.raw?.serviceCalendarId;
+        const staffId = raw.assignedUserId || b?.assigned_user_id;
+        const duration = raw.serviceDuration ?? null;
+        const price = raw.servicePrice ?? null;
+        const serviceName = raw.serviceName || b?.title || null;
+        const staffName = raw.staffName || null;
+        // Min selectable date = next day after original start
+        const startIso = raw.startTime || b?.start_time || null;
+        let minDateIso: string | null = null;
+        if (startIso) {
+          const d = new Date(startIso);
+          d.setDate(d.getDate() + 1);
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          minDateIso = `${y}-${m}-${day}`;
+        }
+        // Split name
+        const nameRaw = String(raw.customerName || '').trim();
+        const parts = nameRaw.split(/\s+/);
+        const firstName = parts[0] || '';
+        const lastName = parts.slice(1).join(' ') || '';
+        const phone = String(raw.customerPhone || '').trim();
+        try { console.log('[AppointmentsList] reschedule preselect', { calendarId, staffId, duration, price, serviceName, staffName, firstName, lastName, phone, minDateIso }); } catch {}
+        if (drawerControl && bookingContext && calendarId && staffId) {
+          bookingContext.setPreSelectedServiceAndStaff(String(calendarId), String(staffId), {
+            duration: duration != null ? Number(duration) : null,
+            price: price != null ? Number(price) : null,
+            serviceName: serviceName || null,
+            staffName: staffName || null,
+            minDateIso,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            phone: phone || null,
+            isReschedule: true,
+            appointmentId: String(b?.id || raw.apptId || '' ) || null,
+          });
+          drawerControl.openDrawer();
+        } else {
+          setToast('Unable to open reschedule drawer');
+        }
       }
     } catch (e: any) {
       setToast(e?.message || "Failed to reschedule");
@@ -411,7 +475,7 @@ export default function AppointmentsList({
                         style={{ background: brandColor, color: "#fff", borderColor: brandColor, opacity: disableActions ? 0.6 : 1, cursor: disableActions ? 'not-allowed' : 'pointer' }}
                         disabled={disableActions}
                         title={disableTitle}
-                        onClick={() => handleReschedule(b.id)}
+                        onClick={() => handleReschedule(b)}
                       >
                         {rescheduleButtonText}
                       </button>
@@ -421,7 +485,7 @@ export default function AppointmentsList({
                         style={{ background: textPrimary, color: "#fff", borderColor: textPrimary, opacity: disableActions ? 0.6 : 1, cursor: disableActions ? 'not-allowed' : 'pointer' }}
                         disabled={disableActions}
                         title={disableTitle}
-                        onClick={() => handleCancel(b.id)}
+                        onClick={() => promptCancel(b.id)}
                       >
                         {cancelButtonText}
                       </button>
@@ -441,6 +505,36 @@ export default function AppointmentsList({
         <div className="fixed left-1/2 -translate-x-1/2 bottom-6 z-[9999] px-3 py-2 rounded-xl text-sm font-semibold shadow-md"
           style={{ background: "#111", color: "#fff" }}>
           {toast}
+        </div>
+      )}
+
+      {confirmOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmOpen(false)} />
+          <div className="relative w-[92%] max-w-sm rounded-xl border bg-white p-5 shadow-xl text-left">
+            <div className="font-bold text-lg mb-1">Cancel appointment?</div>
+            <div className="text-sm mb-4" style={{ color: textMuted }}>
+              This will mark the booking as cancelled. This cannot be undone.
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold border hover:opacity-90"
+                style={{ background: "#f3f4f6", color: textPrimary, borderColor }}
+                onClick={() => setConfirmOpen(false)}
+              >
+                Keep booking
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold border hover:opacity-90"
+                style={{ background: brandColor, color: "#fff", borderColor: brandColor }}
+                onClick={confirmCancel}
+              >
+                Confirm cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>
