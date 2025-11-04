@@ -19,6 +19,7 @@ import ServicesShowcase from "./components/ServicesShowcase";
 import HomepageStaff from "./components/HomepageStaff";
 import HomepageServices from "./components/HomepageServices";
 import StaffShowcase from "./components/StaffShowcase";
+import StaffGrid from "./components/StaffGrid";
 // (BarberProfile removed)
 
 // Register code components used by Plasmic pages so Studio and runtime can render them
@@ -1003,6 +1004,62 @@ PLASMIC.registerComponent(HomepageServices, {
 PLASMIC.registerComponent(StaffShowcase, {
   name: "StaffShowcase",
   props: {
+    // Title Controls
+    title: { type: "string", description: "Section title", defaultValue: "Our Professionals" },
+    titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
+    titleSizeMobile: { type: "string", description: "Title size - Mobile (e.g., 1.5rem, 24px)", defaultValue: "1.5rem" },
+    titleSizeTablet: { type: "string", description: "Title size - Tablet (e.g., 2rem, 32px)", defaultValue: "2rem" },
+    titleSizeDesktop: { type: "string", description: "Title size - Desktop (e.g., 2.5rem, 40px)", defaultValue: "2.5rem" },
+    
+    // Breadcrumb
+    breadcrumb: { type: "string", description: "Breadcrumb text", defaultValue: "Home / All" },
+    breadcrumbColor: { type: "color", description: "Breadcrumb color", defaultValue: "#6b7280" },
+    showBreadcrumb: { type: "boolean", description: "Show breadcrumb", defaultValue: true },
+    breadcrumbSize: { type: "string", description: "Breadcrumb font size", defaultValue: "0.875rem" },
+    
+    // Card Appearance
+    cardBgColor: { type: "color", description: "Card background", defaultValue: "white" },
+    cardHoverColor: { type: "color", description: "Card hover color", defaultValue: "#f9fafb" },
+    cardImageHeightMobile: { type: "number", description: "Card image height - Mobile (px)", defaultValue: 250 },
+    cardImageHeightTablet: { type: "number", description: "Card image height - Tablet (px)", defaultValue: 300 },
+    cardImageHeightDesktop: { type: "number", description: "Card image height - Desktop (px)", defaultValue: 350 },
+    cardBorderRadius: { type: "string", description: "Card border radius (e.g., 0.75rem, 12px)", defaultValue: "0.75rem" },
+    
+    // Staff Info
+    nameColor: { type: "color", description: "Staff name color", defaultValue: "#1a1a1a" },
+    nameFontSize: { type: "string", description: "Staff name font size", defaultValue: "1.25rem" },
+    subtitleColor: { type: "color", description: "Staff subtitle color", defaultValue: "#6b7280" },
+    subtitleFontSize: { type: "string", description: "Staff subtitle font size", defaultValue: "0.875rem" },
+    
+    // Layout Controls  
+    columnsMobile: { type: "number", description: "Columns - Mobile (1-3)", defaultValue: 2 },
+    columnsTablet: { type: "number", description: "Columns - Tablet (2-4)", defaultValue: 3 },
+    columnsDesktop: { type: "number", description: "Columns - Desktop (3-6)", defaultValue: 4 },
+    cardGap: { type: "string", description: "Gap between cards (e.g., 1.5rem, 24px)", defaultValue: "1.5rem" },
+    
+    // Section Style
+    bgColor: { type: "color", description: "Background color", defaultValue: "white" },
+    paddingMobile: { type: "string", description: "Section padding - Mobile (e.g., 2rem 1rem)", defaultValue: "2rem 1rem" },
+    paddingTablet: { type: "string", description: "Section padding - Tablet (e.g., 2.5rem 1.5rem)", defaultValue: "2.5rem 1.5rem" },
+    paddingDesktop: { type: "string", description: "Section padding - Desktop (e.g., 3rem 2rem)", defaultValue: "3rem 2rem" },
+    maxWidth: { type: "string", description: "Maximum container width (e.g., 1280px)", defaultValue: "1280px" },
+  },
+});
+
+PLASMIC.registerComponent(StaffGrid, {
+  name: "StaffGrid",
+  props: {
+    // API Configuration
+    apiPath: { 
+      type: "choice", 
+      description: "API endpoint to fetch staff data",
+      options: [
+        "/api/supabasestaff",
+        "/api/staff",
+      ],
+      defaultValue: "/api/supabasestaff" 
+    },
+    
     // Title Controls
     title: { type: "string", description: "Section title", defaultValue: "Our Professionals" },
     titleColor: { type: "color", description: "Title color", defaultValue: "#1a1a1a" },
