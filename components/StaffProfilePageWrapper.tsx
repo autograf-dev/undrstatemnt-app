@@ -44,7 +44,7 @@ export default function StaffProfilePageWrapper() {
 
   return (
     <div className="w-full">
-      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8">
+      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8 hidden">
         <nav className="mb-4 text-sm text-gray-600">
           <Link href="/barbers" className="hover:underline">Barbers</Link>
           <span className="mx-2">/</span>
