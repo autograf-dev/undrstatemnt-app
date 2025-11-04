@@ -54,7 +54,7 @@ export default function AppointmentsList({
   title = "Your bookings",
   subtitle = "Here's what's coming up. Need to make changes? Just reschedule or cancel below.",
   emptyText = "No upcoming bookings.",
-  containerMaxWidth = "860px",
+  containerMaxWidth = "1280px",
   brandColor = "#D97639",
   cardBgColor = "#ffffff",
   borderColor = "#e5e7eb",
@@ -81,6 +81,7 @@ export default function AppointmentsList({
   const [toast, setToast] = useState<string | null>(null);
   const [contactName, setContactName] = useState<string>("");
   const [contactPhone, setContactPhone] = useState<string>("");
+  const [contactPhoneFormatted, setContactPhoneFormatted] = useState<string>("");
 
   useEffect(() => {
     try {
@@ -113,6 +114,23 @@ export default function AppointmentsList({
     };
   }, [contactId]);
 
+  function toTitleCase(name: string) {
+    return name
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  function formatPhoneCanada(raw: string) {
+    const digits = (raw || "").replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.length === 11 && digits.startsWith("1")) return "+" + digits;
+    if (digits.length === 10) return "+1" + digits;
+    if (raw.startsWith("+")) return raw; // already e164-ish
+    return "+1" + digits; // fallback best effort
+  }
+
   // Fetch contact details for greeting (best-effort)
   useEffect(() => {
     if (!contactId) return;
@@ -130,10 +148,12 @@ export default function AppointmentsList({
             const c = data.contact || data.customer || {};
             const first = c.firstName || c.first_name || c.first || "";
             const last = c.lastName || c.last_name || c.last || "";
-            const name = `${first} ${last}`.trim();
+            const name = toTitleCase(`${first} ${last}`.trim());
             if (!aborted) {
               setContactName(name || "");
-              setContactPhone(String(c.phone || c.phoneNumber || c.phone_number || ""));
+              const phoneRaw = String(c.phone || c.phoneNumber || c.phone_number || "");
+              setContactPhone(phoneRaw);
+              setContactPhoneFormatted(formatPhoneCanada(phoneRaw));
             }
             return;
           }
@@ -274,7 +294,7 @@ export default function AppointmentsList({
             <h1 className="mt-0 font-extrabold tracking-tight text-[20px] sm:text-[24px] lg:text-[28px]">{title}</h1>
             <p className="mt-1 text-xs sm:text-sm" style={{ color: textMuted }}>{subtitle}</p>
 
-            {(contactName || contactPhone) && (
+            {(contactName || contactPhoneFormatted) && (
               <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
                 {contactName && (
                   <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold"
@@ -282,11 +302,11 @@ export default function AppointmentsList({
                     {contactName}
                   </span>
                 )}
-                {contactPhone && (
+                {contactPhoneFormatted && (
                   <a className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold"
-                     href={`tel:${contactPhone.replace(/\D/g, "")}`}
+                     href={`tel:${contactPhoneFormatted.replace(/\D/g, "")}`}
                      style={{ borderColor, background: chipBg, color: textPrimary }}>
-                    {contactPhone}
+                    {contactPhoneFormatted}
                   </a>
                 )}
               </div>
@@ -360,24 +380,7 @@ export default function AppointmentsList({
                         {isCancelled ? "Cancelled" : `with ${b.staffName || "Unassigned"}`}
                       </div>
                     </div>
-                    {/* Customer chips */}
-                    {(b.customerName || b.customerPhone) && (
-                      <div className="mt-2 mb-1 flex flex-wrap items-center gap-2">
-                        {b.customerName && (
-                          <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold"
-                                style={{ borderColor, background: chipBg, color: textPrimary }}>
-                            {b.customerName}
-                          </span>
-                        )}
-                        {b.customerPhone && (
-                          <a className="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold"
-                             href={`tel:${b.customerPhone.replace(/\D/g, "")}`}
-                             style={{ borderColor, background: chipBg, color: textPrimary }}>
-                            {b.customerPhone}
-                          </a>
-                        )}
-                      </div>
-                    )}
+                    {/* Customer chips removed from per-card; shown in header */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                       <div>
                         <div className="text-[12px] font-bold uppercase tracking-wider" style={{ color: textMuted }}>Start Time</div>

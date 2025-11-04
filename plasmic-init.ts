@@ -1140,7 +1140,7 @@ PLASMIC.registerComponent(AppointmentsList, {
     title: { type: "string", defaultValue: "Your bookings" },
     subtitle: { type: "string", defaultValue: "Here's what's coming up. Need to make changes? Just reschedule or cancel below." },
     emptyText: { type: "string", defaultValue: "No upcoming bookings." },
-    containerMaxWidth: { type: "string", defaultValue: "860px" },
+    containerMaxWidth: { type: "string", defaultValue: "1280px" },
     brandColor: { type: "color", defaultValue: "#D97639" },
     cardBgColor: { type: "color", defaultValue: "#ffffff" },
     borderColor: { type: "color", defaultValue: "#e5e7eb" },
