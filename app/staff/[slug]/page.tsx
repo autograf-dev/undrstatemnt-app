@@ -1,11 +1,12 @@
+import { use } from "react";
 import StaffProfilePage from "@/components/StaffProfilePage";
 
 interface PageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export default function StaffPage({ params }: PageProps) {
-  const { slug } = params;
+  const { slug } = use(params);
 
   return <StaffProfilePage slug={slug} />;
 }

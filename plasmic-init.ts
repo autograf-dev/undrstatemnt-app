@@ -20,6 +20,8 @@ import HomepageStaff from "./components/HomepageStaff";
 import HomepageServices from "./components/HomepageServices";
 import StaffShowcase from "./components/StaffShowcase";
 import StaffGrid from "./components/StaffGrid";
+import StaffProfilePage from "./components/StaffProfilePage";
+import StaffProfilePageWrapper from "./components/StaffProfilePageWrapper";
 // (BarberProfile removed)
 
 // Register code components used by Plasmic pages so Studio and runtime can render them
@@ -1100,4 +1102,33 @@ PLASMIC.registerComponent(StaffGrid, {
     paddingDesktop: { type: "string", description: "Section padding - Desktop (e.g., 3rem 2rem)", defaultValue: "3rem 2rem" },
     maxWidth: { type: "string", description: "Maximum container width (e.g., 1280px)", defaultValue: "1280px" },
   },
+});
+
+PLASMIC.registerComponent(StaffProfilePage, {
+  name: "StaffProfilePage",
+  props: {
+    slug: { 
+      type: "string", 
+      description: "Staff member slug (e.g., 'daniel', 'aj-samson'). This should match the URL slug from /staff/[slug]",
+      defaultValue: "daniel"
+    },
+    apiPath: { 
+      type: "choice", 
+      description: "API endpoint to fetch staff data",
+      options: [
+        "/api/supabasestaff",
+        "/api/staff",
+      ],
+      defaultValue: "/api/supabasestaff" 
+    },
+  },
+});
+
+// Wrapper component that automatically extracts slug from URL - use this in Plasmic pages
+PLASMIC.registerComponent(StaffProfilePageWrapper, {
+  name: "StaffProfilePageWrapper",
+  props: {
+    // No props needed - automatically gets slug from URL
+  },
+  importPath: "@/components/StaffProfilePageWrapper",
 });
