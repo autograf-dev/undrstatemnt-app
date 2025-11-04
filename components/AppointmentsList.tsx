@@ -156,6 +156,8 @@ export default function AppointmentsList({
       const status = (b.raw?.appointmentStatus || b.raw?.appoinmentStatus || b.appointment_status || "").toLowerCase();
       const serviceName = b.raw?.serviceName || b.title || "Untitled Booking";
       const staffName = b.raw?.staffName || "";
+      const customerName = b.raw?.customerName || "";
+      const customerPhone = b.raw?.customerPhone || "";
       return {
         id: b.id,
         startIso,
@@ -163,6 +165,8 @@ export default function AppointmentsList({
         status,
         serviceName,
         staffName,
+        customerName,
+        customerPhone,
         raw: b.raw || {},
       };
     });
@@ -356,6 +360,24 @@ export default function AppointmentsList({
                         {isCancelled ? "Cancelled" : `with ${b.staffName || "Unassigned"}`}
                       </div>
                     </div>
+                    {/* Customer chips */}
+                    {(b.customerName || b.customerPhone) && (
+                      <div className="mt-2 mb-1 flex flex-wrap items-center gap-2">
+                        {b.customerName && (
+                          <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold"
+                                style={{ borderColor, background: chipBg, color: textPrimary }}>
+                            {b.customerName}
+                          </span>
+                        )}
+                        {b.customerPhone && (
+                          <a className="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold"
+                             href={`tel:${b.customerPhone.replace(/\D/g, "")}`}
+                             style={{ borderColor, background: chipBg, color: textPrimary }}>
+                            {b.customerPhone}
+                          </a>
+                        )}
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                       <div>
                         <div className="text-[12px] font-bold uppercase tracking-wider" style={{ color: textMuted }}>Start Time</div>
