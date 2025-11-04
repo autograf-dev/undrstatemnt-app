@@ -156,7 +156,10 @@ body > div[style*="min-height: 100vh"] {
   height: auto !important;
   min-height: auto !important;
 }
-
+main.pt-24.pb-24.md\:pb-8.px-4.md\:px-8 {
+  overflow-y: scroll;
+  height: 100% !important;
+}
 /* Remove min-height only from main page wrapper */
 body > div#__next {
   min-height: auto !important;
