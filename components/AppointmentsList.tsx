@@ -102,7 +102,24 @@ export default function AppointmentsList({
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data?.error || "Failed to fetch bookings");
         if (aborted) return;
-        setBookings(Array.isArray(data?.bookings) ? data.bookings : []);
+        const list: Booking[] = Array.isArray(data?.bookings) ? data.bookings : [];
+        try { console.log('[AppointmentsList] fetched bookings:', { count: list.length, first: list[0] }); } catch {}
+        setBookings(list);
+        // Derive name/phone from first booking.raw if available
+        if (list.length > 0) {
+          const raw = (list[0] as any)?.raw || {};
+          const derivedName = toTitleCase(String(raw.customerName || ''));
+          const derivedPhoneRaw = String(raw.customerPhone || '');
+          const derivedPhone = formatPhoneCanada(derivedPhoneRaw);
+          try { console.log('[AppointmentsList] derived contact from bookings:', { derivedName, derivedPhoneRaw, derivedPhone }); } catch {}
+          if (!aborted) {
+            if (derivedName) setContactName(derivedName);
+            if (derivedPhoneRaw) {
+              setContactPhone(derivedPhoneRaw);
+              setContactPhoneFormatted(derivedPhone);
+            }
+          }
+        }
       } catch (e: any) {
         if (!aborted) setError(e?.message || "Failed to load bookings");
       } finally {
@@ -131,37 +148,7 @@ export default function AppointmentsList({
     return "+1" + digits; // fallback best effort
   }
 
-  // Fetch contact details for greeting (best-effort)
-  useEffect(() => {
-    if (!contactId) return;
-    let aborted = false;
-    (async () => {
-      try {
-        const tryUrls = [
-          `/api/customer?contactId=${encodeURIComponent(contactId)}`,
-          `/api/customer?id=${encodeURIComponent(contactId)}`,
-        ];
-        for (const u of tryUrls) {
-          const res = await fetch(u, { cache: "no-store" });
-          const data = await res.json().catch(() => ({}));
-          if (res.ok && data && (data.contact || data.customer)) {
-            const c = data.contact || data.customer || {};
-            const first = c.firstName || c.first_name || c.first || "";
-            const last = c.lastName || c.last_name || c.last || "";
-            const name = toTitleCase(`${first} ${last}`.trim());
-            if (!aborted) {
-              setContactName(name || "");
-              const phoneRaw = String(c.phone || c.phoneNumber || c.phone_number || "");
-              setContactPhone(phoneRaw);
-              setContactPhoneFormatted(formatPhoneCanada(phoneRaw));
-            }
-            return;
-          }
-        }
-      } catch {}
-    })();
-    return () => { aborted = true; };
-  }, [contactId]);
+  // Removed contact API fetch; derive from bookings instead.
 
   const processed = useMemo(() => {
     const now = Date.now();
