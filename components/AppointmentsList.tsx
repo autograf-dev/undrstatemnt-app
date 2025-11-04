@@ -230,10 +230,26 @@ export default function AppointmentsList({
 
   async function handleCancel(bookingId: string) {
     try {
+      // Confirm dialog
+      if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
       if (onCancelClick) {
         await onCancelClick(bookingId);
       } else {
-        setToast("Cancel action will be wired next. ✅ Button working.");
+        // Default: call our API
+        const res = await fetch("/api/cancel-booking", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookingId }),
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(j?.error || "Cancel failed");
+        setToast("✅ Appointment cancelled.");
+        // Refresh list
+        if (contactId) {
+          const res2 = await fetch(`/api/fetchBookings?contactId=${encodeURIComponent(contactId)}`, { cache: "no-store" });
+          const data2 = await res2.json().catch(() => ({}));
+          if (res2.ok && Array.isArray(data2?.bookings)) setBookings(data2.bookings);
+        }
       }
     } catch (e: any) {
       setToast(e?.message || "Failed to cancel");
@@ -338,6 +354,14 @@ export default function AppointmentsList({
                   : pri === "warning" ? "bg-amber-50 text-amber-700 border-amber-200"
                   : pri === "closed" ? "bg-gray-100 text-gray-700 border-gray-200"
                   : "bg-emerald-50 text-emerald-700 border-emerald-200";
+                const isSameDay = (() => {
+                  if (!b.startIso) return false;
+                  const d = new Date(b.startIso);
+                  const now = new Date();
+                  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+                })();
+                const disableActions = isCancelled || isSameDay;
+                const disableTitle = isCancelled ? "This booking is already cancelled" : (isSameDay ? "Same-day bookings can't be changed" : "");
                 return (
                   <div key={b.id} className="rounded-2xl border shadow-sm p-4 sm:p-5"
                     style={{ borderColor, background: cardBgColor }}>
@@ -379,12 +403,14 @@ export default function AppointmentsList({
                         <div className="font-semibold">{formatDuration(b.startIso, b.endIso)}</div>
                       </div>
                     </div>
-                  {!isCancelled && showActions && (
+                  {showActions && (
                     <div className="mt-3 pt-3 border-t flex flex-wrap gap-2 justify-end" style={{ borderColor }}>
                       <button
                         type="button"
                         className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold border hover:opacity-90"
-                        style={{ background: brandColor, color: "#fff", borderColor: brandColor }}
+                        style={{ background: brandColor, color: "#fff", borderColor: brandColor, opacity: disableActions ? 0.6 : 1, cursor: disableActions ? 'not-allowed' : 'pointer' }}
+                        disabled={disableActions}
+                        title={disableTitle}
                         onClick={() => handleReschedule(b.id)}
                       >
                         {rescheduleButtonText}
@@ -392,7 +418,9 @@ export default function AppointmentsList({
                       <button
                         type="button"
                         className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold border hover:opacity-90"
-                        style={{ background: textPrimary, color: "#fff", borderColor: textPrimary }}
+                        style={{ background: textPrimary, color: "#fff", borderColor: textPrimary, opacity: disableActions ? 0.6 : 1, cursor: disableActions ? 'not-allowed' : 'pointer' }}
+                        disabled={disableActions}
+                        title={disableTitle}
                         onClick={() => handleCancel(b.id)}
                       >
                         {cancelButtonText}
