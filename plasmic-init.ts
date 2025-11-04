@@ -1148,5 +1148,15 @@ PLASMIC.registerComponent(AppointmentsList, {
     textMuted: { type: "color", defaultValue: "#6b7280" },
     chipBg: { type: "color", defaultValue: "#f3f4f6" },
     showHeader: { type: "boolean", defaultValue: true },
+    // Actions
+    showActions: { type: "boolean", defaultValue: true },
+    cancelButtonText: { type: "string", defaultValue: "Cancel" },
+    rescheduleButtonText: { type: "string", defaultValue: "Reschedule" },
+    // Logo
+    logoSrc: { type: "imageUrl", defaultValue: "/next.svg" },
+    logoWidth: { type: "number", defaultValue: 68 },
+    logoHeight: { type: "number", defaultValue: 68 },
+    logoBgColor: { type: "color", defaultValue: "#ffffff" },
+    logoBorderColor: { type: "color", defaultValue: "#e5e7eb" },
   },
 });

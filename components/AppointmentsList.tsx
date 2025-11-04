@@ -35,6 +35,18 @@ export interface AppointmentsListProps {
   textMuted?: string;
   chipBg?: string;
   showHeader?: boolean;
+  // Actions
+  showActions?: boolean;
+  cancelButtonText?: string;
+  rescheduleButtonText?: string;
+  onCancelClick?: (bookingId: string) => void | Promise<void>;
+  onRescheduleClick?: (bookingId: string) => void | Promise<void>;
+  // Logo (similar to HeroSection)
+  logoSrc?: string;
+  logoWidth?: number;
+  logoHeight?: number;
+  logoBgColor?: string;
+  logoBorderColor?: string;
 }
 
 export default function AppointmentsList({
@@ -50,11 +62,25 @@ export default function AppointmentsList({
   textMuted = "#6b7280",
   chipBg = "#f3f4f6",
   showHeader = true,
+  showActions = true,
+  cancelButtonText = "Cancel",
+  rescheduleButtonText = "Reschedule",
+  onCancelClick,
+  onRescheduleClick,
+  // Logo
+  logoSrc = "/next.svg",
+  logoWidth = 68,
+  logoHeight = 68,
+  logoBgColor = "#ffffff",
+  logoBorderColor = "#e5e7eb",
 }: AppointmentsListProps) {
   const [contactId, setContactId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [toast, setToast] = useState<string | null>(null);
+  const [contactName, setContactName] = useState<string>("");
+  const [contactPhone, setContactPhone] = useState<string>("");
 
   useEffect(() => {
     try {
@@ -85,6 +111,36 @@ export default function AppointmentsList({
     return () => {
       aborted = true;
     };
+  }, [contactId]);
+
+  // Fetch contact details for greeting (best-effort)
+  useEffect(() => {
+    if (!contactId) return;
+    let aborted = false;
+    (async () => {
+      try {
+        const tryUrls = [
+          `/api/customer?contactId=${encodeURIComponent(contactId)}`,
+          `/api/customer?id=${encodeURIComponent(contactId)}`,
+        ];
+        for (const u of tryUrls) {
+          const res = await fetch(u, { cache: "no-store" });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data && (data.contact || data.customer)) {
+            const c = data.contact || data.customer || {};
+            const first = c.firstName || c.first_name || c.first || "";
+            const last = c.lastName || c.last_name || c.last || "";
+            const name = `${first} ${last}`.trim();
+            if (!aborted) {
+              setContactName(name || "");
+              setContactPhone(String(c.phone || c.phoneNumber || c.phone_number || ""));
+            }
+            return;
+          }
+        }
+      } catch {}
+    })();
+    return () => { aborted = true; };
   }, [contactId]);
 
   const processed = useMemo(() => {
@@ -161,19 +217,80 @@ export default function AppointmentsList({
     return "normal" as const;
   }
 
+  async function handleCancel(bookingId: string) {
+    try {
+      if (onCancelClick) {
+        await onCancelClick(bookingId);
+      } else {
+        setToast("Cancel action will be wired next. ✅ Button working.");
+      }
+    } catch (e: any) {
+      setToast(e?.message || "Failed to cancel");
+    } finally {
+      setTimeout(() => setToast(null), 2200);
+    }
+  }
+
+  async function handleReschedule(bookingId: string) {
+    try {
+      if (onRescheduleClick) {
+        await onRescheduleClick(bookingId);
+      } else {
+        setToast("Reschedule is coming soon ✨");
+      }
+    } catch (e: any) {
+      setToast(e?.message || "Failed to reschedule");
+    } finally {
+      setTimeout(() => setToast(null), 2200);
+    }
+  }
+
   return (
     <section className={className}>
       <div className="mx-auto" style={{ maxWidth: containerMaxWidth, color: textPrimary }}>
         {showHeader && (
-          <header className="rounded-2xl border shadow-sm text-center px-4 sm:px-6 py-6 sm:py-8"
+          <header className="rounded-2xl border shadow-sm text-center px-4 sm:px-6 py-5 sm:py-7 lg:py-8"
             style={{ borderColor, background: cardBgColor }}>
-            <div className="text-xs font-bold tracking-wider uppercase" style={{ color: textMuted }}>UNDRSTATEMNT COMPANY</div>
-            <h1 className="mt-2 font-extrabold tracking-tight" style={{ fontSize: "clamp(24px,3.5vw,34px)" }}>{title}</h1>
-            <p className="mt-2 text-sm" style={{ color: textMuted }}>{subtitle}</p>
+            <div className="flex justify-center mb-3 sm:mb-4">
+              <div
+                className="rounded-full flex items-center justify-center overflow-hidden"
+                style={{
+                  width: `min(${logoWidth}px, 30vw)`,
+                  height: `min(${logoHeight}px, 30vw)`,
+                  maxWidth: logoWidth,
+                  maxHeight: logoHeight,
+                  background: logoBgColor,
+                  border: `2px solid ${logoBorderColor}`,
+                }}
+              >
+                {/* eslint-disable @next/next/no-img-element */}
+                <img src={logoSrc} alt="Brand" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 6 }} />
+              </div>
+            </div>
+            <h1 className="mt-0 font-extrabold tracking-tight text-[20px] sm:text-[24px] lg:text-[28px]">{title}</h1>
+            <p className="mt-1 text-xs sm:text-sm" style={{ color: textMuted }}>{subtitle}</p>
+
+            {(contactName || contactPhone) && (
+              <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+                {contactName && (
+                  <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold"
+                        style={{ borderColor, background: chipBg, color: textPrimary }}>
+                    {contactName}
+                  </span>
+                )}
+                {contactPhone && (
+                  <a className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold"
+                     href={`tel:${contactPhone.replace(/\D/g, "")}`}
+                     style={{ borderColor, background: chipBg, color: textPrimary }}>
+                    {contactPhone}
+                  </a>
+                )}
+              </div>
+            )}
           </header>
         )}
 
-        <main className="pt-5 sm:pt-6">
+        <main className="pt-5 sm:pt-6 lg:pt-7">
           {(!contactId || error) && (
             <div className="text-center text-base" style={{ color: textMuted }}>
               {!contactId ? "We couldn’t find your link. Add ?id=contactId to the URL." : `Failed to load: ${error}`}
@@ -249,6 +366,26 @@ export default function AppointmentsList({
                         <div className="font-semibold">{formatDuration(b.startIso, b.endIso)}</div>
                       </div>
                     </div>
+                  {!isCancelled && showActions && (
+                    <div className="mt-3 pt-3 border-t flex flex-wrap gap-2 justify-end" style={{ borderColor }}>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold border hover:opacity-90"
+                        style={{ background: brandColor, color: "#fff", borderColor: brandColor }}
+                        onClick={() => handleReschedule(b.id)}
+                      >
+                        {rescheduleButtonText}
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold border hover:opacity-90"
+                        style={{ background: textPrimary, color: "#fff", borderColor: textPrimary }}
+                        onClick={() => handleCancel(b.id)}
+                      >
+                        {cancelButtonText}
+                      </button>
+                    </div>
+                  )}
                   </div>
                 );
               })}
@@ -259,6 +396,12 @@ export default function AppointmentsList({
       <style jsx>{`
         :global(.btn-primary){ background:${brandColor}; color:#fff }
       `}</style>
+      {toast && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-6 z-[9999] px-3 py-2 rounded-xl text-sm font-semibold shadow-md"
+          style={{ background: "#111", color: "#fff" }}>
+          {toast}
+        </div>
+      )}
     </section>
   );
 }
