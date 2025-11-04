@@ -20,7 +20,11 @@ import {
   Layers,
   Palette,
   Flame,
-  Sparkle
+  Sparkle,
+  Baby,
+  Smile,
+  Ruler,
+  Waves
 } from "lucide-react";
 import { Tag } from "lucide-react";
 import { Department, Service } from "@/lib/types";
@@ -219,28 +223,38 @@ export function ServiceSelectionStep({
   const getCategoryIcon = (category: string) => {
     const lowerCategory = category.toLowerCase();
     
+    // Specific category overrides (check these first)
+    // Kids - Baby icon
+    if (lowerCategory.includes('kid') || lowerCategory.includes('child') || 
+        lowerCategory.includes('youth') || lowerCategory.includes('junior')) {
+      return Baby;
+    }
+    
+    // Line Up - Ruler icon (for precision/straight lines)
+    if (lowerCategory.includes('line up') || lowerCategory.includes('lineup')) {
+      return Ruler;
+    }
+    
+    // Perm - Waves icon
+    if (lowerCategory.includes('perm')) {
+      return Waves;
+    }
+    
+    // Beard/Facial hair - Smile icon (facial icon)
+    if (lowerCategory.includes('beard') || lowerCategory.includes('facial') || 
+        lowerCategory.includes('mustache') || lowerCategory.includes('moustache')) {
+      return Smile;
+    }
+    
     // Haircut related
     if (lowerCategory.includes('haircut') || lowerCategory.includes('hair cut') || 
-        lowerCategory.includes('cut') || lowerCategory.includes('line up') || 
-        lowerCategory.includes('lineup') || lowerCategory.includes('trim')) {
+        lowerCategory.includes('cut') || lowerCategory.includes('trim')) {
       return Scissors;
     }
     
-    // Beard/Facial hair
-    if (lowerCategory.includes('beard') || lowerCategory.includes('facial') || 
-        lowerCategory.includes('mustache') || lowerCategory.includes('moustache')) {
-      return User;
-    }
-    
-    // Kids/Children
-    if (lowerCategory.includes('kid') || lowerCategory.includes('child') || 
-        lowerCategory.includes('youth') || lowerCategory.includes('junior')) {
-      return Scissors; // Kids also get haircuts
-    }
-    
-    // Perm/Texture/Wave
-    if (lowerCategory.includes('perm') || lowerCategory.includes('texture') || 
-        lowerCategory.includes('wave') || lowerCategory.includes('curl')) {
+    // Texture/Wave (not perm)
+    if (lowerCategory.includes('texture') || lowerCategory.includes('wave') || 
+        lowerCategory.includes('curl')) {
       return Sparkles;
     }
     
