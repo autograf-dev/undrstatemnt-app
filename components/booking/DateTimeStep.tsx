@@ -9,7 +9,7 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Calendar,
+  CalendarDays,
   Clock,
   Hourglass
 } from "lucide-react";
@@ -197,10 +197,10 @@ export function DateTimeStep({
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowMonthPicker(v => !v)}
-                className="p-1 sm:p-2 smooth-transition flex-shrink-0"
+                className="p-2 sm:p-3 smooth-transition flex-shrink-0 bg-[#391709] ml-2 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center"
                 aria-label="Open calendar"
               >
-                <Calendar className="text-lg sm:text-xl" />
+                <CalendarDays className="text-2xl sm:text-3xl" />
               </Button>
             </div>
 
