@@ -7,7 +7,7 @@ import StaffProfilePage from "./StaffProfilePage";
 /**
  * Wrapper component for StaffProfilePage that works with Plasmic pages.
  * Extracts the slug from the URL path when used in Plasmic pages.
- * Use this component in Plasmic pages with path pattern: /staff/[slug]
+ * Use this component in Plasmic pages with path pattern: /[slug]
  */
 export default function StaffProfilePageWrapper() {
   const [slug, setSlug] = useState<string>("");
@@ -15,10 +15,10 @@ export default function StaffProfilePageWrapper() {
   
   useEffect(() => {
     // Extract slug from URL path
-    // In Plasmic, the path will be /staff/[slug], so we get it from the URL
+    // In Plasmic, the path will be /[slug], so we get it from the URL
     if (typeof window !== 'undefined') {
       const pathname = window.location.pathname;
-      const match = pathname.match(/^\/staff\/([^\/]+)/);
+      const match = pathname.match(/^\/([^\/]+)/);
       const extractedSlug = match ? match[1] : '';
       setSlug(extractedSlug);
       if (extractedSlug) {

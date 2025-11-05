@@ -245,7 +245,7 @@ export default function StaffGrid({
               );
               
               const slug = generateSlug(member.name);
-              const href = `/staff/${slug}`;
+              const href = `/${slug}`;
               
               return (
                 <Link
