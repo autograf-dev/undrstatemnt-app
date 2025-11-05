@@ -182,16 +182,7 @@ export function DateTimeStep({
                   </div>
                 ))}
               </div>
-              {/* Mini month calendar toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowMonthPicker(v => !v)}
-                className="p-1 sm:p-2 smooth-transition flex-shrink-0"
-                aria-label="Open calendar"
-              >
-                <Calendar className="text-lg sm:text-xl" />
-              </Button>
+             
               <Button
                 variant="ghost"
                 size="sm"
@@ -200,6 +191,16 @@ export function DateTimeStep({
                 className="p-1 sm:p-2 smooth-transition flex-shrink-0"
               >
                 <ChevronRight className="text-lg sm:text-xl" />
+              </Button>
+               {/* Mini month calendar toggle */}
+               <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowMonthPicker(v => !v)}
+                className="p-1 sm:p-2 smooth-transition flex-shrink-0"
+                aria-label="Open calendar"
+              >
+                <Calendar className="text-lg sm:text-xl" />
               </Button>
             </div>
 
