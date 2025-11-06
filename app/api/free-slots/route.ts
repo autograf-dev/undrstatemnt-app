@@ -124,7 +124,7 @@ export async function GET(req: Request) {
       if (parts.length === 3) startDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
     }
 
-    const totalDays = 30;
+    const totalDays = 120;
     const daysToCheck: Date[] = [];
     for (let i = 0; i < totalDays; i++) {
       const d = new Date(startDate); d.setDate(startDate.getDate() + i); daysToCheck.push(d);
