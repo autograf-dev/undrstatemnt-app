@@ -61,11 +61,20 @@ export default function StaffProfilePage({
         if (!staffRes.ok) throw new Error(`Failed to fetch staff (${staffRes.status})`);
         const staffList: any[] = await staffRes.json();
 
-        // Find staff by slug (match by name)
-        const normalizeName = (name: string) => name.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-');
+        // Find staff by slug (match by first name only - before any hyphen or space)
+        const generateSlug = (name: string) => {
+          return name
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        };
         const member = staffList.find((s: any) => {
-          const name = s.name || `${s.firstname || ''} ${s.lastname || ''}`.trim();
-          return normalizeName(name) === slug;
+          // Extract only the first word (before any hyphen or space) from firstname or name
+          const firstNameOnly = (s.firstname || s.name || '').split(/[\s-]+/)[0];
+          const staffSlug = generateSlug(firstNameOnly);
+          return staffSlug === slug;
         });
 
         if (!member) {
