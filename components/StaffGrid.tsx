@@ -244,7 +244,9 @@ export default function StaffGrid({
                 cardImageHeightDesktop
               );
               
-              const slug = generateSlug(member.firstname || member.name);
+              // Extract only the first word (before any hyphen or space)
+              const firstNameOnly = (member.firstname || member.name || '').split(/[\s-]+/)[0];
+              const slug = generateSlug(firstNameOnly);
               const href = `/${slug}`;
               
               return (
