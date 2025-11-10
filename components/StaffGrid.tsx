@@ -244,7 +244,7 @@ export default function StaffGrid({
                 cardImageHeightDesktop
               );
               
-              const slug = generateSlug(member.name);
+              const slug = generateSlug(member.firstname || member.name);
               const href = `/${slug}`;
               
               return (
