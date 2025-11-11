@@ -84,7 +84,8 @@ function tzTodayDate() {
   const y = parseInt(parts.find((p) => p.type === 'year')!.value, 10);
   const m = parseInt(parts.find((p) => p.type === 'month')!.value, 10);
   const d = parseInt(parts.find((p) => p.type === 'day')!.value, 10);
-  return new Date(y, m - 1, d);
+  // Create date at noon to avoid timezone boundary issues
+  return new Date(y, m - 1, d, 12, 0, 0);
 }
 
 function isWithinRangeExclusiveEnd(minutes: number, start: number, end: number) {
@@ -121,7 +122,8 @@ export async function GET(req: Request) {
     let startDate = tzTodayDate();
     if (date) {
       const parts = date.split('-');
-      if (parts.length === 3) startDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      // Create date at noon to avoid timezone boundary issues when comparing
+      if (parts.length === 3) startDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 12, 0, 0);
     }
 
     const totalDays = 120;
@@ -380,7 +382,11 @@ export async function GET(req: Request) {
         const raw = item['Block/Recurring'];
         const recurring = raw === true || String(raw).toLowerCase().replace(/["']/g, '') === 'true';
         let recurringDays: string[] = [];
-        if (recurring && item['Block/Recurring Day']) recurringDays = String(item['Block/Recurring Day']).split(',').map((d) => d.trim());
+        if (recurring && item['Block/Recurring Day']) {
+          // Strip PostgreSQL array curly braces before splitting
+          const dayStr = String(item['Block/Recurring Day']).replace(/[{}]/g, '');
+          recurringDays = dayStr.split(',').map((d) => d.trim());
+        }
         // Build a stable dateKey (YYYY-MM-DD) without timezone shifts
         let dateKey: string | null = null;
         const rawIdDate = item['Block/Date -> ID Check'];
@@ -461,17 +467,27 @@ export async function GET(req: Request) {
       return false;
     };
 
-    const isSlotBlocked = (slotDate: Date, slotMinutes: number) => {
+    const isSlotBlocked = (slotDate: Date, slotMinutes: number, durMinutes: number) => {
+      const slotEnd = slotMinutes + durMinutes;
       for (const block of timeBlockList) {
         if (block.recurring) {
           const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
           const currentDayName = dayNames[dayOfWeekInTZ(slotDate)];
           let list: any = block.recurringDays;
-          if (typeof list === 'string') list = list.split(',').map((d: string) => d.trim());
-          if (list && list.includes(currentDayName)) if (isWithinRangeExclusiveEnd(slotMinutes, block.start, block.end)) return true;
+          if (typeof list === 'string') {
+            // Handle PostgreSQL array format if still present
+            const cleaned = list.replace(/[{}]/g, '');
+            list = cleaned.split(',').map((d: string) => d.trim());
+          }
+          // Check if appointment overlaps with block: slot starts before block ends AND slot ends after block starts
+          if (list && list.includes(currentDayName)) {
+            if (slotMinutes < block.end && slotEnd > block.start) return true;
+          }
         } else if (block.date) {
-          // Compare using precomputed stable dateKey
-          if (block.date === ymdInTZ(slotDate) && isWithinRangeExclusiveEnd(slotMinutes, block.start, block.end)) return true;
+          // Compare using precomputed stable dateKey and check overlap
+          if (block.date === ymdInTZ(slotDate)) {
+            if (slotMinutes < block.end && slotEnd > block.start) return true;
+          }
         }
       }
       return false;
@@ -508,7 +524,7 @@ export async function GET(req: Request) {
         if (!bhours || (bhours.start === 0 && bhours.end === 0)) continue;
         if (isDateInTimeOff(day)) continue;
         validMins = validMins.filter((mins) => {
-          const blocked = isSlotBlocked(day, mins);
+          const blocked = isSlotBlocked(day, mins, serviceDurationMinutes);
           const booked = isSlotBooked(day, mins, serviceDurationMinutes);
           const end = mins + serviceDurationMinutes;
           return mins >= bhours.start && end <= bhours.end && !blocked && !booked;
