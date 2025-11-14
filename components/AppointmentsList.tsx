@@ -173,7 +173,30 @@ export default function AppointmentsList({
       const endIso = normalizeIso(b, "end_time", "endTime");
       const status = (b.raw?.appointmentStatus || b.raw?.appoinmentStatus || b.appointment_status || "").toLowerCase();
       const serviceName = b.raw?.serviceName || b.title || "Untitled Booking";
-      const staffName = b.raw?.staffName || "";
+      let staffName = b.raw?.staffName || "";
+      if (!staffName) {
+        try {
+          if ((b as any).summary) {
+            let s: any = null;
+            if (typeof (b as any).summary === 'string') {
+              s = JSON.parse((b as any).summary);
+            } else if (typeof (b as any).summary === 'object') {
+              s = (b as any).summary;
+            }
+            if (s && typeof s === 'object') {
+              const candidates = [
+                s.Barber,
+                (s as any)['Barber Name'],
+                (s as any)['Barber/Name'],
+                (s as any)['Staff'],
+                (s as any)['Staff Name'],
+              ];
+              const found = candidates.find((v) => typeof v === 'string' && v.trim().length > 0);
+              if (found) staffName = toTitleCase(String(found).trim());
+            }
+          }
+        } catch {}
+      }
       const customerName = b.raw?.customerName || "";
       const customerPhone = b.raw?.customerPhone || "";
       return {
