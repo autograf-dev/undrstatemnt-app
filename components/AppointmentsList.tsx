@@ -347,7 +347,7 @@ export default function AppointmentsList({
         const firstName = parts[0] || '';
         const lastName = parts.slice(1).join(' ') || '';
         const phone = String(raw.customerPhone || '').trim();
-        try { console.log('[AppointmentsList] reschedule preselect', { calendarId, staffId, duration, price, serviceName, staffName, firstName, lastName, phone, minDateIso }); } catch {}
+        try { console.log('[AppointmentsList] reschedule preselect', { calendarId, staffId, duration, price, serviceName, staffName, firstName, lastName, phone, minDateIso, contactId }); } catch {}
         if (drawerControl && bookingContext && calendarId && staffId) {
           bookingContext.setPreSelectedServiceAndStaff(String(calendarId), String(staffId), {
             duration: duration != null ? Number(duration) : null,
@@ -360,18 +360,9 @@ export default function AppointmentsList({
             phone: phone || null,
             isReschedule: true,
             appointmentId: String(b?.id || raw.apptId || '' ) || null,
+            contactId: contactId || null,
           });
           drawerControl.openDrawer();
-          setTimeout(async () => {
-            if (contactId) {
-              const res = await fetch(`/api/fetchBookings?contactId=${encodeURIComponent(contactId)}&_t=${Date.now()}`, {
-                cache: "no-store",
-                headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" }
-              });
-              const data = await res.json().catch(() => ({}));
-              if (res.ok && Array.isArray(data?.bookings)) setBookings(data.bookings);
-            }
-          }, 1500);
         } else {
           setToast('Unable to open reschedule drawer');
         }

@@ -1127,6 +1127,10 @@ export default function BookingWidget({
   };
 
   const validateForm = (): boolean => {
+    if (bookingContext?.isReschedule && !showContactForm) {
+      return true;
+    }
+    
     const errors: ValidationErrors = {
       firstName: '',
       lastName: '',
@@ -1149,10 +1153,12 @@ export default function BookingWidget({
     return Object.values(errors).every(error => !error);
   };
 
-  const isFormValid = Boolean(contactForm.firstName.trim() && 
-                     contactForm.lastName.trim() && 
-                     contactForm.phone.trim() && 
-                     isValidCAPhone(contactForm.phone));
+  const isFormValid = bookingContext?.isReschedule && !showContactForm 
+    ? true 
+    : Boolean(contactForm.firstName.trim() && 
+              contactForm.lastName.trim() && 
+              contactForm.phone.trim() && 
+              isValidCAPhone(contactForm.phone));
 
   const handleServiceSubmit = () => {
     if (selectedService) {
@@ -1213,52 +1219,61 @@ export default function BookingWidget({
     setBookingLoading(true);
 
     try {
-      // 1) Upsert/find customer to get contactId
-      const customerUrl = new URL(customerApiPath, window.location.origin);
-      customerUrl.searchParams.set("firstName", contactForm.firstName.trim());
-      customerUrl.searchParams.set("lastName", contactForm.lastName.trim());
-      customerUrl.searchParams.set("phone", contactForm.phone.replace(/\D/g, ""));
-      const customerRes = await fetch(customerUrl.toString());
-      if (!customerRes.ok) {
-        const err = await customerRes.json().catch(() => ({} as any));
-        console.error('Customer lookup/create failed:', err);
-        setBookingLoading(false);
-        return;
-      }
-      const customerData = await customerRes.json();
-      let contactId = (
-        customerData?.contactId ||
-        customerData?.id ||
-        customerData?.data?.id ||
-        customerData?.meta?.contactId ||
-        customerData?.contact?.id
-      );
-      // Fallback: sometimes create returns without id surfaced; re-query once to fetch it
-      if (!contactId) {
-        try {
-          const verifyUrl = new URL(customerApiPath, window.location.origin);
-          verifyUrl.searchParams.set("firstName", contactForm.firstName.trim());
-          verifyUrl.searchParams.set("lastName", contactForm.lastName.trim());
-          verifyUrl.searchParams.set("phone", digitsOnly(contactForm.phone));
-          const verifyRes = await fetch(verifyUrl.toString());
-          if (verifyRes.ok) {
-            const verifyData = await verifyRes.json();
-            contactId = (
-              verifyData?.contactId ||
-              verifyData?.id ||
-              verifyData?.data?.id ||
-              verifyData?.meta?.contactId ||
-              verifyData?.contact?.id
-            );
-          }
-        } catch (e) {
-          console.error('Customer verify fetch failed:', e);
+      const isReschedule = Boolean(bookingContext?.isReschedule && bookingContext?.preSelectedAppointmentId);
+      
+      // 1) Get contactId: skip customer lookup for reschedule (use existing contactId)
+      let contactId = "";
+      if (isReschedule && bookingContext?.preSelectedContactId) {
+        contactId = String(bookingContext.preSelectedContactId);
+        console.log('[BookingWidget] Reschedule: using existing contactId:', contactId);
+      } else {
+        // Normal booking: lookup/create customer
+        const customerUrl = new URL(customerApiPath, window.location.origin);
+        customerUrl.searchParams.set("firstName", contactForm.firstName.trim());
+        customerUrl.searchParams.set("lastName", contactForm.lastName.trim());
+        customerUrl.searchParams.set("phone", contactForm.phone.replace(/\D/g, ""));
+        const customerRes = await fetch(customerUrl.toString());
+        if (!customerRes.ok) {
+          const err = await customerRes.json().catch(() => ({} as any));
+          console.error('Customer lookup/create failed:', err);
+          setBookingLoading(false);
+          return;
         }
-      }
-      if (!contactId) {
-        console.error('Customer response missing contactId after retry');
-        setBookingLoading(false);
-        return;
+        const customerData = await customerRes.json();
+        contactId = (
+          customerData?.contactId ||
+          customerData?.id ||
+          customerData?.data?.id ||
+          customerData?.meta?.contactId ||
+          customerData?.contact?.id
+        );
+        // Fallback: sometimes create returns without id surfaced; re-query once to fetch it
+        if (!contactId) {
+          try {
+            const verifyUrl = new URL(customerApiPath, window.location.origin);
+            verifyUrl.searchParams.set("firstName", contactForm.firstName.trim());
+            verifyUrl.searchParams.set("lastName", contactForm.lastName.trim());
+            verifyUrl.searchParams.set("phone", digitsOnly(contactForm.phone));
+            const verifyRes = await fetch(verifyUrl.toString());
+            if (verifyRes.ok) {
+              const verifyData = await verifyRes.json();
+              contactId = (
+                verifyData?.contactId ||
+                verifyData?.id ||
+                verifyData?.data?.id ||
+                verifyData?.meta?.contactId ||
+                verifyData?.contact?.id
+              );
+            }
+          } catch (e) {
+            console.error('Customer verify fetch failed:', e);
+          }
+        }
+        if (!contactId) {
+          console.error('Customer response missing contactId after retry');
+          setBookingLoading(false);
+          return;
+        }
       }
 
       // 2) Compute start/end UTC ISO from selectedDate + selectedTimeSlot (America/Edmonton)
@@ -1321,7 +1336,6 @@ export default function BookingWidget({
       }
 
       // 5) Create vs Update
-      const isReschedule = Boolean(bookingContext?.isReschedule && bookingContext?.preSelectedAppointmentId);
       const apptUrl = new URL(isReschedule ? "/api/update-appointment" : appointmentApiPath, window.location.origin);
       const serviceName = serviceObj?.name || bookingContext?.preSelectedServiceName || "";
       const staffNameDerived = getDisplayStaffName();

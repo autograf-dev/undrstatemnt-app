@@ -15,13 +15,14 @@ interface BookingContextType {
   preSelectedPhone: string | null;
   isReschedule: boolean;
   preSelectedAppointmentId: string | null;
+  preSelectedContactId: string | null;
   initialStep: "service" | "staff" | "datetime" | "information" | "success";
   setPreSelectedService: (serviceId: string, startAtStep?: "service" | "staff") => void;
   setPreSelectedStaff: (staffId: string) => void;
   setPreSelectedServiceAndStaff: (
     serviceId: string,
     staffId: string,
-    opts?: { duration?: number | null; price?: number | null; serviceName?: string | null; staffName?: string | null; minDateIso?: string | null; firstName?: string | null; lastName?: string | null; phone?: string | null; isReschedule?: boolean | null; appointmentId?: string | null }
+    opts?: { duration?: number | null; price?: number | null; serviceName?: string | null; staffName?: string | null; minDateIso?: string | null; firstName?: string | null; lastName?: string | null; phone?: string | null; isReschedule?: boolean | null; appointmentId?: string | null; contactId?: string | null }
   ) => void;
   clearPreSelection: () => void;
 }
@@ -41,6 +42,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const [preSelectedPhone, setPreSelectedPhone] = useState<string | null>(null);
   const [isReschedule, setIsReschedule] = useState<boolean>(false);
   const [preSelectedAppointmentId, setPreSelectedAppointmentId] = useState<string | null>(null);
+  const [preSelectedContactId, setPreSelectedContactId] = useState<string | null>(null);
   const [initialStep, setInitialStep] = useState<"service" | "staff" | "datetime" | "information" | "success">("service");
 
   const setPreSelectedService = (serviceId: string, startAtStep: "service" | "staff" = "staff") => {
@@ -57,7 +59,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const setPreSelectedServiceAndStaff = (
     serviceId: string,
     staffId: string,
-    opts?: { duration?: number | null; price?: number | null; serviceName?: string | null; staffName?: string | null; minDateIso?: string | null; firstName?: string | null; lastName?: string | null; phone?: string | null; isReschedule?: boolean | null; appointmentId?: string | null }
+    opts?: { duration?: number | null; price?: number | null; serviceName?: string | null; staffName?: string | null; minDateIso?: string | null; firstName?: string | null; lastName?: string | null; phone?: string | null; isReschedule?: boolean | null; appointmentId?: string | null; contactId?: string | null }
   ) => {
     setPreSelectedServiceId(serviceId);
     setPreSelectedStaffIdState(staffId);
@@ -71,6 +73,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setPreSelectedPhone(opts?.phone ?? null);
     setIsReschedule(Boolean(opts?.isReschedule));
     setPreSelectedAppointmentId(opts?.appointmentId ?? null);
+    setPreSelectedContactId(opts?.contactId ?? null);
     setInitialStep("datetime");
   };
 
@@ -87,6 +90,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setPreSelectedPhone(null);
     setIsReschedule(false);
     setPreSelectedAppointmentId(null);
+    setPreSelectedContactId(null);
     setInitialStep("service");
   };
 
@@ -105,6 +109,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         preSelectedPhone,
         isReschedule,
         preSelectedAppointmentId,
+        preSelectedContactId,
         initialStep,
         setPreSelectedService,
         setPreSelectedStaff,
