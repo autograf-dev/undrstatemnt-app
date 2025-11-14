@@ -109,7 +109,10 @@ export default function AppointmentsList({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/fetchBookings?contactId=${encodeURIComponent(contactId)}`, { cache: "no-store" });
+        const res = await fetch(`/api/fetchBookings?contactId=${encodeURIComponent(contactId)}&_t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" }
+        });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data?.error || "Failed to fetch bookings");
         if (aborted) return;
@@ -289,7 +292,10 @@ export default function AppointmentsList({
         if (!res.ok) throw new Error(j?.error || "Cancel failed");
         setToast("✅ Appointment cancelled.");
         if (contactId) {
-          const res2 = await fetch(`/api/fetchBookings?contactId=${encodeURIComponent(contactId)}`, { cache: "no-store" });
+          const res2 = await fetch(`/api/fetchBookings?contactId=${encodeURIComponent(contactId)}&_t=${Date.now()}`, {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" }
+          });
           const data2 = await res2.json().catch(() => ({}));
           if (res2.ok && Array.isArray(data2?.bookings)) setBookings(data2.bookings);
         }
@@ -307,6 +313,14 @@ export default function AppointmentsList({
     try {
       if (onRescheduleClick) {
         await onRescheduleClick(b?.id);
+        if (contactId) {
+          const res = await fetch(`/api/fetchBookings?contactId=${encodeURIComponent(contactId)}&_t=${Date.now()}`, {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" }
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && Array.isArray(data?.bookings)) setBookings(data.bookings);
+        }
       } else {
         // Open Booking drawer at Date/Time with preselected values from booking raw
         const raw = b?.raw || {};
@@ -348,6 +362,16 @@ export default function AppointmentsList({
             appointmentId: String(b?.id || raw.apptId || '' ) || null,
           });
           drawerControl.openDrawer();
+          setTimeout(async () => {
+            if (contactId) {
+              const res = await fetch(`/api/fetchBookings?contactId=${encodeURIComponent(contactId)}&_t=${Date.now()}`, {
+                cache: "no-store",
+                headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" }
+              });
+              const data = await res.json().catch(() => ({}));
+              if (res.ok && Array.isArray(data?.bookings)) setBookings(data.bookings);
+            }
+          }, 1500);
         } else {
           setToast('Unable to open reschedule drawer');
         }
