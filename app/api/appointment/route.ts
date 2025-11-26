@@ -18,6 +18,117 @@ function pick(obj: URLSearchParams | Record<string, any>, ...keys: string[]) {
   return undefined;
 }
 
+// Helper functions for validation
+function ymdInTZ(date: Date): string {
+  const dtf = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Edmonton', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const parts = dtf.formatToParts(date);
+  const y = parts.find((p) => p.type === 'year')?.value || '';
+  const m = parts.find((p) => p.type === 'month')?.value || '';
+  const d = parts.find((p) => p.type === 'day')?.value || '';
+  return `${y}-${m}-${d}`;
+}
+
+function minutesInTZ(date: Date): number {
+  const edmonton = new Date(date.toLocaleString('en-US', { timeZone: 'America/Edmonton' }));
+  return edmonton.getHours() * 60 + edmonton.getMinutes();
+}
+
+function dayOfWeekInTZ(date: Date): number {
+  const edmonton = new Date(date.toLocaleString('en-US', { timeZone: 'America/Edmonton' }));
+  return edmonton.getDay();
+}
+
+async function validateBookingSlot(params: Record<string, any>): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const { getSupabaseServiceClient } = await import('@/lib/server/supabase');
+    const supabase = getSupabaseServiceClient();
+    
+    const startTime = new Date(params.startTime);
+    const endTime = new Date(params.endTime);
+    const startMinutes = minutesInTZ(startTime);
+    const endMinutes = minutesInTZ(endTime);
+    const dateKey = ymdInTZ(startTime);
+    const dateId = dateKey.replace(/-/g, '');
+    const dayOfWeek = dayOfWeekInTZ(startTime);
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const currentDayName = dayNames[dayOfWeek];
+
+    // Check existing bookings in ghl_events
+    if (params.assignedUserId) {
+      const { data: existingBookings } = await supabase
+        .from('ghl_events')
+        .select('start_time, end_time, appointment_status')
+        .eq('assigned_user_id', params.assignedUserId)
+        .eq('date_id', dateId)
+        .neq('appointment_status', 'canceled');
+
+      if (existingBookings && existingBookings.length > 0) {
+        for (const booking of existingBookings) {
+          const bookingStart = minutesInTZ(new Date(booking.start_time));
+          const bookingEnd = minutesInTZ(new Date(booking.end_time));
+          // Check for overlap: new booking starts before existing ends AND new booking ends after existing starts
+          if (startMinutes < bookingEnd && endMinutes > bookingStart) {
+            return { valid: false, error: 'This time slot has already been booked. Please select another time.' };
+          }
+        }
+      }
+    }
+
+    // Check time blocks
+    if (params.assignedUserId) {
+      const { data: timeBlocks } = await supabase
+        .from('time_block')
+        .select('*')
+        .eq('ghl_id', params.assignedUserId);
+
+      if (timeBlocks && timeBlocks.length > 0) {
+        for (const block of timeBlocks) {
+          const blockStart = parseInt(block['Block/Start']);
+          const blockEnd = parseInt(block['Block/End']);
+          const recurringRaw = block['Block/Recurring'];
+          const recurring = recurringRaw === true || String(recurringRaw).toLowerCase().replace(/["']/g, '') === 'true';
+
+          let isBlocked = false;
+
+          if (recurring) {
+            // Check if current day matches recurring days
+            const recurringDayStr = block['Block/Recurring Day'];
+            if (recurringDayStr) {
+              const recurringDays = String(recurringDayStr).replace(/[{}]/g, '').split(',').map((d: string) => d.trim());
+              if (recurringDays.includes(currentDayName)) {
+                // Check for overlap
+                if (startMinutes < blockEnd && endMinutes > blockStart) {
+                  isBlocked = true;
+                }
+              }
+            }
+          } else {
+            // Check specific date
+            const blockDateId = block['Block/Date -> ID Check'];
+            if (blockDateId && String(blockDateId) === dateId) {
+              // Check for overlap
+              if (startMinutes < blockEnd && endMinutes > blockStart) {
+                isBlocked = true;
+              }
+            }
+          }
+
+          if (isBlocked) {
+            const blockName = block['Block/Name'] || 'Time Block';
+            return { valid: false, error: `This time slot is blocked (${blockName}). Please select another time.` };
+          }
+        }
+      }
+    }
+
+    return { valid: true };
+  } catch (error) {
+    console.error('Validation error:', error);
+    // On validation error, allow booking but log the issue
+    return { valid: true };
+  }
+}
+
 async function createAppointment(params: Record<string, any>) {
   const accessToken = await getValidAccessToken();
   if (!accessToken) throw new Error('Access token missing');
@@ -31,7 +142,7 @@ async function createAppointment(params: Record<string, any>) {
     address: 'Zoom',
     ignoreDateRange: true,
     toNotify: true,
-    ignoreFreeSlotValidation: true,
+    ignoreFreeSlotValidation: false,
     calendarId: params.calendarId,
     locationId: process.env.GHL_LOCATION_ID || 'iwqzlJBNFlXynsezheHv',
     contactId: params.contactId,
@@ -150,6 +261,13 @@ export async function GET(req: Request) {
     });
   } catch {}
 
+  // Validate slot availability before booking
+  const validation = await validateBookingSlot(params);
+  if (!validation.valid) {
+    console.log('[appointment] validation failed:', validation.error);
+    return NextResponse.json({ error: validation.error }, { status: 409, headers: cors() });
+  }
+
   // Helper to get minutes since midnight in America/Edmonton
   function getMinutesInEdmonton(dateString: string): number | null {
     if (!dateString) return null;
@@ -218,6 +336,14 @@ export async function POST(req: Request) {
     if (!params.contactId || !params.calendarId || !params.startTime || !params.endTime) {
       return NextResponse.json({ error: 'Missing required parameters: contactId, calendarId, startTime, endTime' }, { status: 400, headers: cors() });
     }
+    
+    // Validate slot availability before booking
+    const validation = await validateBookingSlot(params);
+    if (!validation.valid) {
+      console.log('[appointment] POST validation failed:', validation.error);
+      return NextResponse.json({ error: validation.error }, { status: 409, headers: cors() });
+    }
+    
     const booking = await createAppointment(params);
     try { await saveEventToDB(booking); } catch (e) { console.error('DB save failed:', (e as Error).message); }
     return NextResponse.json({ message: '✅ Booking success', response: booking }, { headers: cors() });
