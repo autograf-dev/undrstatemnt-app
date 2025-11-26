@@ -68,7 +68,7 @@ async function validateBookingSlot(params: Record<string, any>): Promise<{ valid
           const bookingEnd = minutesInTZ(new Date(booking.end_time));
           // Check for overlap: new booking starts before existing ends AND new booking ends after existing starts
           if (startMinutes < bookingEnd && endMinutes > bookingStart) {
-            return { valid: false, error: 'This time slot has already been booked. Please select another time.' };
+            return { valid: false, error: 'Someone just booked this time slot! Please choose another available time.' };
           }
         }
       }
@@ -114,8 +114,7 @@ async function validateBookingSlot(params: Record<string, any>): Promise<{ valid
           }
 
           if (isBlocked) {
-            const blockName = block['Block/Name'] || 'Time Block';
-            return { valid: false, error: `This time slot is blocked (${blockName}). Please select another time.` };
+            return { valid: false, error: 'This time slot is unavailable. Please select another time.' };
           }
         }
       }

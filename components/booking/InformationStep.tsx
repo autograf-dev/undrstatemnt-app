@@ -21,6 +21,7 @@ interface InformationStepProps {
   onContactFormChange: (form: ContactForm) => void;
   validationErrors: ValidationErrors;
   bookingLoading: boolean;
+  bookingError?: string;
   onSubmit: () => void;
   onPrevious: () => void;
   selectedDate: DateInfo | null;
@@ -47,6 +48,7 @@ export function InformationStep({
   onContactFormChange,
   validationErrors,
   bookingLoading,
+  bookingError,
   onSubmit,
   onPrevious,
   selectedDate,
@@ -150,6 +152,31 @@ export function InformationStep({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Contact Form / Summary-with-edit */}
         <div className="space-y-6">
+          {/* Error Message */}
+          {bookingError && (
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-300 rounded-xl p-5 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 mt-0.5">
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg className="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-gray-900 mb-1">
+                    Oops! This time slot is no longer available
+                  </h3>
+                  <p className="text-sm text-gray-700 mb-3">
+                    {bookingError}
+                  </p>
+                  <p className="text-sm text-gray-600 italic">
+                    💡 Please go back and select another available time that works for you.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           {!showContactForm ? (
             <Card className="p-4 rounded-xl border border-gray-200 bg-white">
               <div className="flex items-center justify-between">

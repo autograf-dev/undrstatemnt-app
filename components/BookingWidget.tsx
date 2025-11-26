@@ -348,6 +348,7 @@ export default function BookingWidget({
     phone: "",
   });
   const [bookingLoading, setBookingLoading] = useState<boolean>(false);
+  const [bookingError, setBookingError] = useState<string>("");
   // Prefill contact info for reschedule and show summary-first
   useEffect(() => {
     try {
@@ -1389,12 +1390,23 @@ export default function BookingWidget({
         } catch (e) {
           console.warn('[BookingWidget] update-contact failed:', e);
         }
+        setBookingError("");
         setCurrentStep("success");
       } else {
         console.error('Booking error response:', apptData);
+        const errorMessage = apptData?.error || 'Booking failed. Please try again.';
+        setBookingError(errorMessage);
+        // Scroll to top to show error
+        if (typeof window !== 'undefined') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       }
     } catch (error) {
       console.error('Booking error:', error);
+      setBookingError('An unexpected error occurred. Please try again.');
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } finally {
       setBookingLoading(false);
     }
@@ -1420,12 +1432,14 @@ export default function BookingWidget({
       lastName: "",
       phone: "",
     });
+    setBookingError("");
     setTimeSlots([]);
     setWorkingSlots({});
     setWorkingSlotsLoaded(false);
   };
 
   const goToPreviousStep = () => {
+    setBookingError(""); // Clear any booking errors when going back
     switch (currentStep) {
       case 'staff':
         setCurrentStep('service');
@@ -1435,6 +1449,8 @@ export default function BookingWidget({
         break;
       case 'information':
         setCurrentStep('datetime');
+        break;
+      default:
         break;
     }
   };
@@ -1530,6 +1546,7 @@ export default function BookingWidget({
             onContactFormChange={setContactForm}
             validationErrors={validationErrors}
             bookingLoading={bookingLoading}
+            bookingError={bookingError}
             onSubmit={handleInformationSubmit}
             onPrevious={goToPreviousStep}
             selectedDate={selectedDate}
