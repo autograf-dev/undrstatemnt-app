@@ -348,7 +348,6 @@ export default function BookingWidget({
     phone: "",
   });
   const [bookingLoading, setBookingLoading] = useState<boolean>(false);
-  const [bookingError, setBookingError] = useState<string>("");
   // Prefill contact info for reschedule and show summary-first
   useEffect(() => {
     try {
@@ -1128,10 +1127,6 @@ export default function BookingWidget({
   };
 
   const validateForm = (): boolean => {
-    if (bookingContext?.isReschedule && !showContactForm) {
-      return true;
-    }
-    
     const errors: ValidationErrors = {
       firstName: '',
       lastName: '',
@@ -1154,12 +1149,10 @@ export default function BookingWidget({
     return Object.values(errors).every(error => !error);
   };
 
-  const isFormValid = bookingContext?.isReschedule && !showContactForm 
-    ? true 
-    : Boolean(contactForm.firstName.trim() && 
-              contactForm.lastName.trim() && 
-              contactForm.phone.trim() && 
-              isValidCAPhone(contactForm.phone));
+  const isFormValid = Boolean(contactForm.firstName.trim() && 
+                     contactForm.lastName.trim() && 
+                     contactForm.phone.trim() && 
+                     isValidCAPhone(contactForm.phone));
 
   const handleServiceSubmit = () => {
     if (selectedService) {
@@ -1220,61 +1213,52 @@ export default function BookingWidget({
     setBookingLoading(true);
 
     try {
-      const isReschedule = Boolean(bookingContext?.isReschedule && bookingContext?.preSelectedAppointmentId);
-      
-      // 1) Get contactId: skip customer lookup for reschedule (use existing contactId)
-      let contactId = "";
-      if (isReschedule && bookingContext?.preSelectedContactId) {
-        contactId = String(bookingContext.preSelectedContactId);
-        console.log('[BookingWidget] Reschedule: using existing contactId:', contactId);
-      } else {
-        // Normal booking: lookup/create customer
-        const customerUrl = new URL(customerApiPath, window.location.origin);
-        customerUrl.searchParams.set("firstName", contactForm.firstName.trim());
-        customerUrl.searchParams.set("lastName", contactForm.lastName.trim());
-        customerUrl.searchParams.set("phone", contactForm.phone.replace(/\D/g, ""));
-        const customerRes = await fetch(customerUrl.toString());
-        if (!customerRes.ok) {
-          const err = await customerRes.json().catch(() => ({} as any));
-          console.error('Customer lookup/create failed:', err);
-          setBookingLoading(false);
-          return;
-        }
-        const customerData = await customerRes.json();
-        contactId = (
-          customerData?.contactId ||
-          customerData?.id ||
-          customerData?.data?.id ||
-          customerData?.meta?.contactId ||
-          customerData?.contact?.id
-        );
-        // Fallback: sometimes create returns without id surfaced; re-query once to fetch it
-        if (!contactId) {
-          try {
-            const verifyUrl = new URL(customerApiPath, window.location.origin);
-            verifyUrl.searchParams.set("firstName", contactForm.firstName.trim());
-            verifyUrl.searchParams.set("lastName", contactForm.lastName.trim());
-            verifyUrl.searchParams.set("phone", digitsOnly(contactForm.phone));
-            const verifyRes = await fetch(verifyUrl.toString());
-            if (verifyRes.ok) {
-              const verifyData = await verifyRes.json();
-              contactId = (
-                verifyData?.contactId ||
-                verifyData?.id ||
-                verifyData?.data?.id ||
-                verifyData?.meta?.contactId ||
-                verifyData?.contact?.id
-              );
-            }
-          } catch (e) {
-            console.error('Customer verify fetch failed:', e);
+      // 1) Upsert/find customer to get contactId
+      const customerUrl = new URL(customerApiPath, window.location.origin);
+      customerUrl.searchParams.set("firstName", contactForm.firstName.trim());
+      customerUrl.searchParams.set("lastName", contactForm.lastName.trim());
+      customerUrl.searchParams.set("phone", contactForm.phone.replace(/\D/g, ""));
+      const customerRes = await fetch(customerUrl.toString());
+      if (!customerRes.ok) {
+        const err = await customerRes.json().catch(() => ({} as any));
+        console.error('Customer lookup/create failed:', err);
+        setBookingLoading(false);
+        return;
+      }
+      const customerData = await customerRes.json();
+      let contactId = (
+        customerData?.contactId ||
+        customerData?.id ||
+        customerData?.data?.id ||
+        customerData?.meta?.contactId ||
+        customerData?.contact?.id
+      );
+      // Fallback: sometimes create returns without id surfaced; re-query once to fetch it
+      if (!contactId) {
+        try {
+          const verifyUrl = new URL(customerApiPath, window.location.origin);
+          verifyUrl.searchParams.set("firstName", contactForm.firstName.trim());
+          verifyUrl.searchParams.set("lastName", contactForm.lastName.trim());
+          verifyUrl.searchParams.set("phone", digitsOnly(contactForm.phone));
+          const verifyRes = await fetch(verifyUrl.toString());
+          if (verifyRes.ok) {
+            const verifyData = await verifyRes.json();
+            contactId = (
+              verifyData?.contactId ||
+              verifyData?.id ||
+              verifyData?.data?.id ||
+              verifyData?.meta?.contactId ||
+              verifyData?.contact?.id
+            );
           }
+        } catch (e) {
+          console.error('Customer verify fetch failed:', e);
         }
-        if (!contactId) {
-          console.error('Customer response missing contactId after retry');
-          setBookingLoading(false);
-          return;
-        }
+      }
+      if (!contactId) {
+        console.error('Customer response missing contactId after retry');
+        setBookingLoading(false);
+        return;
       }
 
       // 2) Compute start/end UTC ISO from selectedDate + selectedTimeSlot (America/Edmonton)
@@ -1337,6 +1321,7 @@ export default function BookingWidget({
       }
 
       // 5) Create vs Update
+      const isReschedule = Boolean(bookingContext?.isReschedule && bookingContext?.preSelectedAppointmentId);
       const apptUrl = new URL(isReschedule ? "/api/update-appointment" : appointmentApiPath, window.location.origin);
       const serviceName = serviceObj?.name || bookingContext?.preSelectedServiceName || "";
       const staffNameDerived = getDisplayStaffName();
@@ -1390,23 +1375,30 @@ export default function BookingWidget({
         } catch (e) {
           console.warn('[BookingWidget] update-contact failed:', e);
         }
-        setBookingError("");
         setCurrentStep("success");
       } else {
         console.error('Booking error response:', apptData);
-        const errorMessage = apptData?.error || 'Booking failed. Please try again.';
-        setBookingError(errorMessage);
-        // Scroll to top to show error
-        if (typeof window !== 'undefined') {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Handle timeslot validation failures (409 Conflict)
+        if (apptRes.status === 409) {
+          alert('This time slot is no longer available, please try another time slot');
+          
+          // Refresh available slots automatically
+          setSelectedTimeSlot('');
+          setTimeSlots([]);
+          await handleDateTimeSubmit(); // Re-fetch slots for current selection
+          
+          // Stay on the datetime step so user can pick another time
+          setCurrentStep('datetime');
+        } else {
+          // Other errors
+          const errorMsg = apptData?.error || apptData?.details || 'Booking failed. Please try again.';
+          alert(`${errorMsg}\n\nPlease contact support if this continues.`);
         }
       }
     } catch (error) {
       console.error('Booking error:', error);
-      setBookingError('An unexpected error occurred. Please try again.');
-      if (typeof window !== 'undefined') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      alert('❌ An unexpected error occurred while booking your appointment. Please try again or contact support.');
     } finally {
       setBookingLoading(false);
     }
@@ -1432,14 +1424,12 @@ export default function BookingWidget({
       lastName: "",
       phone: "",
     });
-    setBookingError("");
     setTimeSlots([]);
     setWorkingSlots({});
     setWorkingSlotsLoaded(false);
   };
 
   const goToPreviousStep = () => {
-    setBookingError(""); // Clear any booking errors when going back
     switch (currentStep) {
       case 'staff':
         setCurrentStep('service');
@@ -1449,8 +1439,6 @@ export default function BookingWidget({
         break;
       case 'information':
         setCurrentStep('datetime');
-        break;
-      default:
         break;
     }
   };
@@ -1546,7 +1534,6 @@ export default function BookingWidget({
             onContactFormChange={setContactForm}
             validationErrors={validationErrors}
             bookingLoading={bookingLoading}
-            bookingError={bookingError}
             onSubmit={handleInformationSubmit}
             onPrevious={goToPreviousStep}
             selectedDate={selectedDate}

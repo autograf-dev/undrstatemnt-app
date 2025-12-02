@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getValidAccessToken } from '@/lib/server/tokens';
 import { saveEventToDB } from '@/lib/server/appointments';
+import { buildValidationContext, validateSlot } from '@/lib/server/slot-validation';
 
 function cors() {
   return {
@@ -18,116 +19,6 @@ function pick(obj: URLSearchParams | Record<string, any>, ...keys: string[]) {
   return undefined;
 }
 
-// Helper functions for validation
-function ymdInTZ(date: Date): string {
-  const dtf = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Edmonton', year: 'numeric', month: '2-digit', day: '2-digit' });
-  const parts = dtf.formatToParts(date);
-  const y = parts.find((p) => p.type === 'year')?.value || '';
-  const m = parts.find((p) => p.type === 'month')?.value || '';
-  const d = parts.find((p) => p.type === 'day')?.value || '';
-  return `${y}-${m}-${d}`;
-}
-
-function minutesInTZ(date: Date): number {
-  const edmonton = new Date(date.toLocaleString('en-US', { timeZone: 'America/Edmonton' }));
-  return edmonton.getHours() * 60 + edmonton.getMinutes();
-}
-
-function dayOfWeekInTZ(date: Date): number {
-  const edmonton = new Date(date.toLocaleString('en-US', { timeZone: 'America/Edmonton' }));
-  return edmonton.getDay();
-}
-
-async function validateBookingSlot(params: Record<string, any>): Promise<{ valid: boolean; error?: string }> {
-  try {
-    const { getSupabaseServiceClient } = await import('@/lib/server/supabase');
-    const supabase = getSupabaseServiceClient();
-    
-    const startTime = new Date(params.startTime);
-    const endTime = new Date(params.endTime);
-    const startMinutes = minutesInTZ(startTime);
-    const endMinutes = minutesInTZ(endTime);
-    const dateKey = ymdInTZ(startTime);
-    const dateId = dateKey.replace(/-/g, '');
-    const dayOfWeek = dayOfWeekInTZ(startTime);
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const currentDayName = dayNames[dayOfWeek];
-
-    // Check existing bookings in ghl_events
-    if (params.assignedUserId) {
-      const { data: existingBookings } = await supabase
-        .from('ghl_events')
-        .select('start_time, end_time, appointment_status')
-        .eq('assigned_user_id', params.assignedUserId)
-        .eq('date_id', dateId)
-        .neq('appointment_status', 'canceled');
-
-      if (existingBookings && existingBookings.length > 0) {
-        for (const booking of existingBookings) {
-          const bookingStart = minutesInTZ(new Date(booking.start_time));
-          const bookingEnd = minutesInTZ(new Date(booking.end_time));
-          // Check for overlap: new booking starts before existing ends AND new booking ends after existing starts
-          if (startMinutes < bookingEnd && endMinutes > bookingStart) {
-            return { valid: false, error: 'Someone just booked this time slot! Please choose another available time.' };
-          }
-        }
-      }
-    }
-
-    // Check time blocks
-    if (params.assignedUserId) {
-      const { data: timeBlocks } = await supabase
-        .from('time_block')
-        .select('*')
-        .eq('ghl_id', params.assignedUserId);
-
-      if (timeBlocks && timeBlocks.length > 0) {
-        for (const block of timeBlocks) {
-          const blockStart = parseInt(block['Block/Start']);
-          const blockEnd = parseInt(block['Block/End']);
-          const recurringRaw = block['Block/Recurring'];
-          const recurring = recurringRaw === true || String(recurringRaw).toLowerCase().replace(/["']/g, '') === 'true';
-
-          let isBlocked = false;
-
-          if (recurring) {
-            // Check if current day matches recurring days
-            const recurringDayStr = block['Block/Recurring Day'];
-            if (recurringDayStr) {
-              const recurringDays = String(recurringDayStr).replace(/[{}]/g, '').split(',').map((d: string) => d.trim());
-              if (recurringDays.includes(currentDayName)) {
-                // Check for overlap
-                if (startMinutes < blockEnd && endMinutes > blockStart) {
-                  isBlocked = true;
-                }
-              }
-            }
-          } else {
-            // Check specific date
-            const blockDateId = block['Block/Date -> ID Check'];
-            if (blockDateId && String(blockDateId) === dateId) {
-              // Check for overlap
-              if (startMinutes < blockEnd && endMinutes > blockStart) {
-                isBlocked = true;
-              }
-            }
-          }
-
-          if (isBlocked) {
-            return { valid: false, error: 'This time slot is unavailable. Please select another time.' };
-          }
-        }
-      }
-    }
-
-    return { valid: true };
-  } catch (error) {
-    console.error('Validation error:', error);
-    // On validation error, allow booking but log the issue
-    return { valid: true };
-  }
-}
-
 async function createAppointment(params: Record<string, any>) {
   const accessToken = await getValidAccessToken();
   if (!accessToken) throw new Error('Access token missing');
@@ -141,7 +32,7 @@ async function createAppointment(params: Record<string, any>) {
     address: 'Zoom',
     ignoreDateRange: true,
     toNotify: true,
-    ignoreFreeSlotValidation: false,
+    ignoreFreeSlotValidation: true,
     calendarId: params.calendarId,
     locationId: process.env.GHL_LOCATION_ID || 'iwqzlJBNFlXynsezheHv',
     contactId: params.contactId,
@@ -260,12 +151,68 @@ export async function GET(req: Request) {
     });
   } catch {}
 
-  // Validate slot availability before booking
-  const validation = await validateBookingSlot(params);
-  if (!validation.valid) {
-    console.log('[appointment] validation failed:', validation.error);
-    return NextResponse.json({ error: validation.error }, { status: 409, headers: cors() });
+  // ========== SERVER-SIDE VALIDATION ==========
+  // Re-check all availability constraints before creating the booking
+  try {
+    const startTime = new Date(params.startTime);
+    const endTime = new Date(params.endTime);
+    
+    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid date format for startTime or endTime' },
+        { status: 400, headers: cors() }
+      );
+    }
+    
+    const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+    if (durationMinutes <= 0) {
+      return NextResponse.json(
+        { error: 'Invalid booking duration' },
+        { status: 400, headers: cors() }
+      );
+    }
+    
+    console.log('[appointment] validating slot availability...', {
+      startTime: params.startTime,
+      endTime: params.endTime,
+      durationMinutes,
+      assignedUserId: params.assignedUserId,
+    });
+    
+    // Build validation context (fetch business hours, barber hours, time blocks, time off, existing bookings)
+    const validationContext = await buildValidationContext(
+      params.assignedUserId,
+      startTime,
+      new Date(startTime.getTime() + 24 * 60 * 60 * 1000) // +1 day range
+    );
+    
+    // Validate the requested slot
+    const validation = validateSlot(startTime, durationMinutes, validationContext);
+    
+    if (!validation.valid) {
+      console.warn('[appointment] slot validation failed:', validation.reason);
+      return NextResponse.json(
+        { 
+          error: 'Timeslot no longer available', 
+          reason: validation.reason || 'The selected timeslot is not available',
+          details: 'Please refresh and select another time'
+        },
+        { status: 409, headers: cors() }
+      );
+    }
+    
+    console.log('[appointment] slot validation passed ✓');
+  } catch (validationError: any) {
+    console.error('[appointment] validation error:', validationError);
+    return NextResponse.json(
+      { 
+        error: 'Failed to validate timeslot availability',
+        details: validationError?.message || 'Unknown validation error'
+      },
+      { status: 500, headers: cors() }
+    );
   }
+  // ========== END VALIDATION ==========
 
   // Helper to get minutes since midnight in America/Edmonton
   function getMinutesInEdmonton(dateString: string): number | null {
@@ -320,6 +267,51 @@ export async function GET(req: Request) {
     console.error("Webhook send failed:", (e as Error).message);
   }
 
+  // Send detailed webhook for table mutation
+  try {
+    const detailedPayload = {
+      appID: "VAC7eZY8vOOl4KZYEWF6",
+      mutations: [
+        {
+          kind: "add-row-to-table",
+          tableName: "native-table-17B93ocF1HmbC5Wge9ta",
+          columnValues: {
+            vJ042: (params.startTime ? new Date(params.startTime).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }).replace(/-/g, '') : ""),
+            kqZs5: params.bookingType || "Booking/Type",
+            "8C8HP": booking.id || booking.cal_com_id || "",
+            mNuL2: params.cancelUrl || "Booking/Cancel",
+            VPfiU: params.modifyUrl || "Booking/Modify",
+            "8265X": params.notifyUrl || "Booking/Notify",
+            tN30J: params.appointmentStatus || booking.appointmentStatus || "Confirmed",
+            wQ3qg: params.bookedBy || "Booking/Booked By",
+            wF0cN: params.customerId || params.contactId || "",
+            aPXKv: params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || "",
+            Ul1Xb: params.customerPhone || "",
+            Ppy2M: params.customerEmail || "",
+            xAwbe: params.staffId || params.assignedUserId || "",
+            JE35N: params.serviceId || "",
+            jIXWb: params.customPrice || "",
+            b3MEu: params.serviceName || params.title || "",
+            mN11Y: params.serviceDuration || "",
+            "9qKZ1": booking.id || "",
+            vY5AO: params.startTime || "",
+            MAqsh: params.documentId || "",
+            thd34: params.notes || "",
+            uDzPy: params.paymentId || "",
+            "4HFxg": "column1"
+          }
+        }
+      ]
+    };
+    await fetch("https://primary-rmsi-production2.up.railway.app/webhook/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(detailedPayload)
+    });
+  } catch (e) {
+    console.error("Detailed webhook send failed:", (e as Error).message);
+  }
+
   try { await saveEventToDB({ ...booking, ...enhanced }); } catch (e) { console.error('DB save failed:', (e as Error).message); }
 
   try {
@@ -335,14 +327,70 @@ export async function POST(req: Request) {
     if (!params.contactId || !params.calendarId || !params.startTime || !params.endTime) {
       return NextResponse.json({ error: 'Missing required parameters: contactId, calendarId, startTime, endTime' }, { status: 400, headers: cors() });
     }
-    
-    // Validate slot availability before booking
-    const validation = await validateBookingSlot(params);
-    if (!validation.valid) {
-      console.log('[appointment] POST validation failed:', validation.error);
-      return NextResponse.json({ error: validation.error }, { status: 409, headers: cors() });
+
+    // ========== SERVER-SIDE VALIDATION ==========
+    // Re-check all availability constraints before creating the booking
+    try {
+      const startTime = new Date(params.startTime);
+      const endTime = new Date(params.endTime);
+      
+      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid date format for startTime or endTime' },
+          { status: 400, headers: cors() }
+        );
+      }
+      
+      const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+      if (durationMinutes <= 0) {
+        return NextResponse.json(
+          { error: 'Invalid booking duration' },
+          { status: 400, headers: cors() }
+        );
+      }
+      
+      console.log('[appointment POST] validating slot availability...', {
+        startTime: params.startTime,
+        endTime: params.endTime,
+        durationMinutes,
+        assignedUserId: params.assignedUserId,
+      });
+      
+      // Build validation context
+      const validationContext = await buildValidationContext(
+        params.assignedUserId,
+        startTime,
+        new Date(startTime.getTime() + 24 * 60 * 60 * 1000)
+      );
+      
+      // Validate the requested slot
+      const validation = validateSlot(startTime, durationMinutes, validationContext);
+      
+      if (!validation.valid) {
+        console.warn('[appointment POST] slot validation failed:', validation.reason);
+        return NextResponse.json(
+          { 
+            error: 'Timeslot no longer available', 
+            reason: validation.reason || 'The selected timeslot is not available',
+            details: 'Please refresh and select another time'
+          },
+          { status: 409, headers: cors() }
+        );
+      }
+      
+      console.log('[appointment POST] slot validation passed ✓');
+    } catch (validationError: any) {
+      console.error('[appointment POST] validation error:', validationError);
+      return NextResponse.json(
+        { 
+          error: 'Failed to validate timeslot availability',
+          details: validationError?.message || 'Unknown validation error'
+        },
+        { status: 500, headers: cors() }
+      );
     }
-    
+    // ========== END VALIDATION ==========
+
     const booking = await createAppointment(params);
     try { await saveEventToDB(booking); } catch (e) { console.error('DB save failed:', (e as Error).message); }
     return NextResponse.json({ message: '✅ Booking success', response: booking }, { headers: cors() });
