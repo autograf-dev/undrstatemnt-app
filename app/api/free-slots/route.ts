@@ -348,44 +348,190 @@ export async function GET(req: Request) {
     if (hasBarber || userId) {
       const barberRowId: string | undefined = (resolvedBarberData as any)?.['\uD83D\uDD12 Row ID'] || (resolvedBarberData as any)?.['🔒 Row ID'];
       const barberGhlId: string | undefined = (resolvedBarberData as any)?.['GHL_id'];
+      console.log(`[free-slots] Querying time blocks - userId: ${userId}, barberGhlId: ${barberGhlId}, barberRowId: ${barberRowId}`);
       let blockData: any[] = [];
       try {
         if (userId) {
-          const { data } = await supabase.from('time_block').select('*').eq('ghl_id', userId);
-          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+          const { data, error } = await supabase.from('time_block').select('*').eq('ghl_id', userId);
+          if (error) console.log(`[free-slots] Error querying time_block by ghl_id (${userId}):`, error);
+          if (Array.isArray(data)) {
+            console.log(`[free-slots] Found ${data.length} blocks in time_block table by ghl_id (${userId})`);
+            blockData = blockData.concat(data as any[]);
+          }
         }
         if (barberGhlId && barberGhlId !== userId) {
-          const { data } = await supabase.from('time_block').select('*').eq('ghl_id', barberGhlId);
-          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+          const { data, error } = await supabase.from('time_block').select('*').eq('ghl_id', barberGhlId);
+          if (error) console.log(`[free-slots] Error querying time_block by barberGhlId (${barberGhlId}):`, error);
+          if (Array.isArray(data)) {
+            console.log(`[free-slots] Found ${data.length} blocks in time_block table by barberGhlId (${barberGhlId})`);
+            blockData = blockData.concat(data as any[]);
+          }
         }
         if (barberRowId) {
-          const { data } = await supabase.from('time_block').select('*').eq('Barber/ID', barberRowId);
-          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+          // Note: Supabase should handle column names with slashes, but if it fails, we'll catch it
+          const { data, error } = await supabase.from('time_block').select('*').eq('Barber/ID', barberRowId);
+          if (error) {
+            console.log(`[free-slots] Error querying time_block by Barber/ID (${barberRowId}):`, error);
+            // Try alternative: query all and filter client-side
+            const { data: allData } = await supabase.from('time_block').select('*');
+            if (Array.isArray(allData)) {
+              const filtered = allData.filter((item: any) => item['Barber/ID'] === barberRowId);
+              if (filtered.length > 0) {
+                console.log(`[free-slots] Found ${filtered.length} blocks in time_block table by Barber/ID (client-side filter)`);
+                blockData = blockData.concat(filtered);
+              }
+            }
+          } else if (Array.isArray(data)) {
+            console.log(`[free-slots] Found ${data.length} blocks in time_block table by Barber/ID (${barberRowId})`);
+            blockData = blockData.concat(data as any[]);
+          }
         }
-      } catch (_) {}
+      } catch (err) {
+        console.log(`[free-slots] Exception querying time_block:`, err);
+      }
       // Also attempt plural table time_blocks
       try {
         if (userId) {
-          const { data } = await supabase.from('time_blocks').select('*').eq('ghl_id', userId);
-          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+          const { data, error } = await supabase.from('time_blocks').select('*').eq('ghl_id', userId);
+          if (error) console.log(`[free-slots] Error querying time_blocks by ghl_id (${userId}):`, error);
+          if (Array.isArray(data)) {
+            console.log(`[free-slots] Found ${data.length} blocks in time_blocks table by ghl_id (${userId})`);
+            blockData = blockData.concat(data as any[]);
+          }
         }
         if (barberGhlId && barberGhlId !== userId) {
-          const { data } = await supabase.from('time_blocks').select('*').eq('ghl_id', barberGhlId);
-          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+          const { data, error } = await supabase.from('time_blocks').select('*').eq('ghl_id', barberGhlId);
+          if (error) console.log(`[free-slots] Error querying time_blocks by barberGhlId (${barberGhlId}):`, error);
+          if (Array.isArray(data)) {
+            console.log(`[free-slots] Found ${data.length} blocks in time_blocks table by barberGhlId (${barberGhlId})`);
+            blockData = blockData.concat(data as any[]);
+          }
         }
         if (barberRowId) {
-          const { data } = await supabase.from('time_blocks').select('*').eq('Barber/ID', barberRowId);
-          if (Array.isArray(data)) blockData = blockData.concat(data as any[]);
+          const { data, error } = await supabase.from('time_blocks').select('*').eq('Barber/ID', barberRowId);
+          if (error) {
+            console.log(`[free-slots] Error querying time_blocks by Barber/ID (${barberRowId}):`, error);
+            // Try alternative: query all and filter client-side
+            const { data: allData } = await supabase.from('time_blocks').select('*');
+            if (Array.isArray(allData)) {
+              const filtered = allData.filter((item: any) => item['Barber/ID'] === barberRowId);
+              if (filtered.length > 0) {
+                console.log(`[free-slots] Found ${filtered.length} blocks in time_blocks table by Barber/ID (client-side filter)`);
+                blockData = blockData.concat(filtered);
+              }
+            }
+          } else if (Array.isArray(data)) {
+            console.log(`[free-slots] Found ${data.length} blocks in time_blocks table by Barber/ID (${barberRowId})`);
+            blockData = blockData.concat(data as any[]);
+          }
         }
-      } catch {}
+      } catch (err) {
+        console.log(`[free-slots] Exception querying time_blocks:`, err);
+      }
+      
+      // Debug: Check if recurring lunch block exists in database (for Martin)
+      if (userId === 'VQYDmgfngKScT0Ropy0A') {
+        try {
+          // Query by ghl_id
+          const { data: blocksByGhl, error: err1 } = await supabase
+            .from('time_blocks')
+            .select('*')
+            .eq('ghl_id', userId);
+          
+          // Query by Barber/ID
+          const { data: blocksByBarber, error: err2 } = await supabase
+            .from('time_blocks')
+            .select('*')
+            .eq('Barber/ID', '76dMfR2pTKmfVM48SFgokQ');
+          
+          // If that fails, try client-side filtering
+          let blocksByBarberFiltered: any[] = [];
+          if (err2) {
+            console.log(`[free-slots] Direct query failed, trying client-side filter:`, err2);
+            const { data: allBlocksData } = await supabase.from('time_blocks').select('*');
+            if (Array.isArray(allBlocksData)) {
+              blocksByBarberFiltered = allBlocksData.filter((b: any) => 
+                b['Barber/ID'] === '76dMfR2pTKmfVM48SFgokQ' || b['ghl_id'] === userId
+              );
+            }
+          }
+          
+          const allBlocks = [...(blocksByGhl || []), ...(blocksByBarber || []), ...blocksByBarberFiltered];
+          
+          if (err1 || err2) {
+            console.log(`[free-slots] Errors checking all blocks for Martin:`, err1 || err2);
+          }
+          
+          console.log(`[free-slots] All blocks for Martin (VQYDmgfngKScT0Ropy0A):`, allBlocks.map((b: any) => ({
+            name: b['Block/Name'],
+            recurring: b['Block/Recurring'],
+            recurringDay: b['Block/Recurring Day'],
+            start: b['Block/Start'],
+            end: b['Block/End'],
+            ghl_id: b['ghl_id'],
+            barberId: b['Barber/ID']
+          })));
+          
+          // Specifically check for the lunch block
+          const lunchBlock = allBlocks.find((b: any) => 
+            b['Block/Name'] === 'Lunch' && 
+            (b['ghl_id'] === userId || b['Barber/ID'] === '76dMfR2pTKmfVM48SFgokQ')
+          );
+          if (lunchBlock) {
+            console.log(`[free-slots] ✓ Found Lunch block:`, {
+              name: lunchBlock['Block/Name'],
+              recurring: lunchBlock['Block/Recurring'],
+              recurringDay: lunchBlock['Block/Recurring Day'],
+              start: lunchBlock['Block/Start'],
+              end: lunchBlock['Block/End']
+            });
+          } else {
+            console.log(`[free-slots] ✗ Lunch block NOT FOUND in database for Martin`);
+          }
+        } catch (err) {
+          console.log(`[free-slots] Exception checking all blocks:`, err);
+        }
+      }
+      
+      // Debug: log how many blocks were fetched and their raw data
+      if (blockData && blockData.length > 0) {
+        console.log(`[free-slots] Fetched ${blockData.length} time blocks for userId: ${userId}`);
+        console.log(`[free-slots] Raw block data:`, JSON.stringify(blockData.map((item: any) => ({
+          name: item['Block/Name'],
+          recurring: item['Block/Recurring'],
+          recurringDay: item['Block/Recurring Day'],
+          date: item['Block/Date -> ID Check'],
+          start: item['Block/Start'],
+          end: item['Block/End'],
+          barberId: item['Barber/ID'],
+          ghlId: item['ghl_id']
+        })), null, 2));
+      }
+      
       timeBlockList = (blockData || []).map((item: any) => {
         const raw = item['Block/Recurring'];
-        const recurring = raw === true || String(raw).toLowerCase().replace(/["']/g, '') === 'true';
+        // Handle various formats: true, "true", 'true', false, "false", etc.
+        const rawStr = String(raw || '').toLowerCase().replace(/["']/g, '').trim();
+        const recurring = raw === true || rawStr === 'true';
         let recurringDays: string[] = [];
         if (recurring && item['Block/Recurring Day']) {
           // Strip PostgreSQL array curly braces before splitting
-          const dayStr = String(item['Block/Recurring Day']).replace(/[{}]/g, '');
-          recurringDays = dayStr.split(',').map((d) => d.trim());
+          const dayStr = String(item['Block/Recurring Day']).replace(/[{}]/g, '').trim();
+          // Normalize day names: capitalize first letter, lowercase rest
+          const dayNameMap: Record<string, string> = {
+            'sunday': 'Sunday',
+            'monday': 'Monday',
+            'tuesday': 'Tuesday',
+            'wednesday': 'Wednesday',
+            'thursday': 'Thursday',
+            'friday': 'Friday',
+            'saturday': 'Saturday'
+          };
+          recurringDays = dayStr.split(',').map((d: string) => {
+            const trimmed = d.trim();
+            const normalized = dayNameMap[trimmed.toLowerCase()];
+            return normalized || trimmed;
+          }).filter(Boolean);
         }
         // Build a stable dateKey (YYYY-MM-DD) without timezone shifts
         let dateKey: string | null = null;
@@ -396,15 +542,27 @@ export async function GET(req: Request) {
         } else if (item['Block/Date']) {
           try { dateKey = ymdInTZ(new Date(item['Block/Date'])); } catch {}
         }
-        return {
-          start: parseInt(item['Block/Start']),
-          end: parseInt(item['Block/End']),
+        const block = {
+          start: parseInt(item['Block/Start']) || 0,
+          end: parseInt(item['Block/End']) || 0,
           date: dateKey,
           recurring,
           recurringDays,
           name: item['Block/Name'] || 'Time Block',
         };
+        // Debug log for all blocks
+        if (recurring && recurringDays.length > 0) {
+          console.log(`[free-slots] Processed RECURRING block: "${block.name}" | Days: [${recurringDays.join(', ')}] | Time: ${displayFromMinutes(block.start)} - ${displayFromMinutes(block.end)} (${block.start}-${block.end} min)`);
+        } else if (block.date) {
+          console.log(`[free-slots] Processed ONE-TIME block: "${block.name}" | Date: ${block.date} | Time: ${displayFromMinutes(block.start)} - ${displayFromMinutes(block.end)} (${block.start}-${block.end} min)`);
+        } else {
+          console.log(`[free-slots] Processed block (no date/recurring): "${block.name}" | Recurring: ${recurring} | Days: [${recurringDays.join(', ')}] | Time: ${displayFromMinutes(block.start)} - ${displayFromMinutes(block.end)} (${block.start}-${block.end} min)`);
+        }
+        return block;
       });
+      
+      // Log summary of processed blocks
+      console.log(`[free-slots] Total processed blocks: ${timeBlockList.length} (${timeBlockList.filter(b => b.recurring).length} recurring, ${timeBlockList.filter(b => !b.recurring && b.date).length} one-time)`);
     }
 
     // Existing bookings from ghl_events: block overlapping slots for assigned barber
@@ -469,26 +627,70 @@ export async function GET(req: Request) {
 
     const isSlotBlocked = (slotDate: Date, slotMinutes: number, durMinutes: number) => {
       const slotEnd = slotMinutes + durMinutes;
+      const slotDayKey = ymdInTZ(slotDate);
+      const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const currentDayName = dayNames[dayOfWeekInTZ(slotDate)];
+      
+      // Debug: log when checking Monday at 1:00 PM (780 minutes)
+      const isMonday1PM = currentDayName === 'Monday' && slotMinutes === 780;
+      
       for (const block of timeBlockList) {
         if (block.recurring) {
-          const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-          const currentDayName = dayNames[dayOfWeekInTZ(slotDate)];
-          let list: any = block.recurringDays;
-          if (typeof list === 'string') {
-            // Handle PostgreSQL array format if still present
-            const cleaned = list.replace(/[{}]/g, '');
-            list = cleaned.split(',').map((d: string) => d.trim());
+          // Skip if no recurring days defined
+          if (!block.recurringDays || block.recurringDays.length === 0) {
+            if (isMonday1PM) {
+              console.log(`[free-slots] Block "${block.name}" is recurring but has no recurring days`);
+            }
+            continue;
           }
-          // Check if appointment overlaps with block: slot starts before block ends AND slot ends after block starts
-          if (list && list.includes(currentDayName)) {
-            if (slotMinutes < block.end && slotEnd > block.start) return true;
+          
+          // Normalize recurring days list (should already be normalized, but ensure it)
+          const dayNameMap: Record<string, string> = {
+            'sunday': 'Sunday',
+            'monday': 'Monday',
+            'tuesday': 'Tuesday',
+            'wednesday': 'Wednesday',
+            'thursday': 'Thursday',
+            'friday': 'Friday',
+            'saturday': 'Saturday'
+          };
+          
+          const normalizedRecurringDays = block.recurringDays.map((d: string) => {
+            const normalized = dayNameMap[String(d).toLowerCase()];
+            return normalized || String(d);
+          });
+          
+          // Check if current day matches any recurring day
+          const dayMatches = normalizedRecurringDays.includes(currentDayName);
+          
+          if (isMonday1PM) {
+            console.log(`[free-slots] Checking recurring block "${block.name}": days=[${normalizedRecurringDays.join(', ')}], currentDay=${currentDayName}, matches=${dayMatches}, blockTime=${block.start}-${block.end}, slotTime=${slotMinutes}-${slotEnd}`);
+          }
+          
+          if (dayMatches) {
+            // Check if slot overlaps with block time: slot starts before block ends AND slot ends after block starts
+            const timeOverlaps = slotMinutes < block.end && slotEnd > block.start;
+            if (timeOverlaps) {
+              if (isMonday1PM) {
+                console.log(`[free-slots] ✓ BLOCKED: Slot ${displayFromMinutes(slotMinutes)} on ${currentDayName} overlaps with recurring block "${block.name}"`);
+              }
+              return true;
+            }
           }
         } else if (block.date) {
-          // Compare using precomputed stable dateKey and check overlap
-          if (block.date === ymdInTZ(slotDate)) {
-            if (slotMinutes < block.end && slotEnd > block.start) return true;
+          // Non-recurring block: compare using precomputed stable dateKey and check overlap
+          if (block.date === slotDayKey) {
+            if (slotMinutes < block.end && slotEnd > block.start) {
+              if (isMonday1PM) {
+                console.log(`[free-slots] ✓ BLOCKED: Slot ${displayFromMinutes(slotMinutes)} on ${slotDayKey} overlaps with one-time block "${block.name}"`);
+              }
+              return true;
+            }
           }
         }
+      }
+      if (isMonday1PM) {
+        console.log(`[free-slots] ✗ NOT BLOCKED: Slot ${displayFromMinutes(slotMinutes)} on ${currentDayName} (${slotDayKey}) is available`);
       }
       return false;
     };
@@ -516,6 +718,11 @@ export async function GET(req: Request) {
       // Always remove times that overlap existing GHL events, regardless of barber lookup
       if (existingBookings.length > 0) {
         validMins = validMins.filter((mins) => !isSlotBooked(day, mins, serviceDurationMinutes));
+      }
+
+      // Always check time blocks if they exist (regardless of hasBarber, since blocks are fetched when userId is provided)
+      if (timeBlockList.length > 0) {
+        validMins = validMins.filter((mins) => !isSlotBlocked(day, mins, serviceDurationMinutes));
       }
 
       if (hasBarber) {
