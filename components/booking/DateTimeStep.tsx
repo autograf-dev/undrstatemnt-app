@@ -38,6 +38,7 @@ interface DateTimeStepProps {
   navSecondaryText?: string;
   extendedAvailableDates?: DateInfo[];
   extendedSlotsLoaded?: boolean;
+  onCalendarOpen?: () => void;
 }
 
 export function DateTimeStep({
@@ -61,15 +62,19 @@ export function DateTimeStep({
   navSecondaryBorder,
   navSecondaryText,
   extendedAvailableDates = [],
-  extendedSlotsLoaded = false
+  extendedSlotsLoaded = false,
+  onCalendarOpen
 }: DateTimeStepProps) {
   const [currentDateIndex, setCurrentDateIndex] = useState(0);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [monthAnchor, setMonthAnchor] = useState<Date | null>(null);
 
-  // Use extended dates when calendar picker is open, otherwise use regular dates
-  const datesForCalendar = showMonthPicker && extendedSlotsLoaded && extendedAvailableDates.length > 0 
-    ? extendedAvailableDates 
+  // Always combine available dates and extended dates for calendar picker
+  // This ensures the calendar shows all known available dates, not just the first 7
+  const datesForCalendar = showMonthPicker 
+    ? (extendedSlotsLoaded && extendedAvailableDates.length > 0 
+        ? extendedAvailableDates 
+        : availableDates) // Fall back to availableDates if extended not loaded yet
     : availableDates;
 
   // Build a quick lookup for available dates (YYYY-MM-DD)
@@ -205,7 +210,13 @@ export function DateTimeStep({
                <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowMonthPicker(v => !v)}
+                onClick={() => {
+                  setShowMonthPicker(v => !v);
+                  // Trigger extended slots loading when calendar is opened
+                  if (!showMonthPicker && onCalendarOpen) {
+                    onCalendarOpen();
+                  }
+                }}
                 className="p-2 sm:p-3 smooth-transition flex-shrink-0 bg-[#391709] ml-2 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center"
                 aria-label="Open calendar"
               >
@@ -217,6 +228,12 @@ export function DateTimeStep({
             {showMonthPicker && (
               <div className="px-4 sm:px-0 pb-4">
                 <Card className="p-3 sm:p-4 rounded-xl border border-gray-200 bg-white">
+                  {/* Loading indicator for extended slots */}
+                  {!extendedSlotsLoaded && (
+                    <div className="text-center text-xs text-gray-500 mb-2 py-1 bg-yellow-50 rounded">
+                      Loading more dates...
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mb-2 sm:mb-3">
                     <Button variant="ghost" size="sm" onClick={() => goMonth(-1)} className="p-1"><ChevronLeft /></Button>
                     <div className="text-sm sm:text-base font-semibold">

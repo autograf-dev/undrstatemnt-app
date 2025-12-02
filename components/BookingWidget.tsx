@@ -899,26 +899,82 @@ export default function BookingWidget({
           setWorkingSlotsLoaded(true);
           generateAvailableDates(data.slots);
           
-          // Auto-select first available date and show slots
-          setTimeout(() => {
-            if (availableDates.length > 0) {
-              const firstDate = availableDates[0];
-              if (firstDate && firstDate.dateString) {
-                setSelectedDate(firstDate);
-                // Use the slots data directly instead of calling fetchSlotsForDate
-                const slotsForSelectedDate = data.slots[firstDate.dateString];
-                if (slotsForSelectedDate) {
-                  const slotsWithStatus = slotsForSelectedDate.map((slot: string) => ({
-                    time: slot,
-                    isPast: isSlotInPastMST(slot, firstDate.dateString)
-                  }));
-                  const availableSlots = slotsWithStatus.filter((slot: { time: string; isPast: boolean }) => !slot.isPast);
-                  setTimeSlots(availableSlots);
-                  console.log('Auto-loaded slots for first date:', firstDate.dateString, availableSlots);
+          // Check if we got any slots in the first 30 days
+          const hasInitialSlots = Object.keys(data.slots).some(dateString => {
+            const slotsForDate = data.slots[dateString];
+            return Array.isArray(slotsForDate) && slotsForDate.length > 0;
+          });
+          
+          // If no slots in first 30 days, show first available slot immediately (fast endpoint)
+          if (!hasInitialSlots) {
+            const getFirstAvailableSlot = async () => {
+              try {
+                let firstSlotUrl = `/api/first-available-slot?calendarId=${serviceId}`;
+                if (userId && selectedStaff !== 'any') {
+                  firstSlotUrl += `&userId=${userId}`;
+                }
+                if (serviceDurationMinutes) {
+                  firstSlotUrl += `&serviceDuration=${serviceDurationMinutes}`;
+                }
+                
+                const response = await fetch(firstSlotUrl);
+                const firstSlotData = await response.json();
+                
+                if (firstSlotData.available) {
+                  console.log('[BookingWidget] First available slot:', firstSlotData);
+                  
+                  // Create a minimal date object for the first available date
+                  const [year, month, day] = firstSlotData.date.split('-').map(Number);
+                  const date = new Date(year, month - 1, day);
+                  const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+                  const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                  
+                  const firstDate = {
+                    dateString: firstSlotData.date,
+                    dayName,
+                    dateDisplay,
+                    label: 'FIRST AVAILABLE',
+                    date
+                  };
+                  
+                  // Show this as an available date immediately
+                  setAvailableDates([firstDate]);
+                  setSelectedDate(firstDate);
+                  
+                  // Show loading indicator for time slots
+                  setTimeSlots([{ time: 'Loading...', isPast: false }]);
+                }
+              } catch (error) {
+                console.error('[BookingWidget] Error getting first available slot:', error);
+              }
+            };
+            
+            // Fire this immediately for fast UX when no slots in next 30 days
+            getFirstAvailableSlot();
+          }
+          
+          // Auto-select first available date and show slots (only if we have initial slots)
+          if (hasInitialSlots) {
+            setTimeout(() => {
+              if (availableDates.length > 0) {
+                const firstDate = availableDates[0];
+                if (firstDate && firstDate.dateString) {
+                  setSelectedDate(firstDate);
+                  // Use the slots data directly instead of calling fetchSlotsForDate
+                  const slotsForSelectedDate = data.slots[firstDate.dateString];
+                  if (slotsForSelectedDate) {
+                    const slotsWithStatus = slotsForSelectedDate.map((slot: string) => ({
+                      time: slot,
+                      isPast: isSlotInPastMST(slot, firstDate.dateString)
+                    }));
+                    const availableSlots = slotsWithStatus.filter((slot: { time: string; isPast: boolean }) => !slot.isPast);
+                    setTimeSlots(availableSlots);
+                    console.log('Auto-loaded slots for first date:', firstDate.dateString, availableSlots);
+                  }
                 }
               }
-            }
-          }, 200);
+            }, 200);
+          }
           
           // Background prefetch for 120 days (for calendar picker)
           // This runs in the background without blocking the UI
@@ -941,6 +997,52 @@ export default function BookingWidget({
                 generateExtendedAvailableDates(extendedData.slots);
                 setExtendedSlotsLoaded(true);
                 console.log('[BookingWidget] Background prefetch complete - 120 days loaded');
+                
+                // If we had no initial slots but got extended slots, use those as working slots
+                if (!hasInitialSlots) {
+                  console.log('[BookingWidget] No slots in next 30 days, using extended slots as primary');
+                  setWorkingSlots(extendedData.slots);
+                  generateAvailableDates(extendedData.slots);
+                  
+                  // Auto-select first available date from extended slots
+                  setTimeout(() => {
+                    const extendedDates = Object.keys(extendedData.slots)
+                      .filter(dateString => {
+                        const slotsForDate = extendedData.slots[dateString];
+                        return Array.isArray(slotsForDate) && slotsForDate.length > 0;
+                      })
+                      .sort()
+                      .slice(0, 7);
+                    
+                    if (extendedDates.length > 0) {
+                      const firstDateString = extendedDates[0];
+                      const [year, month, day] = firstDateString.split('-').map(Number);
+                      const date = new Date(year, month - 1, day);
+                      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+                      const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                      
+                      const firstDate = {
+                        dateString: firstDateString,
+                        dayName,
+                        dateDisplay,
+                        label: 'AVAILABLE',
+                        date
+                      };
+                      
+                      setSelectedDate(firstDate);
+                      const slotsForSelectedDate = extendedData.slots[firstDateString];
+                      if (slotsForSelectedDate) {
+                        const slotsWithStatus = slotsForSelectedDate.map((slot: string) => ({
+                          time: slot,
+                          isPast: isSlotInPastMST(slot, firstDateString)
+                        }));
+                        const availableSlots = slotsWithStatus.filter((slot: { time: string; isPast: boolean }) => !slot.isPast);
+                        setTimeSlots(availableSlots);
+                        console.log('Auto-loaded slots from extended dates:', firstDateString, availableSlots);
+                      }
+                    }
+                  }, 100);
+                }
               }
             } catch (error) {
               console.error('[BookingWidget] Error in background prefetch:', error);
@@ -1024,8 +1126,14 @@ export default function BookingWidget({
     
     if (Object.keys(slots).length > 0) {
       const workingDates = Object.keys(slots)
-        .filter(dateString => dateString >= minDateString)
-        .sort();
+        .filter(dateString => {
+          // Only include dates that are >= minDate AND have actual slots available
+          if (dateString < minDateString) return false;
+          const slotsForDate = slots[dateString];
+          return Array.isArray(slotsForDate) && slotsForDate.length > 0;
+        })
+        .sort()
+        .slice(0, 7); // Take only the first 7 dates that have available slots
       
       workingDates.forEach((dateString, index) => {
         const [year, month, day] = dateString.split('-').map(Number);
@@ -1181,6 +1289,43 @@ export default function BookingWidget({
     
     // Compare with current time (both in local timezone)
     return slotDate < now;
+  };
+
+  // Trigger extended slots loading on-demand (e.g., when calendar is opened)
+  const handleCalendarOpen = async () => {
+    // If already loaded or loading, skip
+    if (extendedSlotsLoaded || loadingSlots) return;
+    
+    const serviceId = selectedService || bookingContext?.preSelectedServiceId || '';
+    const userId = selectedStaff && selectedStaff !== 'any' 
+      ? (bookingContext?.preSelectedStaffId ? selectedStaff : (staff.find(s => s.id === selectedStaff)?.ghlId || selectedStaff))
+      : '';
+    const serviceDurationMinutes = getServiceDuration(selectedService);
+    
+    if (!serviceId) return;
+    
+    try {
+      console.log('[BookingWidget] Calendar opened - loading extended slots (120 days)...');
+      let extendedApiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}&days=120`;
+      if (userId && selectedStaff !== 'any') {
+        extendedApiUrl += `&userId=${userId}`;
+      }
+      if (serviceDurationMinutes) {
+        extendedApiUrl += `&serviceDuration=${serviceDurationMinutes}`;
+      }
+      
+      const extendedResponse = await fetch(extendedApiUrl);
+      const extendedData = await extendedResponse.json();
+      
+      if (extendedData.slots && extendedData.calendarId) {
+        setExtendedSlots(extendedData.slots);
+        generateExtendedAvailableDates(extendedData.slots);
+        setExtendedSlotsLoaded(true);
+        console.log('[BookingWidget] Extended slots loaded on calendar open');
+      }
+    } catch (error) {
+      console.error('[BookingWidget] Error loading extended slots on calendar open:', error);
+    }
   };
 
   const formatDurationMins = (mins: number): string => {
@@ -1615,6 +1760,7 @@ export default function BookingWidget({
             navSecondaryText={navSecondaryText}
             extendedAvailableDates={extendedAvailableDates}
             extendedSlotsLoaded={extendedSlotsLoaded}
+            onCalendarOpen={handleCalendarOpen}
           />
         );
       case 'information':
