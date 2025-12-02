@@ -333,6 +333,10 @@ export default function BookingWidget({
   const [workingSlots, setWorkingSlots] = useState<WorkingSlots>({});
   const [workingSlotsLoaded, setWorkingSlotsLoaded] = useState<boolean>(false);
   const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
+  // Extended slots for calendar picker (120 days, prefetched in background)
+  const [extendedSlots, setExtendedSlots] = useState<WorkingSlots>({});
+  const [extendedSlotsLoaded, setExtendedSlotsLoaded] = useState<boolean>(false);
+  const [extendedAvailableDates, setExtendedAvailableDates] = useState<DateInfo[]>([]);
 
   // Contact form and booking state
   const [contactForm, setContactForm] = useState<ContactForm>({
@@ -915,6 +919,34 @@ export default function BookingWidget({
               }
             }
           }, 200);
+          
+          // Background prefetch for 120 days (for calendar picker)
+          // This runs in the background without blocking the UI
+          setTimeout(async () => {
+            try {
+              console.log('[BookingWidget] Starting background prefetch for 120 days...');
+              let extendedApiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}&days=120`;
+              if (userId && selectedStaff !== 'any') {
+                extendedApiUrl += `&userId=${userId}`;
+              }
+              if (serviceDurationMinutes) {
+                extendedApiUrl += `&serviceDuration=${serviceDurationMinutes}`;
+              }
+              
+              const extendedResponse = await fetch(extendedApiUrl);
+              const extendedData = await extendedResponse.json();
+              
+              if (extendedData.slots && extendedData.calendarId) {
+                setExtendedSlots(extendedData.slots);
+                generateExtendedAvailableDates(extendedData.slots);
+                setExtendedSlotsLoaded(true);
+                console.log('[BookingWidget] Background prefetch complete - 120 days loaded');
+              }
+            } catch (error) {
+              console.error('[BookingWidget] Error in background prefetch:', error);
+              // Silently fail - don't affect user experience
+            }
+          }, 500); // Small delay to not interfere with initial load
         }
       } catch (error) {
         console.error('Error fetching working slots:', error);
@@ -1024,6 +1056,52 @@ export default function BookingWidget({
     setAvailableDates(dates);
   };
 
+  const generateExtendedAvailableDates = (slots: WorkingSlots) => {
+    const dates: DateInfo[] = [];
+    
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const tomorrowDateString = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    // If a min date is preselected (e.g., reschedule next-day after original), honor it
+    const minDateFromContext = (bookingContext?.preSelectedMinDateIso || '').trim();
+    const minDateString = minDateFromContext && minDateFromContext > tomorrowDateString ? minDateFromContext : tomorrowDateString;
+    
+    if (Object.keys(slots).length > 0) {
+      const workingDates = Object.keys(slots)
+        .filter(dateString => dateString >= minDateString)
+        .sort();
+      
+      workingDates.forEach((dateString) => {
+        const [year, month, day] = dateString.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+        const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        // For extended dates, use simpler labels
+        let label = '';
+        if (dateString === tomorrowDateString) {
+          label = 'TOMORROW';
+        } else if (isThisWeek(dateString)) {
+          label = 'THIS WEEK';
+        } else {
+          label = 'NEXT WEEK';
+        }
+        
+        dates.push({
+          dateString,
+          dayName,
+          dateDisplay,
+          label,
+          date
+        });
+      });
+    }
+    
+    setExtendedAvailableDates(dates);
+  };
+
   const isThisWeek = (dateString: string): boolean => {
     const today = new Date();
     const targetDate = new Date(dateString + 'T00:00:00');
@@ -1040,13 +1118,15 @@ export default function BookingWidget({
 
     console.log('Fetching slots for specific date:', dateString);
     console.log('Working slots available:', workingSlots);
+    console.log('Extended slots available:', extendedSlots);
     
     setSelectedTimeSlot("");
     setLoadingSlots(true);
 
-    // Use working slots data if available
-    if (workingSlots[dateString]) {
-      const slotsForSelectedDate = workingSlots[dateString];
+    // Check working slots first (7 days), then extended slots (120 days)
+    const slotsForSelectedDate = workingSlots[dateString] || extendedSlots[dateString];
+    
+    if (slotsForSelectedDate) {
       console.log('Raw slots for date:', dateString, slotsForSelectedDate);
       
       const slotsWithStatus = slotsForSelectedDate.map((slot: string) => ({
@@ -1059,10 +1139,18 @@ export default function BookingWidget({
       
       setTimeSlots(availableSlots);
       console.log('Filtered available slots for date:', dateString, availableSlots);
+      
+      // If date is from extended range, merge it into workingSlots for future use
+      if (extendedSlots[dateString] && !workingSlots[dateString]) {
+        setWorkingSlots(prev => ({
+          ...prev,
+          [dateString]: extendedSlots[dateString]
+        }));
+      }
     } else {
-      // If no weekly slots for this date, show empty
+      // If no slots for this date, show empty
       setTimeSlots([]);
-      console.log('No weekly slots available for date:', dateString);
+      console.log('No slots available for date:', dateString);
     }
     
     setLoadingSlots(false);
@@ -1525,6 +1613,8 @@ export default function BookingWidget({
             navPrimaryText={navPrimaryText}
             navSecondaryBorder={navSecondaryBorder}
             navSecondaryText={navSecondaryText}
+            extendedAvailableDates={extendedAvailableDates}
+            extendedSlotsLoaded={extendedSlotsLoaded}
           />
         );
       case 'information':

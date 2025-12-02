@@ -109,6 +109,7 @@ export async function GET(req: Request) {
   const userId = url.searchParams.get('userId') || undefined;
   const date = url.searchParams.get('date') || undefined;
   const serviceDurationParam = url.searchParams.get('serviceDuration') || undefined;
+  const daysParam = url.searchParams.get('days') || undefined;
 
   if (!calendarId) {
     return NextResponse.json({ error: 'calendarId is required' }, { status: 400, headers: cors() });
@@ -126,7 +127,8 @@ export async function GET(req: Request) {
       if (parts.length === 3) startDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 12, 0, 0);
     }
 
-    const totalDays = 120;
+    // Support days parameter (default 7, max 120 for performance)
+    const totalDays = daysParam ? Math.min(Math.max(1, parseInt(daysParam)), 120) : 7;
     const daysToCheck: Date[] = [];
     for (let i = 0; i < totalDays; i++) {
       const d = new Date(startDate); d.setDate(startDate.getDate() + i); daysToCheck.push(d);

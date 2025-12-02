@@ -36,6 +36,8 @@ interface DateTimeStepProps {
   navPrimaryText?: string;
   navSecondaryBorder?: string;
   navSecondaryText?: string;
+  extendedAvailableDates?: DateInfo[];
+  extendedSlotsLoaded?: boolean;
 }
 
 export function DateTimeStep({
@@ -57,14 +59,21 @@ export function DateTimeStep({
   navPrimaryBg,
   navPrimaryText,
   navSecondaryBorder,
-  navSecondaryText
+  navSecondaryText,
+  extendedAvailableDates = [],
+  extendedSlotsLoaded = false
 }: DateTimeStepProps) {
   const [currentDateIndex, setCurrentDateIndex] = useState(0);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [monthAnchor, setMonthAnchor] = useState<Date | null>(null);
 
+  // Use extended dates when calendar picker is open, otherwise use regular dates
+  const datesForCalendar = showMonthPicker && extendedSlotsLoaded && extendedAvailableDates.length > 0 
+    ? extendedAvailableDates 
+    : availableDates;
+
   // Build a quick lookup for available dates (YYYY-MM-DD)
-  const availableSet = new Set((availableDates || []).map(d => d.dateString));
+  const availableSet = new Set((datesForCalendar || []).map(d => d.dateString));
 
   // Determine the month we are showing
   const baseDateString = (selectedDate?.dateString) || (availableDates[0]?.dateString) || '';
@@ -237,7 +246,7 @@ export function DateTimeStep({
                           key={iso}
                           disabled={!isAvailable}
                           onClick={() => {
-                            const match = availableDates.find(x => x.dateString === iso);
+                            const match = datesForCalendar.find(x => x.dateString === iso);
                             if (match) {
                               onDateSelect(match);
                               onTimeSlotClear("");
