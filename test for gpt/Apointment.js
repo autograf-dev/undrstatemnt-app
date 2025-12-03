@@ -85,7 +85,7 @@ exports.handler = async function (event) {
       address: "Zoom",
       ignoreDateRange: true,
       toNotify: true,
-      ignoreFreeSlotValidation: true,
+      ignoreFreeSlotValidation: false,
       calendarId,
       locationId: "iwqzlJBNFlXynsezheHv",
       contactId,

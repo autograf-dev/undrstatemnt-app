@@ -32,7 +32,7 @@ async function createAppointment(params: Record<string, any>) {
     address: 'Zoom',
     ignoreDateRange: true,
     toNotify: true,
-    ignoreFreeSlotValidation: true,
+    ignoreFreeSlotValidation: false, // CRITICAL: Let GHL reject conflicts as final safety net
     calendarId: params.calendarId,
     locationId: process.env.GHL_LOCATION_ID || 'iwqzlJBNFlXynsezheHv',
     contactId: params.contactId,
@@ -265,51 +265,6 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     console.error("Webhook send failed:", (e as Error).message);
-  }
-
-  // Send detailed webhook for table mutation
-  try {
-    const detailedPayload = {
-      appID: "VAC7eZY8vOOl4KZYEWF6",
-      mutations: [
-        {
-          kind: "add-row-to-table",
-          tableName: "native-table-17B93ocF1HmbC5Wge9ta",
-          columnValues: {
-            vJ042: (params.startTime ? new Date(params.startTime).toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' }).replace(/-/g, '') : ""),
-            kqZs5: params.bookingType || "Booking/Type",
-            "8C8HP": booking.id || booking.cal_com_id || "",
-            mNuL2: params.cancelUrl || "Booking/Cancel",
-            VPfiU: params.modifyUrl || "Booking/Modify",
-            "8265X": params.notifyUrl || "Booking/Notify",
-            tN30J: params.appointmentStatus || booking.appointmentStatus || "Confirmed",
-            wQ3qg: params.bookedBy || "Booking/Booked By",
-            wF0cN: params.customerId || params.contactId || "",
-            aPXKv: params.customerName || [params.customerFirstName, params.customerLastName].filter(Boolean).join(' ') || "",
-            Ul1Xb: params.customerPhone || "",
-            Ppy2M: params.customerEmail || "",
-            xAwbe: params.staffId || params.assignedUserId || "",
-            JE35N: params.serviceId || "",
-            jIXWb: params.customPrice || "",
-            b3MEu: params.serviceName || params.title || "",
-            mN11Y: params.serviceDuration || "",
-            "9qKZ1": booking.id || "",
-            vY5AO: params.startTime || "",
-            MAqsh: params.documentId || "",
-            thd34: params.notes || "",
-            uDzPy: params.paymentId || "",
-            "4HFxg": "column1"
-          }
-        }
-      ]
-    };
-    await fetch("https://primary-rmsi-production2.up.railway.app/webhook/e6aeb66b-e5c3-42e6-bc12-172900db6801", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(detailedPayload)
-    });
-  } catch (e) {
-    console.error("Detailed webhook send failed:", (e as Error).message);
   }
 
   try { await saveEventToDB({ ...booking, ...enhanced }); } catch (e) { console.error('DB save failed:', (e as Error).message); }

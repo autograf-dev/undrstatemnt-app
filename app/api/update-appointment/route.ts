@@ -86,7 +86,7 @@ async function doUpdate(params: UpdateParams) {
 
   // Relax validations when moving time
   if (payload.startTime || payload.endTime) {
-    payload.ignoreFreeSlotValidation = true;
+    payload.ignoreFreeSlotValidation = false;
     payload.ignoreDateRange = true;
     payload.toNotify = true;
   }
