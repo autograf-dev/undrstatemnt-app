@@ -567,6 +567,64 @@ export async function GET(req: Request) {
       console.log(`[free-slots] Total processed blocks: ${timeBlockList.length} (${timeBlockList.filter(b => b.recurring).length} recurring, ${timeBlockList.filter(b => !b.recurring && b.date).length} one-time)`);
     }
 
+    // Overtime periods from time_overtime table
+    // These slots bypass ALL restrictions (work schedule, business hours, breaks, holidays)
+    let overtimeList: { date: string; start: number; end: number }[] = []
+    if (userId) {
+      try {
+        const barberRowId: string | undefined = (resolvedBarberData as any)?.['\uD83D\uDD12 Row ID'] || (resolvedBarberData as any)?.['🔒 Row ID']
+        const barberGhlId: string | undefined = (resolvedBarberData as any)?.['GHL_id'] || (resolvedBarberData as any)?.['ghl_id'] || userId
+
+        let overtimeData: any[] = []
+
+        // Query by ghl_id
+        if (barberGhlId) {
+          const { data } = await supabase.from('time_overtime').select('*').eq('ghl_id', barberGhlId)
+          if (Array.isArray(data)) overtimeData = overtimeData.concat(data as any[])
+        }
+
+        // Query by Barber/ID (row id)
+        if (barberRowId) {
+          const { data } = await supabase.from('time_overtime').select('*').eq('Barber/ID', barberRowId)
+          if (Array.isArray(data)) {
+            // Avoid duplicates
+            const existingIds = new Set(overtimeData.map((o: any) => o['🔒 Row ID']))
+            for (const row of data as any[]) {
+              if (!existingIds.has(row['🔒 Row ID'])) {
+                overtimeData.push(row)
+              }
+            }
+          }
+        }
+
+        // Parse overtime entries
+        for (const row of overtimeData) {
+          const dateRaw = row['Overtime/Date']
+          const startVal = parseInt(row['Overtime/Start Value'])
+          const endVal = parseInt(row['Overtime/End Value'])
+          if (!dateRaw || !Number.isFinite(startVal) || !Number.isFinite(endVal)) continue
+
+          // Normalize date to YYYY-MM-DD format
+          let dateKey: string | null = null
+          if (typeof dateRaw === 'string') {
+            if (/^\d{4}-\d{2}-\d{2}/.test(dateRaw)) {
+              dateKey = dateRaw.split('T')[0]
+            } else if (/^\d{8}$/.test(dateRaw)) {
+              dateKey = `${dateRaw.slice(0, 4)}-${dateRaw.slice(4, 6)}-${dateRaw.slice(6, 8)}`
+            }
+          }
+
+          if (dateKey && startVal < endVal) {
+            overtimeList.push({ date: dateKey, start: startVal, end: endVal })
+          }
+        }
+
+        console.log(`[free-slots] Found ${overtimeList.length} overtime entries for barber ${barberGhlId || barberRowId}`)
+      } catch (err) {
+        console.error('[free-slots] Error fetching overtime:', err)
+      }
+    }
+
     // Existing bookings from ghl_events: block overlapping slots for assigned barber
     // Only confirmed bookings block slots; canceled appointments are excluded
     let existingBookings: { startDayKey: string; startMinutes: number; endMinutes: number }[] = [];
@@ -697,51 +755,80 @@ export async function GET(req: Request) {
       return false;
     };
 
+    // Helper: Get overtime slots for a specific date (bypasses all restrictions except bookings)
+    const getOvertimeSlotsForDate = (dateKey: string): number[] => {
+      const overtimeForDate = overtimeList.filter((ot) => ot.date === dateKey)
+      if (overtimeForDate.length === 0) return []
+
+      const overtimeSlots: number[] = []
+      for (const ot of overtimeForDate) {
+        // Generate 15-minute interval slots within overtime window
+        // Slot must fit entirely within overtime: slot + serviceDuration <= ot.end
+        for (let mins = ot.start; mins + serviceDurationMinutes <= ot.end; mins += 15) {
+          overtimeSlots.push(mins)
+        }
+      }
+      return overtimeSlots
+    }
+
     // Build results
     const filteredSlots: Record<string, string[]> = {};
     for (const day of daysToCheck) {
       const dateKey = ymdInTZ(day);
       const dowNum: number = Number(dayOfWeekInTZ(day));
+
+      // Check for overtime slots for this date (these bypass ALL restrictions)
+      const overtimeMins = getOvertimeSlotsForDate(dateKey);
+
+      // Filter overtime slots only by existing bookings (can't double-book)
+      const validOvertimeMins = overtimeMins.filter((mins) => !isSlotBooked(day, mins, serviceDurationMinutes));
+
+      // Normal slot logic
+      let validMins: number[] = [];
       const bh = businessHoursMap[dowNum];
-      if (!bh) continue;
-      // Skip whole day if marked as time-off for this user/barber
-      if (isDateInTimeOff(day)) continue;
-      const openTime = bh.open_time;
-      const closeTime = bh.close_time;
+      const isTimeOff = isDateInTimeOff(day);
 
-      let validMins = (slotsData[dateKey]?.minutes || []).slice();
-      validMins = validMins.filter((mins) => {
-        const end = mins + serviceDurationMinutes;
-        if (!hasBarber) return mins >= openTime && end <= closeTime;
-        // With a barber selected, also require service end within store close
-        return mins >= openTime && end <= closeTime;
-      });
+      // Only process normal slots if business hours exist and not on time off
+      if (bh && !isTimeOff) {
+        const openTime = bh.open_time;
+        const closeTime = bh.close_time;
 
-      // Always remove times that overlap existing GHL events, regardless of barber lookup
-      if (existingBookings.length > 0) {
-        validMins = validMins.filter((mins) => !isSlotBooked(day, mins, serviceDurationMinutes));
-      }
-
-      // Always check time blocks if they exist (regardless of hasBarber, since blocks are fetched when userId is provided)
-      if (timeBlockList.length > 0) {
-        validMins = validMins.filter((mins) => !isSlotBlocked(day, mins, serviceDurationMinutes));
-      }
-
-      if (hasBarber) {
-        if ((barberWeekendIndexes || []).includes(dowNum)) continue;
-        const bhours = barberHoursMap[dowNum];
-        if (!bhours || (bhours.start === 0 && bhours.end === 0)) continue;
-        if (isDateInTimeOff(day)) continue;
+        validMins = (slotsData[dateKey]?.minutes || []).slice();
         validMins = validMins.filter((mins) => {
-          const blocked = isSlotBlocked(day, mins, serviceDurationMinutes);
-          const booked = isSlotBooked(day, mins, serviceDurationMinutes);
           const end = mins + serviceDurationMinutes;
-          return mins >= bhours.start && end <= bhours.end && !blocked && !booked;
+          if (!hasBarber) return mins >= openTime && end <= closeTime;
+          return mins >= openTime && end <= closeTime;
         });
+
+        if (existingBookings.length > 0) {
+          validMins = validMins.filter((mins) => !isSlotBooked(day, mins, serviceDurationMinutes));
+        }
+
+        if (hasBarber) {
+          const isBarberDayOff = (barberWeekendIndexes || []).includes(dowNum);
+          const bhours = barberHoursMap[dowNum];
+          const barberHasNoHours = !bhours || (bhours.start === 0 && bhours.end === 0);
+
+          if (isBarberDayOff || barberHasNoHours) {
+            // Barber's day off - no normal slots, but overtime still applies
+            validMins = [];
+          } else {
+            validMins = validMins.filter((mins) => {
+              const blocked = isSlotBlocked(day, mins, serviceDurationMinutes);
+              const booked = isSlotBooked(day, mins, serviceDurationMinutes);
+              const end = mins + serviceDurationMinutes;
+              return mins >= bhours.start && end <= bhours.end && !blocked && !booked;
+            });
+          }
+        }
       }
 
-      validMins.sort((a, b) => a - b);
-      if (validMins.length > 0) filteredSlots[dateKey] = validMins.map(displayFromMinutes);
+      // Merge normal slots with overtime slots (remove duplicates)
+      const allMins = new Set([...validMins, ...validOvertimeMins]);
+      const finalMins = Array.from(allMins).sort((a, b) => a - b);
+      if (finalMins.length > 0) {
+        filteredSlots[dateKey] = finalMins.map(displayFromMinutes);
+      }
     }
 
     // Log summary of slots calculated
