@@ -187,7 +187,11 @@ export function DateTimeStep({
                     )}
                   >
                     <div className="hidden sm:block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{dateInfo.label}</div>
-                    <div className="font-bold text-sm sm:text-lg text-black">
+                    {/* Mobile: show short weekday name to prevent overflow; Desktop: show full name */}
+                    <div className="font-bold text-sm text-black sm:hidden">
+                      {(dateInfo.dayName || '').slice(0, 3)}
+                    </div>
+                    <div className="hidden sm:block font-bold sm:text-lg text-black">
                       {dateInfo.dayName}
                     </div>
                     <div className="text-xs sm:text-sm text-gray-600">
