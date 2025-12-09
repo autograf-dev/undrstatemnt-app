@@ -797,14 +797,33 @@ export default function BookingWidget({
     loadStaff();
   }, [selectedService, selectedDepartment, effectiveServicesApiPath, effectiveStaffApiPath, usingSupabaseServices]);
 
-  // Load working slots when staff is selected
+  // Load working slots when staff or service is selected - ALWAYS fetch fresh data (no cache)
   useEffect(() => {
-    if (!selectedService || !selectedStaff) return;
-    
-    const loadWorkingSlots = async () => {
+    if (!selectedService || !selectedStaff) {
+      // Clear slots when service or staff is deselected
       setSelectedTimeSlot("");
       setWorkingSlots({});
+      setExtendedSlots({});
       setWorkingSlotsLoaded(false);
+      setExtendedSlotsLoaded(false);
+      setTimeSlots([]);
+      setAvailableDates([]);
+      setExtendedAvailableDates([]);
+      setSelectedDate(null);
+      return;
+    }
+    
+    const loadWorkingSlots = async () => {
+      // Clear all slot data immediately when service/staff changes
+      setSelectedTimeSlot("");
+      setWorkingSlots({});
+      setExtendedSlots({});
+      setWorkingSlotsLoaded(false);
+      setExtendedSlotsLoaded(false);
+      setTimeSlots([]);
+      setAvailableDates([]);
+      setExtendedAvailableDates([]);
+      setSelectedDate(null);
       setLoadingSlots(true);
 
       const serviceId = selectedService;
@@ -870,7 +889,11 @@ export default function BookingWidget({
           apiUrl += `&serviceDuration=${serviceDurationMinutes}`;
         }
         
-        console.log('[BookingWidget] Fetching slots endpoint:', apiUrl);
+        // Add cache-busting timestamp to ensure real-time data
+        const timestamp = Date.now();
+        apiUrl += `&_t=${timestamp}`;
+        
+        console.log('[BookingWidget] Fetching slots endpoint (no cache):', apiUrl);
         console.log('[BookingWidget] Request params:', {
           calendarId: serviceId,
           userId: userId || 'none (any staff)',
@@ -881,7 +904,7 @@ export default function BookingWidget({
           staffName: (bookingContext?.preSelectedStaffName || selectedStaffObj?.name || getDisplayStaffName() || 'not found')
         });
         
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, { cache: 'no-store' });
         const data = await response.json();
 
         console.log('[BookingWidget] Slots API response:', {
@@ -916,8 +939,10 @@ export default function BookingWidget({
                 if (serviceDurationMinutes) {
                   firstSlotUrl += `&serviceDuration=${serviceDurationMinutes}`;
                 }
+                // Add cache-busting timestamp
+                firstSlotUrl += `&_t=${Date.now()}`;
                 
-                const response = await fetch(firstSlotUrl);
+                const response = await fetch(firstSlotUrl, { cache: 'no-store' });
                 const firstSlotData = await response.json();
                 
                 if (firstSlotData.available) {
@@ -980,7 +1005,7 @@ export default function BookingWidget({
           // This runs in the background without blocking the UI
           setTimeout(async () => {
             try {
-              console.log('[BookingWidget] Starting background prefetch for 120 days...');
+              console.log('[BookingWidget] Starting background prefetch for 120 days (no cache)...');
               let extendedApiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}&days=120`;
               if (userId && selectedStaff !== 'any') {
                 extendedApiUrl += `&userId=${userId}`;
@@ -988,8 +1013,10 @@ export default function BookingWidget({
               if (serviceDurationMinutes) {
                 extendedApiUrl += `&serviceDuration=${serviceDurationMinutes}`;
               }
+              // Add cache-busting timestamp
+              extendedApiUrl += `&_t=${Date.now()}`;
               
-              const extendedResponse = await fetch(extendedApiUrl);
+              const extendedResponse = await fetch(extendedApiUrl, { cache: 'no-store' });
               const extendedData = await extendedResponse.json();
               
               if (extendedData.slots && extendedData.calendarId) {
@@ -1305,7 +1332,7 @@ export default function BookingWidget({
     if (!serviceId) return;
     
     try {
-      console.log('[BookingWidget] Calendar opened - loading extended slots (120 days)...');
+      console.log('[BookingWidget] Calendar opened - loading extended slots (120 days, no cache)...');
       let extendedApiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}&days=120`;
       if (userId && selectedStaff !== 'any') {
         extendedApiUrl += `&userId=${userId}`;
@@ -1313,8 +1340,10 @@ export default function BookingWidget({
       if (serviceDurationMinutes) {
         extendedApiUrl += `&serviceDuration=${serviceDurationMinutes}`;
       }
+      // Add cache-busting timestamp
+      extendedApiUrl += `&_t=${Date.now()}`;
       
-      const extendedResponse = await fetch(extendedApiUrl);
+      const extendedResponse = await fetch(extendedApiUrl, { cache: 'no-store' });
       const extendedData = await extendedResponse.json();
       
       if (extendedData.slots && extendedData.calendarId) {
@@ -1439,6 +1468,79 @@ export default function BookingWidget({
     setSelectedTimeSlot(timeSlot);
     // Don't move to next step when clearing
   };
+
+  // Function to refresh slots when booking fails (e.g., 409 conflict)
+  const refreshSlots = async () => {
+    if (!selectedService || !selectedStaff) return;
+    
+    setSelectedTimeSlot("");
+    setLoadingSlots(true);
+    
+    try {
+      const serviceId = selectedService;
+      const selectedStaffObj = staff.find((s) => s.id === selectedStaff || s.ghlId === selectedStaff);
+      const userId = selectedStaff && selectedStaff !== 'any' 
+        ? (selectedStaffObj?.ghlId || selectedStaff) 
+        : null;
+      
+      const service = services.find((s) => s.id === serviceId);
+      const serviceDurationMinutes = effectiveDuration || service?.durationMinutes || 0;
+      
+      let apiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}`;
+      if (userId && selectedStaff !== 'any') {
+        apiUrl += `&userId=${userId}`;
+      }
+      if (serviceDurationMinutes) {
+        apiUrl += `&serviceDuration=${serviceDurationMinutes}`;
+      }
+      // Add cache-busting timestamp to ensure real-time data
+      apiUrl += `&_t=${Date.now()}`;
+      
+      const response = await fetch(apiUrl, { cache: 'no-store' });
+      const data = await response.json();
+      
+      if (data.slots && data.calendarId) {
+        setWorkingSlots(data.slots);
+        setWorkingSlotsLoaded(true);
+        generateAvailableDates(data.slots);
+        
+        // If a date was previously selected, refresh slots for that date
+        if (selectedDate && selectedDate.dateString) {
+          const slotsForDate = data.slots[selectedDate.dateString];
+          if (slotsForDate) {
+            const slotsWithStatus = slotsForDate.map((slot: string) => ({
+              time: slot,
+              isPast: isSlotInPastMST(slot, selectedDate.dateString)
+            }));
+            const availableSlots = slotsWithStatus.filter((slot: { time: string; isPast: boolean }) => !slot.isPast);
+            setTimeSlots(availableSlots);
+          } else {
+            // If no slots for selected date, clear time slots
+            setTimeSlots([]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing slots:', error);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  // Refresh slots when navigating to datetime step to ensure real-time availability
+  // This handles cases where user goes back to datetime step after booking or from other steps
+  useEffect(() => {
+    if (currentStep === 'datetime' && selectedService && selectedStaff) {
+      // Small delay to avoid race conditions with the main loadWorkingSlots effect
+      const timeoutId = setTimeout(() => {
+        refreshSlots().catch(err => {
+          console.warn('[BookingWidget] Failed to refresh slots on datetime step navigation:', err);
+        });
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currentStep, selectedService, selectedStaff]);
 
   const handleInformationSubmit = async () => {
     if (!validateForm()) return;
@@ -1608,6 +1710,17 @@ export default function BookingWidget({
         } catch (e) {
           console.warn('[BookingWidget] update-contact failed:', e);
         }
+        
+        // Refresh slots after successful booking so they're updated if user books again
+        // This ensures the newly booked slot is no longer available
+        try {
+          await refreshSlots();
+          console.log('[BookingWidget] Slots refreshed after successful booking');
+        } catch (refreshError) {
+          console.warn('[BookingWidget] Failed to refresh slots after booking:', refreshError);
+          // Non-critical, continue to success step
+        }
+        
         setCurrentStep("success");
       } else {
         console.error('Booking error response:', apptData);
@@ -1618,8 +1731,7 @@ export default function BookingWidget({
           
           // Refresh available slots automatically
           setSelectedTimeSlot('');
-          setTimeSlots([]);
-          await handleDateTimeSubmit(); // Re-fetch slots for current selection
+          await refreshSlots(); // Re-fetch slots for current selection
           
           // Stay on the datetime step so user can pick another time
           setCurrentStep('datetime');
@@ -1672,6 +1784,12 @@ export default function BookingWidget({
         break;
       case 'information':
         setCurrentStep('datetime');
+        // Refresh slots when going back to datetime step to ensure real-time availability
+        if (selectedService && selectedStaff) {
+          refreshSlots().catch(err => {
+            console.warn('[BookingWidget] Failed to refresh slots when going back to datetime:', err);
+          });
+        }
         break;
     }
   };
