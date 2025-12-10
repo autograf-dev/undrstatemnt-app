@@ -423,8 +423,8 @@ export async function getExistingBookings(
     let q = supabase.from('ghl_events').select('*').in('date_id', dateIds);
     if (userId) q = q.eq('assigned_user_id', userId);
     
-    // Exclude canceled appointments
-    q = q.neq('appointment_status', 'canceled');
+    // Include NULL status (active bookings) and explicitly exclude only 'canceled'
+    q = q.or('appointment_status.is.null,appointment_status.neq.canceled');
     
     const { data } = await q;
     const rows: any[] = Array.isArray(data) ? (data as any[]) : [];
