@@ -632,8 +632,8 @@ export async function GET(req: Request) {
       const dateIds = daysToCheck.map((d) => ymdInTZ(d).replace(/-/g, ''));
       let q = supabase.from('ghl_events').select('*').in('date_id', dateIds);
       if (userId) q = q.eq('assigned_user_id', userId);
-      // Exclude canceled appointments - only confirmed/booked appointments block slots
-      q = q.neq('appointment_status', 'canceled');
+      // Include NULL status (active bookings) and explicitly exclude only 'canceled'
+      q = q.or('appointment_status.is.null,appointment_status.neq.canceled');
       // Do not filter by calendar_id; external calendarId may not match GHL calendar ids
       const { data } = await q;
       const rows: any[] = Array.isArray(data) ? (data as any[]) : [];
