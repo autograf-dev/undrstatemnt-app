@@ -629,11 +629,19 @@ export async function GET(req: Request) {
     // Only confirmed bookings block slots; canceled appointments are excluded
     let existingBookings: { startDayKey: string; startMinutes: number; endMinutes: number }[] = [];
     try {
-      const dateIds = daysToCheck.map((d) => ymdInTZ(d).replace(/-/g, ''));
+      // Include next day to catch UTC timezone boundary issues (bookings stored as Dec 19 UTC but are Dec 18 MST)
+      const extendedDays = [...daysToCheck];
+      const lastDay = daysToCheck[daysToCheck.length - 1];
+      const nextDay = new Date(lastDay);
+      nextDay.setDate(lastDay.getDate() + 1);
+      extendedDays.push(nextDay);
+      const dateIds = extendedDays.map((d) => ymdInTZ(d).replace(/-/g, ''));
       let q = supabase.from('ghl_events').select('*').in('date_id', dateIds);
       if (userId) q = q.eq('assigned_user_id', userId);
       // Include NULL status (active bookings) and explicitly exclude only 'canceled'
       q = q.or('appointment_status.is.null,appointment_status.neq.canceled');
+      // Ensure we fetch ALL bookings without truncation (default limit is 1000)
+      q = q.limit(10000);
       // Do not filter by calendar_id; external calendarId may not match GHL calendar ids
       const { data } = await q;
       const rows: any[] = Array.isArray(data) ? (data as any[]) : [];
@@ -680,7 +688,9 @@ export async function GET(req: Request) {
       const slotDayKey = ymdInTZ(slotDate);
       const slotEnd = slotMinutes + durMinutes;
       for (const b of existingBookings) {
-        if (b.startDayKey === slotDayKey) if (slotMinutes < b.endMinutes && slotEnd > b.startMinutes) return true;
+        if (b.startDayKey === slotDayKey) {
+          if (slotMinutes < b.endMinutes && slotEnd > b.startMinutes) return true;
+        }
       }
       return false;
     };
