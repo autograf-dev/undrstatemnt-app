@@ -192,17 +192,17 @@ export async function GET(req: Request) {
         try {
           const barberRowId: string | undefined = barberData?.['\uD83D\uDD12 Row ID'] || barberData?.['🔒 Row ID'];
           const barberGhlId: string | undefined = barberData?.['GHL_id'];
-          
+
           // Try to find custom duration from Data_Services_Custom
           let customDuration: number | null = null;
-          
+
           // Query by Barber/ID if we have it
           if (barberRowId) {
             const { data: customRows } = await supabase
               .from('Data_Services_Custom')
               .select('Barber/Duration, Barber/ID, ghl_calendar_id, Service/Lookup')
               .eq('Barber/ID', barberRowId);
-            
+
             if (Array.isArray(customRows) && customRows.length > 0) {
               // Find matching custom row by calendarId (ghl_calendar_id) or Service/Lookup
               const match = customRows.find((row: any) => {
@@ -210,13 +210,13 @@ export async function GET(req: Request) {
                 const lookupMatch = String((row as any)?.['Service/Lookup'] || '') === String(calendarId);
                 return calIdMatch || lookupMatch;
               });
-              
+
               if (match && Number.isFinite(Number((match as any)['Barber/Duration']))) {
                 customDuration = Number((match as any)['Barber/Duration']);
               }
             }
           }
-          
+
           // Also try by GHL_id if no match found
           if (!customDuration && barberGhlId) {
             // Try querying by ghl_id field
@@ -224,20 +224,20 @@ export async function GET(req: Request) {
               .from('Data_Services_Custom')
               .select('Barber/Duration, Barber/ID, ghl_calendar_id, Service/Lookup, ghl_id')
               .eq('ghl_id', barberGhlId);
-            
+
             if (Array.isArray(customRowsByGhl) && customRowsByGhl.length > 0) {
               const match = customRowsByGhl.find((row: any) => {
                 const calIdMatch = String((row as any)?.['ghl_calendar_id'] || '') === String(calendarId);
                 const lookupMatch = String((row as any)?.['Service/Lookup'] || '') === String(calendarId);
                 return calIdMatch || lookupMatch;
               });
-              
+
               if (match && Number.isFinite(Number((match as any)['Barber/Duration']))) {
                 customDuration = Number((match as any)['Barber/Duration']);
               }
             }
           }
-          
+
           // Use custom duration if found
           if (customDuration !== null && customDuration > 0) {
             serviceDurationMinutes = customDuration;
@@ -248,7 +248,7 @@ export async function GET(req: Request) {
           console.error('Error fetching custom duration:', err);
         }
       }
-      
+
       // Log the final duration being used for slot calculations
       console.log(`[free-slots] Final service duration for slot calculations: ${serviceDurationMinutes} minutes (userId: ${userId || 'none'}, calendarId: ${calendarId})`);
 
@@ -394,7 +394,7 @@ export async function GET(req: Request) {
       // Also attempt plural table time_blocks
       try {
         if (userId) {
-          const { data, error } = await supabase.from('time_blocks').select('*').eq('ghl_id', userId);
+          const { data, error } = await supabase.from('time_blocks').select('*').like('ghl_id', `${userId}%`);
           if (error) console.log(`[free-slots] Error querying time_blocks by ghl_id (${userId}):`, error);
           if (Array.isArray(data)) {
             console.log(`[free-slots] Found ${data.length} blocks in time_blocks table by ghl_id (${userId})`);
@@ -402,7 +402,7 @@ export async function GET(req: Request) {
           }
         }
         if (barberGhlId && barberGhlId !== userId) {
-          const { data, error } = await supabase.from('time_blocks').select('*').eq('ghl_id', barberGhlId);
+          const { data, error } = await supabase.from('time_blocks').select('*').like('ghl_id', `${barberGhlId}%`);
           if (error) console.log(`[free-slots] Error querying time_blocks by barberGhlId (${barberGhlId}):`, error);
           if (Array.isArray(data)) {
             console.log(`[free-slots] Found ${data.length} blocks in time_blocks table by barberGhlId (${barberGhlId})`);
@@ -410,7 +410,7 @@ export async function GET(req: Request) {
           }
         }
         if (barberRowId) {
-          const { data, error } = await supabase.from('time_blocks').select('*').eq('Barber/ID', barberRowId);
+          const { data, error } = await supabase.from('time_blocks').select('*').eq('"Barber/ID"', barberRowId);
           if (error) {
             console.log(`[free-slots] Error querying time_blocks by Barber/ID (${barberRowId}):`, error);
             // Try alternative: query all and filter client-side
@@ -430,7 +430,7 @@ export async function GET(req: Request) {
       } catch (err) {
         console.log(`[free-slots] Exception querying time_blocks:`, err);
       }
-      
+
       // Debug: Check if recurring lunch block exists in database (for Martin)
       if (userId === 'VQYDmgfngKScT0Ropy0A') {
         try {
@@ -439,31 +439,31 @@ export async function GET(req: Request) {
             .from('time_blocks')
             .select('*')
             .eq('ghl_id', userId);
-          
+
           // Query by Barber/ID
           const { data: blocksByBarber, error: err2 } = await supabase
             .from('time_blocks')
             .select('*')
             .eq('Barber/ID', '76dMfR2pTKmfVM48SFgokQ');
-          
+
           // If that fails, try client-side filtering
           let blocksByBarberFiltered: any[] = [];
           if (err2) {
             console.log(`[free-slots] Direct query failed, trying client-side filter:`, err2);
             const { data: allBlocksData } = await supabase.from('time_blocks').select('*');
             if (Array.isArray(allBlocksData)) {
-              blocksByBarberFiltered = allBlocksData.filter((b: any) => 
+              blocksByBarberFiltered = allBlocksData.filter((b: any) =>
                 b['Barber/ID'] === '76dMfR2pTKmfVM48SFgokQ' || b['ghl_id'] === userId
               );
             }
           }
-          
+
           const allBlocks = [...(blocksByGhl || []), ...(blocksByBarber || []), ...blocksByBarberFiltered];
-          
+
           if (err1 || err2) {
             console.log(`[free-slots] Errors checking all blocks for Martin:`, err1 || err2);
           }
-          
+
           console.log(`[free-slots] All blocks for Martin (VQYDmgfngKScT0Ropy0A):`, allBlocks.map((b: any) => ({
             name: b['Block/Name'],
             recurring: b['Block/Recurring'],
@@ -473,10 +473,10 @@ export async function GET(req: Request) {
             ghl_id: b['ghl_id'],
             barberId: b['Barber/ID']
           })));
-          
+
           // Specifically check for the lunch block
-          const lunchBlock = allBlocks.find((b: any) => 
-            b['Block/Name'] === 'Lunch' && 
+          const lunchBlock = allBlocks.find((b: any) =>
+            b['Block/Name'] === 'Lunch' &&
             (b['ghl_id'] === userId || b['Barber/ID'] === '76dMfR2pTKmfVM48SFgokQ')
           );
           if (lunchBlock) {
@@ -494,7 +494,7 @@ export async function GET(req: Request) {
           console.log(`[free-slots] Exception checking all blocks:`, err);
         }
       }
-      
+
       // Debug: log how many blocks were fetched and their raw data
       if (blockData && blockData.length > 0) {
         console.log(`[free-slots] Fetched ${blockData.length} time blocks for userId: ${userId}`);
@@ -509,7 +509,7 @@ export async function GET(req: Request) {
           ghlId: item['ghl_id']
         })), null, 2));
       }
-      
+
       timeBlockList = (blockData || []).map((item: any) => {
         const raw = item['Block/Recurring'];
         // Handle various formats: true, "true", 'true', false, "false", etc.
@@ -540,9 +540,9 @@ export async function GET(req: Request) {
         const rawIdDate = item['Block/Date -> ID Check'];
         if (rawIdDate && /^\d{8}$/.test(String(rawIdDate))) {
           const v = String(rawIdDate);
-          dateKey = `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
+          dateKey = `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
         } else if (item['Block/Date']) {
-          try { dateKey = ymdInTZ(new Date(item['Block/Date'])); } catch {}
+          try { dateKey = ymdInTZ(new Date(item['Block/Date'])); } catch { }
         }
         const block = {
           start: parseInt(item['Block/Start']) || 0,
@@ -562,7 +562,7 @@ export async function GET(req: Request) {
         }
         return block;
       });
-      
+
       // Log summary of processed blocks
       console.log(`[free-slots] Total processed blocks: ${timeBlockList.length} (${timeBlockList.filter(b => b.recurring).length} recurring, ${timeBlockList.filter(b => !b.recurring && b.date).length} one-time)`);
     }
@@ -671,18 +671,18 @@ export async function GET(req: Request) {
                 const s = JSON.parse(summaryRaw);
                 if (s?.Date && /^\d{8}$/.test(String(s.Date))) {
                   const v = String(s.Date);
-                  startDayKey = `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
+                  startDayKey = `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}`;
                 }
                 if (Number.isFinite(Number(s?.Start))) startMinutes = Number(s.Start);
                 const endBuf = s?.['End (Buffer)'];
                 if (Number.isFinite(Number(endBuf))) endMinutes = Number(endBuf);
-              } catch {}
+              } catch { }
             }
           }
           return { startDayKey, startMinutes, endMinutes };
         })
         .filter((b) => b.startDayKey && Number.isFinite(b.startMinutes) && Number.isFinite(b.endMinutes));
-    } catch {}
+    } catch { }
 
     const isSlotBooked = (slotDate: Date, slotMinutes: number, durMinutes: number) => {
       const slotDayKey = ymdInTZ(slotDate);
@@ -698,22 +698,22 @@ export async function GET(req: Request) {
     const isSlotBlocked = (slotDate: Date, slotMinutes: number, durMinutes: number) => {
       const slotEnd = slotMinutes + durMinutes;
       const slotDayKey = ymdInTZ(slotDate);
-      const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const currentDayName = dayNames[dayOfWeekInTZ(slotDate)];
-      
-      // Debug: log when checking Monday at 1:00 PM (780 minutes)
-      const isMonday1PM = currentDayName === 'Monday' && slotMinutes === 780;
-      
+
+      // Debug: log when checking Tuesday at 10:00 AM (600 minutes)
+      const isDebugTarget = currentDayName === 'Tuesday' && slotMinutes === 600;
+
       for (const block of timeBlockList) {
         if (block.recurring) {
           // Skip if no recurring days defined
           if (!block.recurringDays || block.recurringDays.length === 0) {
-            if (isMonday1PM) {
+            if (isDebugTarget) {
               console.log(`[free-slots] Block "${block.name}" is recurring but has no recurring days`);
             }
             continue;
           }
-          
+
           // Normalize recurring days list (should already be normalized, but ensure it)
           const dayNameMap: Record<string, string> = {
             'sunday': 'Sunday',
@@ -724,24 +724,24 @@ export async function GET(req: Request) {
             'friday': 'Friday',
             'saturday': 'Saturday'
           };
-          
+
           const normalizedRecurringDays = block.recurringDays.map((d: string) => {
             const normalized = dayNameMap[String(d).toLowerCase()];
             return normalized || String(d);
           });
-          
+
           // Check if current day matches any recurring day
           const dayMatches = normalizedRecurringDays.includes(currentDayName);
-          
-          if (isMonday1PM) {
+
+          if (isDebugTarget) {
             console.log(`[free-slots] Checking recurring block "${block.name}": days=[${normalizedRecurringDays.join(', ')}], currentDay=${currentDayName}, matches=${dayMatches}, blockTime=${block.start}-${block.end}, slotTime=${slotMinutes}-${slotEnd}`);
           }
-          
+
           if (dayMatches) {
             // Check if slot overlaps with block time: slot starts before block ends AND slot ends after block starts
             const timeOverlaps = slotMinutes < block.end && slotEnd > block.start;
             if (timeOverlaps) {
-              if (isMonday1PM) {
+              if (isDebugTarget) {
                 console.log(`[free-slots] ✓ BLOCKED: Slot ${displayFromMinutes(slotMinutes)} on ${currentDayName} overlaps with recurring block "${block.name}"`);
               }
               return true;
@@ -751,7 +751,7 @@ export async function GET(req: Request) {
           // Non-recurring block: compare using precomputed stable dateKey and check overlap
           if (block.date === slotDayKey) {
             if (slotMinutes < block.end && slotEnd > block.start) {
-              if (isMonday1PM) {
+              if (isDebugTarget) {
                 console.log(`[free-slots] ✓ BLOCKED: Slot ${displayFromMinutes(slotMinutes)} on ${slotDayKey} overlaps with one-time block "${block.name}"`);
               }
               return true;
@@ -759,7 +759,7 @@ export async function GET(req: Request) {
           }
         }
       }
-      if (isMonday1PM) {
+      if (isDebugTarget) {
         console.log(`[free-slots] ✗ NOT BLOCKED: Slot ${displayFromMinutes(slotMinutes)} on ${currentDayName} (${slotDayKey}) is available`);
       }
       return false;
@@ -790,8 +790,11 @@ export async function GET(req: Request) {
       // Check for overtime slots for this date (these bypass ALL restrictions)
       const overtimeMins = getOvertimeSlotsForDate(dateKey);
 
-      // Filter overtime slots only by existing bookings (can't double-book)
-      const validOvertimeMins = overtimeMins.filter((mins) => !isSlotBooked(day, mins, serviceDurationMinutes));
+      // Filter overtime slots only by existing bookings (can't double-book) and blocks
+      const validOvertimeMins = overtimeMins.filter((mins) =>
+        !isSlotBooked(day, mins, serviceDurationMinutes) &&
+        !isSlotBlocked(day, mins, serviceDurationMinutes)
+      );
 
       // Normal slot logic
       let validMins: number[] = [];

@@ -9,23 +9,23 @@ import { DateTimeStep } from "./booking/DateTimeStep";
 import { InformationStep } from "./booking/InformationStep";
 import { SuccessStep } from "./booking/SuccessStep";
 import { Scissors, UserCheck, CalendarDays, Info, CheckCircle } from "lucide-react";
-import { 
-  BookingStep, 
-  Department, 
-  Service, 
-  Staff, 
-  DateInfo, 
-  TimeSlot, 
-  ContactForm, 
+import {
+  BookingStep,
+  Department,
+  Service,
+  Staff,
+  DateInfo,
+  TimeSlot,
+  ContactForm,
   ValidationErrors,
-  WorkingSlots 
+  WorkingSlots
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export interface BookingWidgetProps {
   className?: string;
   style?: CSSProperties;
-  
+
   // API Configuration
   /** API endpoint for services */
   servicesApiPath?: string;
@@ -37,7 +37,7 @@ export interface BookingWidgetProps {
   customerApiPath?: string;
   /** API endpoint for appointments */
   appointmentApiPath?: string;
-  
+
   // Color Scheme
   /** Primary color (buttons, active states) */
   primaryColor?: string;
@@ -55,7 +55,7 @@ export interface BookingWidgetProps {
   borderColor?: string;
   /** Hover color */
   hoverColor?: string;
-  
+
   // Typography
   /** Heading font size */
   headingSize?: string;
@@ -65,7 +65,7 @@ export interface BookingWidgetProps {
   bodyTextSize?: string;
   /** Small text font size */
   smallTextSize?: string;
-  
+
   // Step Labels
   /** Step 1 label */
   step1Label?: string;
@@ -77,7 +77,7 @@ export interface BookingWidgetProps {
   step4Label?: string;
   /** Step 5 label */
   step5Label?: string;
-  
+
   // Button Text
   /** Continue button text */
   continueButtonText?: string;
@@ -87,7 +87,7 @@ export interface BookingWidgetProps {
   submitButtonText?: string;
   /** Book Now button text */
   bookNowButtonText?: string;
-  
+
   // Loading & Empty States
   /** Loading text */
   loadingText?: string;
@@ -95,7 +95,7 @@ export interface BookingWidgetProps {
   noResultsText?: string;
   /** Show loading spinner */
   showLoadingSpinner?: boolean;
-  
+
   // Spacing & Layout
   /** Container max width */
   maxWidth?: string;
@@ -107,7 +107,7 @@ export interface BookingWidgetProps {
   buttonBorderRadius?: string;
   /** Card gap/spacing */
   cardGap?: string;
-  
+
   // Stepper Configuration
   /** Show stepper on desktop */
   showStepper?: boolean;
@@ -277,7 +277,7 @@ export default function BookingWidget({
   }
 
   const [currentStep, setCurrentStep] = useState<BookingStep>(bookingContext?.initialStep || "service");
-  
+
   // Service selection state
   const [departments, setDepartments] = useState<Department[]>([]);
   // If you don't want to load groups at all, use a sentinel department 'all'
@@ -299,7 +299,7 @@ export default function BookingWidget({
   const [loadingServices, setLoadingServices] = useState(false);
   // Category tab state - persists across step navigation
   const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>("all");
-  
+
   // Staff selection state
   const [staff, setStaff] = useState<Staff[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<string>("");
@@ -309,7 +309,7 @@ export default function BookingWidget({
   // Normalize a phone number to only digits; server will convert to E.164
   const digitsOnly = (raw: string): string => (raw || '').replace(/\D/g, '');
   const [showGuestInput, setShowGuestInput] = useState(false);
-  
+
   // Effective overrides (duration/price) for current service+staff
   const [effectiveDuration, setEffectiveDuration] = useState<number | null>(null);
   const [effectivePrice, setEffectivePrice] = useState<number | null>(null);
@@ -362,7 +362,7 @@ export default function BookingWidget({
         setContactForm((prev) => ({ ...prev, firstName: fn || prev.firstName, lastName: ln || prev.lastName, phone: ph || prev.phone }));
       }
       if (bookingContext?.isReschedule) setShowContactForm(false);
-    } catch {}
+    } catch { }
   }, [bookingContext?.preSelectedFirstName, bookingContext?.preSelectedLastName, bookingContext?.preSelectedPhone, bookingContext?.isReschedule]);
   // Fallback display name when staff object is not fully populated
   const [resolvedStaffName, setResolvedStaffName] = useState<string>("");
@@ -381,11 +381,11 @@ export default function BookingWidget({
   // Reset all booking state when the drawer unmounts (closed) or page refresh
   useEffect(() => {
     return () => {
-      try { bookingContext?.clearPreSelection(); } catch {}
+      try { bookingContext?.clearPreSelection(); } catch { }
       resetBooking();
     };
   }, []);
-  
+
   // Handle pre-selected service from context (drawer)
   useEffect(() => {
     if (bookingContext?.preSelectedServiceId) {
@@ -442,7 +442,7 @@ export default function BookingWidget({
           setCurrentStep('staff');
         }
       }
-    } catch {}
+    } catch { }
   }, []);
 
   // Load services when department is selected OR when staff is pre-selected
@@ -450,53 +450,53 @@ export default function BookingWidget({
     const loadServices = async () => {
       setLoadingServices(true);
       // Never clear selectedService automatically; preserve deep-linked or user selection
-      
+
       try {
         const start = Date.now();
         let serviceItems: Service[] = [];
-        
+
         // If pre-selected staff workflow, use same logic as StaffShowcase
         if (bookingContext?.preSelectedStaffId) {
           console.log('[BookingWidget] Loading services for pre-selected staff:', bookingContext.preSelectedStaffId);
           // Fetch barber data from data_barbers API to get Services/List
           const barbersResp = await fetch('/api/data_barbers', { cache: 'no-store' });
           const barberRows: any[] = barbersResp?.ok ? await barbersResp.json() : [];
-          
+
           const effectiveId = String(bookingContext.preSelectedStaffId || "");
           const barberMatch = (barberRows || []).find((r: any) => {
             const candidates = [r?.["GHL_id"], r?.["User/ID"], r?.id, r?.["🔒 Row ID"], r?.["Row ID"], r?.row_id]
               .map((v: any) => (v != null ? String(v) : ""));
             return candidates.includes(effectiveId);
           });
-          
+
           if (barberMatch) {
             // Get Services/List (comma-separated Row IDs)
             const serviceIds = String(barberMatch?.["Services/List"] || "")
               .split(",")
               .map((s: string) => s.trim())
               .filter(Boolean);
-            
+
             console.log('[BookingWidget] Staff Services/List (Row IDs):', serviceIds);
-            
+
             // Fetch all services and custom data
             const [allServicesResp, customResp] = await Promise.all([
               fetch('/api/data_services', { cache: 'no-store' }),
               fetch('/api/data_services_custom', { cache: 'no-store' }).catch(() => null),
             ]);
-            
+
             const allSvcRows: any[] = allServicesResp?.ok ? await allServicesResp.json() : [];
             const customRows: any[] = customResp && customResp.ok ? await customResp.json() : [];
-            
+
             // Build map of services by Row ID
             const svcMap = new Map<string, any>();
             for (const r of allSvcRows || []) {
               const rowKey = String(r?.["🔒 Row ID"] || r?.["Row ID"] || r?.id || r?.row_id || "");
               if (rowKey) svcMap.set(rowKey, r);
             }
-            
+
             const barberGhlId = bookingContext.preSelectedStaffId;
             const normalize = (s: any) => String(s ?? "").trim().toLowerCase();
-            
+
             // Process each service Row ID from Services/List
             for (const serviceRowId of serviceIds) {
               const base = svcMap.get(String(serviceRowId));
@@ -504,29 +504,29 @@ export default function BookingWidget({
                 console.warn('[BookingWidget] Service not found for Row ID:', serviceRowId);
                 continue;
               }
-              
+
               const ghlCalendarId = String(base?.["ghl_calendar_id"] || "");
               console.log('[BookingWidget] Processing service:', { serviceRowId, ghlCalendarId, serviceName: base?.["Service/Name"] });
-              
+
               // Find custom override using ghl_calendar_id + barber GHL ID
               const custom = (customRows || []).find((c: any) => {
                 const calMatch = String(c?.["ghl_calendar_id"] || "") === ghlCalendarId;
                 const barberMatch = String(c?.["Barber/ID"] || "") === barberGhlId;
                 return calMatch && barberMatch;
               });
-              
+
               const baseDur = Number(base?.["Service/Display.Mins"]) || Number(base?.["Service/Duration"]) || 0;
               const basePrice = Number(base?.["Service/Default Price"]) || 0;
-              
+
               const duration = custom && Number.isFinite(Number(custom?.["Barber/Duration"]))
                 ? Number(custom?.["Barber/Duration"])
                 : baseDur;
               const price = custom && Number.isFinite(Number(custom?.["Barber/Price"]))
                 ? Number(custom?.["Barber/Price"])
                 : basePrice;
-              
+
               console.log('[BookingWidget] Service pricing:', { serviceRowId, duration, price, isCustom: !!custom });
-              
+
               const baseDisplayRaw = (base?.["Service/Display Name"] ?? "").toString();
               const baseNameRaw = (base?.["Service/Name"] ?? "").toString();
               const baseDisplay = baseDisplayRaw.replace(/^\s+|\s+$/g, "");
@@ -534,7 +534,7 @@ export default function BookingWidget({
               const displayInvalid = !baseDisplay || baseDisplay === "\\" || baseDisplay === "\\\\" || baseDisplay.length <= 1;
               const displayName = !displayInvalid ? baseDisplay : (baseName || "Service");
               const displayPrice = price > 0 ? `From $${price.toFixed(2)}` : `From $${basePrice.toFixed(2)}`;
-              
+
               serviceItems.push({
                 id: String(serviceRowId),
                 name: displayName,
@@ -545,7 +545,7 @@ export default function BookingWidget({
                 category: base?.["Service/Category List"] || base?.["Service/Category"] || undefined,
               });
             }
-            
+
             console.log('[BookingWidget] Loaded services for staff:', serviceItems.length);
           }
         } else {
@@ -559,47 +559,47 @@ export default function BookingWidget({
           if (typeof window !== 'undefined') {
             console.log('[Booking] loadServices:', { url, cameFromUrlParam, selectedService, dataSample: Array.isArray(data) ? data.length : Object.keys(data || {}).slice(0, 3) });
           }
-          
-        if (Array.isArray(data)) {
-          // Supabase services format
-          setUsingSupabaseServices(true);
-          serviceItems = data.map((s: any) => {
-            const minutes = Number(s.duration ?? s.durationMinutes ?? 0) || 0;
-            return {
-              id: String(s.id),
-              name: s.displayName || s.name || 'Service',
-              description: s.description || '',
-              durationMinutes: minutes,
-              imageUrl: s.photo || s.image || s.imageUrl || s["Service/Photo"],
-              displayPrice: s.displayPrice || s["Service/Display Price"] || s.priceDisplay || undefined,
-              category: s.category || s.categoryList || undefined,
-            };
-          });
-        } else {
-          // HighLevel services/calendars format
-          setUsingSupabaseServices(false);
-          const rawServices = (Array.isArray(data.services) && data.services.length > 0)
-            ? data.services
-            : (data.calendars || []);
 
-          serviceItems = rawServices.map((service: any) => {
-            const raw = Number(service.slotDuration ?? service.duration ?? 0);
-            const unit = String(service.slotDurationUnit ?? service.durationUnit ?? '').toLowerCase();
-            const minutes = raw > 0 ? (unit === 'hours' || unit === 'hour' ? raw * 60 : raw) : 0;
-            
-            return {
-              id: service.id,
-              name: service.name,
-              description: service.description,
-              durationMinutes: minutes,
-              imageUrl: service.image || service.photo || service.imageUrl,
-              displayPrice: service.displayPrice || service.priceDisplay,
-              teamMembers: service.teamMembers || []
-            };
-          });
-        }
+          if (Array.isArray(data)) {
+            // Supabase services format
+            setUsingSupabaseServices(true);
+            serviceItems = data.map((s: any) => {
+              const minutes = Number(s.duration ?? s.durationMinutes ?? 0) || 0;
+              return {
+                id: String(s.id),
+                name: s.displayName || s.name || 'Service',
+                description: s.description || '',
+                durationMinutes: minutes,
+                imageUrl: s.photo || s.image || s.imageUrl || s["Service/Photo"],
+                displayPrice: s.displayPrice || s["Service/Display Price"] || s.priceDisplay || undefined,
+                category: s.category || s.categoryList || undefined,
+              };
+            });
+          } else {
+            // HighLevel services/calendars format
+            setUsingSupabaseServices(false);
+            const rawServices = (Array.isArray(data.services) && data.services.length > 0)
+              ? data.services
+              : (data.calendars || []);
+
+            serviceItems = rawServices.map((service: any) => {
+              const raw = Number(service.slotDuration ?? service.duration ?? 0);
+              const unit = String(service.slotDurationUnit ?? service.durationUnit ?? '').toLowerCase();
+              const minutes = raw > 0 ? (unit === 'hours' || unit === 'hour' ? raw * 60 : raw) : 0;
+
+              return {
+                id: service.id,
+                name: service.name,
+                description: service.description,
+                durationMinutes: minutes,
+                imageUrl: service.image || service.photo || service.imageUrl,
+                displayPrice: service.displayPrice || service.priceDisplay,
+                teamMembers: service.teamMembers || []
+              };
+            });
+          }
         } // End of normal flow else block
-        
+
         // Merge with any previously injected service (from deep-link bootstrap)
         setServices((prev) => {
           const byId = new Map<string, Service>();
@@ -612,7 +612,7 @@ export default function BookingWidget({
           }
           return Array.from(byId.values());
         });
-        
+
         // Ensure skeleton shows at least 1s for smoother UX
         const elapsed = Date.now() - start;
         const remaining = 1000 - elapsed;
@@ -665,7 +665,7 @@ export default function BookingWidget({
   // Load staff when service is selected
   useEffect(() => {
     if (!selectedService) return;
-    
+
     const loadStaff = async () => {
       setLoadingStaff(true);
       // Do not clear when arriving with combined preselection for datetime step
@@ -673,7 +673,7 @@ export default function BookingWidget({
         setSelectedStaff("");
       }
       setStaff([]);
-      
+
       try {
         const items: Staff[] = [{
           id: 'any',
@@ -720,7 +720,7 @@ export default function BookingWidget({
             items.push(...filtered);
             appendedFromSupabase = filtered.length > 0;
           }
-        } catch {}
+        } catch { }
 
         if (!appendedFromSupabase) {
           // Fallback to deriving from HighLevel service team members
@@ -774,7 +774,7 @@ export default function BookingWidget({
               const data = await res.json();
               const derivedName = bookingContext?.preSelectedStaffName || data?.name || data?.fullName || data?.displayName || [data?.firstName, data?.lastName].filter(Boolean).join(' ') || 'Selected Barber';
               items.push({ id: preId, name: derivedName, icon: 'user' } as any);
-            } catch {}
+            } catch { }
           }
           // Persist selection if we came for datetime
           if (bookingContext?.initialStep === 'datetime') {
@@ -812,7 +812,7 @@ export default function BookingWidget({
       setSelectedDate(null);
       return;
     }
-    
+
     const loadWorkingSlots = async () => {
       // Clear all slot data immediately when service/staff changes
       setSelectedTimeSlot("");
@@ -829,8 +829,8 @@ export default function BookingWidget({
       const serviceId = selectedService;
       // Match by either UUID id or ghlId, because selection may pass ghlId
       const selectedStaffObj = staff.find((s) => s.id === selectedStaff || s.ghlId === selectedStaff);
-      const userId = selectedStaff && selectedStaff !== 'any' 
-        ? (selectedStaffObj?.ghlId || selectedStaff) 
+      const userId = selectedStaff && selectedStaff !== 'any'
+        ? (selectedStaffObj?.ghlId || selectedStaff)
         : null;
 
       if (typeof window !== 'undefined') {
@@ -841,7 +841,7 @@ export default function BookingWidget({
         // First, fetch effective duration/price overrides if staff is selected
         let customDuration: number | null = null;
         let customPrice: number | null = null;
-        
+
         if (selectedStaff && selectedStaff !== 'any') {
           try {
             // If provided via context, use them directly
@@ -875,24 +875,24 @@ export default function BookingWidget({
           setEffectiveDuration(null);
           setEffectivePrice(null);
         }
-        
+
         // Now fetch slots with the correct duration
         const service = services.find((s) => s.id === serviceId);
         const serviceDurationMinutes = customDuration || service?.durationMinutes || 0;
-        
+
         let apiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}`;
         if (userId && selectedStaff !== 'any') {
           apiUrl += `&userId=${userId}`;
         }
-        
+
         if (serviceDurationMinutes) {
           apiUrl += `&serviceDuration=${serviceDurationMinutes}`;
         }
-        
+
         // Add cache-busting timestamp to ensure real-time data
         const timestamp = Date.now();
         apiUrl += `&_t=${timestamp}`;
-        
+
         console.log('[BookingWidget] Fetching slots endpoint (no cache):', apiUrl);
         console.log('[BookingWidget] Request params:', {
           calendarId: serviceId,
@@ -903,7 +903,7 @@ export default function BookingWidget({
           selectedStaffGhlId: selectedStaffObj?.ghlId || 'not available',
           staffName: (bookingContext?.preSelectedStaffName || selectedStaffObj?.name || getDisplayStaffName() || 'not found')
         });
-        
+
         const response = await fetch(apiUrl, { cache: 'no-store' });
         const data = await response.json();
 
@@ -921,13 +921,13 @@ export default function BookingWidget({
           setWorkingSlots(data.slots);
           setWorkingSlotsLoaded(true);
           generateAvailableDates(data.slots);
-          
+
           // Check if we got any slots in the first 30 days
           const hasInitialSlots = Object.keys(data.slots).some(dateString => {
             const slotsForDate = data.slots[dateString];
             return Array.isArray(slotsForDate) && slotsForDate.length > 0;
           });
-          
+
           // If no slots in first 30 days, show first available slot immediately (fast endpoint)
           if (!hasInitialSlots) {
             const getFirstAvailableSlot = async () => {
@@ -941,19 +941,19 @@ export default function BookingWidget({
                 }
                 // Add cache-busting timestamp
                 firstSlotUrl += `&_t=${Date.now()}`;
-                
+
                 const response = await fetch(firstSlotUrl, { cache: 'no-store' });
                 const firstSlotData = await response.json();
-                
+
                 if (firstSlotData.available) {
                   console.log('[BookingWidget] First available slot:', firstSlotData);
-                  
+
                   // Create a minimal date object for the first available date
                   const [year, month, day] = firstSlotData.date.split('-').map(Number);
                   const date = new Date(year, month - 1, day);
                   const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
                   const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                  
+
                   const firstDate = {
                     dateString: firstSlotData.date,
                     dayName,
@@ -961,11 +961,11 @@ export default function BookingWidget({
                     label: 'FIRST AVAILABLE',
                     date
                   };
-                  
+
                   // Show this as an available date immediately
                   setAvailableDates([firstDate]);
                   setSelectedDate(firstDate);
-                  
+
                   // Show loading indicator for time slots
                   setTimeSlots([{ time: 'Loading...', isPast: false }]);
                 }
@@ -973,11 +973,11 @@ export default function BookingWidget({
                 console.error('[BookingWidget] Error getting first available slot:', error);
               }
             };
-            
+
             // Fire this immediately for fast UX when no slots in next 30 days
             getFirstAvailableSlot();
           }
-          
+
           // Auto-select first available date and show slots (only if we have initial slots)
           if (hasInitialSlots) {
             setTimeout(() => {
@@ -1000,7 +1000,7 @@ export default function BookingWidget({
               }
             }, 200);
           }
-          
+
           // Background prefetch for 120 days (for calendar picker)
           // This runs in the background without blocking the UI
           setTimeout(async () => {
@@ -1015,22 +1015,25 @@ export default function BookingWidget({
               }
               // Add cache-busting timestamp
               extendedApiUrl += `&_t=${Date.now()}`;
-              
+
               const extendedResponse = await fetch(extendedApiUrl, { cache: 'no-store' });
               const extendedData = await extendedResponse.json();
-              
+
               if (extendedData.slots && extendedData.calendarId) {
                 setExtendedSlots(extendedData.slots);
                 generateExtendedAvailableDates(extendedData.slots);
                 setExtendedSlotsLoaded(true);
                 console.log('[BookingWidget] Background prefetch complete - 120 days loaded');
-                
+                // Debug: Log February 2026 dates specifically
+                const febDates = Object.keys(extendedData.slots).filter(d => d.startsWith('2026-02')).sort();
+                console.log('[BookingWidget] February 2026 dates with slots:', febDates);
+
                 // If we had no initial slots but got extended slots, use those as working slots
                 if (!hasInitialSlots) {
                   console.log('[BookingWidget] No slots in next 30 days, using extended slots as primary');
                   setWorkingSlots(extendedData.slots);
                   generateAvailableDates(extendedData.slots);
-                  
+
                   // Auto-select first available date from extended slots
                   setTimeout(() => {
                     const extendedDates = Object.keys(extendedData.slots)
@@ -1040,14 +1043,14 @@ export default function BookingWidget({
                       })
                       .sort()
                       .slice(0, 7);
-                    
+
                     if (extendedDates.length > 0) {
                       const firstDateString = extendedDates[0];
                       const [year, month, day] = firstDateString.split('-').map(Number);
                       const date = new Date(year, month - 1, day);
                       const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
                       const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                      
+
                       const firstDate = {
                         dateString: firstDateString,
                         dayName,
@@ -1055,7 +1058,7 @@ export default function BookingWidget({
                         label: 'AVAILABLE',
                         date
                       };
-                      
+
                       setSelectedDate(firstDate);
                       const slotsForSelectedDate = extendedData.slots[firstDateString];
                       if (slotsForSelectedDate) {
@@ -1109,7 +1112,7 @@ export default function BookingWidget({
         const rows: any[] = await resp.json();
         const match = (rows || []).find((r: any) => String(r?.['GHL_id'] || '') === String(ghlId));
         if (match && match['Barber/Name']) setResolvedStaffName(String(match['Barber/Name']));
-      } catch {}
+      } catch { }
     };
     maybeResolve();
   }, [selectedStaff, staff, bookingContext?.preSelectedStaffId, bookingContext?.preSelectedStaffName]);
@@ -1142,7 +1145,7 @@ export default function BookingWidget({
 
   const generateAvailableDates = (slots: WorkingSlots) => {
     const dates: DateInfo[] = [];
-    
+
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
@@ -1150,7 +1153,7 @@ export default function BookingWidget({
     // If a min date is preselected (e.g., reschedule next-day after original), honor it
     const minDateFromContext = (bookingContext?.preSelectedMinDateIso || '').trim();
     const minDateString = minDateFromContext && minDateFromContext > tomorrowDateString ? minDateFromContext : tomorrowDateString;
-    
+
     if (Object.keys(slots).length > 0) {
       const workingDates = Object.keys(slots)
         .filter(dateString => {
@@ -1161,14 +1164,14 @@ export default function BookingWidget({
         })
         .sort()
         .slice(0, 7); // Take only the first 7 dates that have available slots
-      
+
       workingDates.forEach((dateString, index) => {
         const [year, month, day] = dateString.split('-').map(Number);
         const date = new Date(year, month - 1, day);
-        
+
         const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
         const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        
+
         let label = '';
         if (dateString === tomorrowDateString) {
           label = 'TOMORROW';
@@ -1177,7 +1180,7 @@ export default function BookingWidget({
         } else {
           label = 'NEXT WEEK';
         }
-        
+
         dates.push({
           dateString,
           dayName,
@@ -1187,13 +1190,13 @@ export default function BookingWidget({
         });
       });
     }
-    
+
     setAvailableDates(dates);
   };
 
   const generateExtendedAvailableDates = (slots: WorkingSlots) => {
     const dates: DateInfo[] = [];
-    
+
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
@@ -1201,19 +1204,19 @@ export default function BookingWidget({
     // If a min date is preselected (e.g., reschedule next-day after original), honor it
     const minDateFromContext = (bookingContext?.preSelectedMinDateIso || '').trim();
     const minDateString = minDateFromContext && minDateFromContext > tomorrowDateString ? minDateFromContext : tomorrowDateString;
-    
+
     if (Object.keys(slots).length > 0) {
       const workingDates = Object.keys(slots)
         .filter(dateString => dateString >= minDateString)
         .sort();
-      
+
       workingDates.forEach((dateString) => {
         const [year, month, day] = dateString.split('-').map(Number);
         const date = new Date(year, month - 1, day);
-        
+
         const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
         const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        
+
         // For extended dates, use simpler labels
         let label = '';
         if (dateString === tomorrowDateString) {
@@ -1223,7 +1226,7 @@ export default function BookingWidget({
         } else {
           label = 'NEXT WEEK';
         }
-        
+
         dates.push({
           dateString,
           dayName,
@@ -1233,8 +1236,13 @@ export default function BookingWidget({
         });
       });
     }
-    
+
     setExtendedAvailableDates(dates);
+    // Debug: Log February 2026 dates in generated list
+    const feb2026Dates = dates.filter(d => d.dateString.startsWith('2026-02')).map(d => d.dateString);
+    if (feb2026Dates.length > 0) {
+      console.log('[BookingWidget] Generated extended available dates for Feb 2026:', feb2026Dates);
+    }
   };
 
   const isThisWeek = (dateString: string): boolean => {
@@ -1254,27 +1262,27 @@ export default function BookingWidget({
     console.log('Fetching slots for specific date:', dateString);
     console.log('Working slots available:', workingSlots);
     console.log('Extended slots available:', extendedSlots);
-    
+
     setSelectedTimeSlot("");
     setLoadingSlots(true);
 
     // Check working slots first (7 days), then extended slots (120 days)
     const slotsForSelectedDate = workingSlots[dateString] || extendedSlots[dateString];
-    
+
     if (slotsForSelectedDate) {
       console.log('Raw slots for date:', dateString, slotsForSelectedDate);
-      
+
       const slotsWithStatus = slotsForSelectedDate.map((slot: string) => ({
         time: slot,
         isPast: isSlotInPastMST(slot, dateString)
       }));
-      
+
       // Filter out past slots and only show future/current slots
       const availableSlots = slotsWithStatus.filter((slot: { time: string; isPast: boolean }) => !slot.isPast);
-      
+
       setTimeSlots(availableSlots);
       console.log('Filtered available slots for date:', dateString, availableSlots);
-      
+
       // If date is from extended range, merge it into workingSlots for future use
       if (extendedSlots[dateString] && !workingSlots[dateString]) {
         setWorkingSlots(prev => ({
@@ -1287,33 +1295,33 @@ export default function BookingWidget({
       setTimeSlots([]);
       console.log('No slots available for date:', dateString);
     }
-    
+
     setLoadingSlots(false);
   };
 
   const isSlotInPastMST = (slotTime: string, dateString: string): boolean => {
     if (!dateString || !slotTime) return false;
-    
+
     // Get current time in local timezone
     const now = new Date();
-    
+
     // Parse the date string (YYYY-MM-DD format) from API
     const [year, month, day] = dateString.split('-').map(Number);
     const slotDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
-    
+
     // Parse slot time (e.g., "2:30 PM" or "02:30 PM")
     const timeMatch = slotTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
     if (!timeMatch) return false;
-    
+
     let hour = parseInt(timeMatch[1]);
     const minute = parseInt(timeMatch[2]);
     const period = timeMatch[3].toUpperCase();
-    
+
     if (period === 'PM' && hour !== 12) hour += 12;
     if (period === 'AM' && hour === 12) hour = 0;
-    
+
     slotDate.setHours(hour, minute, 0, 0);
-    
+
     // Compare with current time (both in local timezone)
     return slotDate < now;
   };
@@ -1322,15 +1330,15 @@ export default function BookingWidget({
   const handleCalendarOpen = async () => {
     // If already loaded or loading, skip
     if (extendedSlotsLoaded || loadingSlots) return;
-    
+
     const serviceId = selectedService || bookingContext?.preSelectedServiceId || '';
-    const userId = selectedStaff && selectedStaff !== 'any' 
+    const userId = selectedStaff && selectedStaff !== 'any'
       ? (bookingContext?.preSelectedStaffId ? selectedStaff : (staff.find(s => s.id === selectedStaff)?.ghlId || selectedStaff))
       : '';
     const serviceDurationMinutes = getServiceDuration(selectedService);
-    
+
     if (!serviceId) return;
-    
+
     try {
       console.log('[BookingWidget] Calendar opened - loading extended slots (120 days, no cache)...');
       let extendedApiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}&days=120`;
@@ -1342,10 +1350,10 @@ export default function BookingWidget({
       }
       // Add cache-busting timestamp
       extendedApiUrl += `&_t=${Date.now()}`;
-      
+
       const extendedResponse = await fetch(extendedApiUrl, { cache: 'no-store' });
       const extendedData = await extendedResponse.json();
-      
+
       if (extendedData.slots && extendedData.calendarId) {
         setExtendedSlots(extendedData.slots);
         generateExtendedAvailableDates(extendedData.slots);
@@ -1372,11 +1380,11 @@ export default function BookingWidget({
 
   const formatPhoneNumber = (value: string): string => {
     let cleanValue = value.replace(/\D/g, '');
-    
+
     if (cleanValue.length > 10) {
       cleanValue = cleanValue.slice(0, 10);
     }
-    
+
     if (cleanValue.length >= 6) {
       cleanValue = `(${cleanValue.slice(0, 3)}) ${cleanValue.slice(3, 6)}-${cleanValue.slice(6)}`;
     } else if (cleanValue.length >= 3) {
@@ -1384,7 +1392,7 @@ export default function BookingWidget({
     } else if (cleanValue.length > 0) {
       cleanValue = `(${cleanValue}`;
     }
-    
+
     return cleanValue;
   };
 
@@ -1411,10 +1419,10 @@ export default function BookingWidget({
     return Object.values(errors).every(error => !error);
   };
 
-  const isFormValid = Boolean(contactForm.firstName.trim() && 
-                     contactForm.lastName.trim() && 
-                     contactForm.phone.trim() && 
-                     isValidCAPhone(contactForm.phone));
+  const isFormValid = Boolean(contactForm.firstName.trim() &&
+    contactForm.lastName.trim() &&
+    contactForm.phone.trim() &&
+    isValidCAPhone(contactForm.phone));
 
   const handleServiceSubmit = () => {
     if (selectedService) {
@@ -1472,20 +1480,20 @@ export default function BookingWidget({
   // Function to refresh slots when booking fails (e.g., 409 conflict)
   const refreshSlots = async () => {
     if (!selectedService || !selectedStaff) return;
-    
+
     setSelectedTimeSlot("");
     setLoadingSlots(true);
-    
+
     try {
       const serviceId = selectedService;
       const selectedStaffObj = staff.find((s) => s.id === selectedStaff || s.ghlId === selectedStaff);
-      const userId = selectedStaff && selectedStaff !== 'any' 
-        ? (selectedStaffObj?.ghlId || selectedStaff) 
+      const userId = selectedStaff && selectedStaff !== 'any'
+        ? (selectedStaffObj?.ghlId || selectedStaff)
         : null;
-      
+
       const service = services.find((s) => s.id === serviceId);
       const serviceDurationMinutes = effectiveDuration || service?.durationMinutes || 0;
-      
+
       let apiUrl = `${effectiveStaffSlotsApiPath}?calendarId=${serviceId}`;
       if (userId && selectedStaff !== 'any') {
         apiUrl += `&userId=${userId}`;
@@ -1495,15 +1503,15 @@ export default function BookingWidget({
       }
       // Add cache-busting timestamp to ensure real-time data
       apiUrl += `&_t=${Date.now()}`;
-      
+
       const response = await fetch(apiUrl, { cache: 'no-store' });
       const data = await response.json();
-      
+
       if (data.slots && data.calendarId) {
         setWorkingSlots(data.slots);
         setWorkingSlotsLoaded(true);
         generateAvailableDates(data.slots);
-        
+
         // If a date was previously selected, refresh slots for that date
         if (selectedDate && selectedDate.dateString) {
           const slotsForDate = data.slots[selectedDate.dateString];
@@ -1537,7 +1545,7 @@ export default function BookingWidget({
           console.warn('[BookingWidget] Failed to refresh slots on datetime step navigation:', err);
         });
       }, 100);
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [currentStep, selectedService, selectedStaff]);
@@ -1710,7 +1718,7 @@ export default function BookingWidget({
         } catch (e) {
           console.warn('[BookingWidget] update-contact failed:', e);
         }
-        
+
         // Refresh slots after successful booking so they're updated if user books again
         // This ensures the newly booked slot is no longer available
         try {
@@ -1720,19 +1728,19 @@ export default function BookingWidget({
           console.warn('[BookingWidget] Failed to refresh slots after booking:', refreshError);
           // Non-critical, continue to success step
         }
-        
+
         setCurrentStep("success");
       } else {
         console.error('Booking error response:', apptData);
-        
+
         // Handle timeslot validation failures (409 Conflict)
         if (apptRes.status === 409) {
           alert('This time slot is no longer available, please try another time slot');
-          
+
           // Refresh available slots automatically
           setSelectedTimeSlot('');
           await refreshSlots(); // Re-fetch slots for current selection
-          
+
           // Stay on the datetime step so user can pick another time
           setCurrentStep('datetime');
         } else {
@@ -1926,15 +1934,15 @@ export default function BookingWidget({
   };
 
   return (
-    <div 
-      className={cn("", className)} 
-      style={{ 
+    <div
+      className={cn("", className)}
+      style={{
         ...style,
         backgroundColor: bgColor,
         color: textColorPrimary,
       }}
     >
-      <div 
+      <div
         className="flex flex-col items-center gap-6 pb-16 px-0 sm:px-0"
         style={{ padding: containerPadding }}
       >
@@ -1943,18 +1951,18 @@ export default function BookingWidget({
             {/* Desktop Stepper */}
             {showStepper && (
               <div className="hidden sm:block stepper-container">
-                <Stepper 
-                  steps={STEPS} 
-                  currentStep={currentStep} 
+                <Stepper
+                  steps={STEPS}
+                  currentStep={currentStep}
                   className="mb-0"
                 />
               </div>
             )}
-            
+
             {/* Mobile Step Indicator */}
             {showMobileStepIndicator && currentStep !== 'datetime' && (
               <div className="sm:hidden fixed top-4 right-4 z-50">
-                <div 
+                <div
                   className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-in-out"
                   style={{ backgroundColor: stepperActiveColor }}
                 >
@@ -1965,7 +1973,7 @@ export default function BookingWidget({
                 </div>
               </div>
             )}
-            
+
             {renderCurrentStep()}
           </div>
         </div>
