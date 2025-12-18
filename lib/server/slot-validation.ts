@@ -267,17 +267,17 @@ export async function getTimeOff(userId: string, barberData?: BarberData | null)
         const s = new Date(startRaw);
         const e = new Date(endRaw);
         if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
-          const cur = new Date(Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate()));
-          const last = new Date(Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), e.getUTCDate()));
+          const cur = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+          const last = new Date(e.getFullYear(), e.getMonth(), e.getDate());
           while (cur <= last) {
-            const y = cur.getUTCFullYear();
-            const m = String(cur.getUTCMonth() + 1).padStart(2, '0');
-            const d = String(cur.getUTCDate()).padStart(2, '0');
+            const y = cur.getFullYear();
+            const m = String(cur.getMonth() + 1).padStart(2, '0');
+            const d = String(cur.getDate()).padStart(2, '0');
             timeOffList.push({ 
               start: new Date(`${y}-${m}-${d}T00:00:00`), 
               end: new Date(`${y}-${m}-${d}T23:59:59`) 
             });
-            cur.setUTCDate(cur.getUTCDate() + 1);
+            cur.setDate(cur.getDate() + 1);
           }
         }
       }
