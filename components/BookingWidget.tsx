@@ -1028,9 +1028,18 @@ export default function BookingWidget({
                 const febDates = Object.keys(extendedData.slots).filter(d => d.startsWith('2026-02')).sort();
                 console.log('[BookingWidget] February 2026 dates with slots:', febDates);
 
-                // If we had no initial slots but got extended slots, use those as working slots
-                if (!hasInitialSlots) {
-                  console.log('[BookingWidget] No slots in next 30 days, using extended slots as primary');
+                // Check if initial 7-day fetch has any usable dates (synchronously check the data, not state)
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+                const tomorrowDateString = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+                const hasUsableInitialDates = Object.keys(data.slots).some(dateString => {
+                  return dateString >= tomorrowDateString && Array.isArray(data.slots[dateString]) && data.slots[dateString].length > 0;
+                });
+
+                // If we had no initial slots OR all initial dates were filtered out (e.g., only today with past slots), use extended slots
+                if (!hasInitialSlots || !hasUsableInitialDates) {
+                  console.log('[BookingWidget] No usable slots in next 7 days, using extended slots as primary');
                   setWorkingSlots(extendedData.slots);
                   generateAvailableDates(extendedData.slots);
 

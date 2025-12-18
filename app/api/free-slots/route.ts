@@ -790,11 +790,9 @@ export async function GET(req: Request) {
       // Check for overtime slots for this date (these bypass ALL restrictions)
       const overtimeMins = getOvertimeSlotsForDate(dateKey);
 
-      // Filter overtime slots only by existing bookings (can't double-book) and blocks
-      const validOvertimeMins = overtimeMins.filter((mins) =>
-        !isSlotBooked(day, mins, serviceDurationMinutes) &&
-        !isSlotBlocked(day, mins, serviceDurationMinutes)
-      );
+      // Filter overtime slots only by existing bookings (can't double-book)
+      // Overtime bypasses all other restrictions (business hours, time blocks, etc.)
+      const validOvertimeMins = overtimeMins.filter((mins) => !isSlotBooked(day, mins, serviceDurationMinutes));
 
       // Normal slot logic
       let validMins: number[] = [];
