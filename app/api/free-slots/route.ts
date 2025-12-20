@@ -315,9 +315,19 @@ export async function GET(req: Request) {
           const startRaw = (row as any)['Event/Start'];
           const endRaw = (row as any)['Event/End'];
           if (startRaw && endRaw) {
-            const s = new Date(startRaw);
-            const e = new Date(endRaw);
-            if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
+            // Parse date strings to extract YYYY-MM-DD components directly
+            // Format is typically "12/24/2025, 12:00:00 AM"
+            const parseLocaleDateString = (dateStr: string): Date | null => {
+              const match = String(dateStr).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+              if (!match) return null;
+              const [, month, day, year] = match;
+              // Create date at noon to avoid any timezone edge cases
+              return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0);
+            };
+            
+            const s = parseLocaleDateString(startRaw);
+            const e = parseLocaleDateString(endRaw);
+            if (s && e) {
               // Convert range to per-day entries
               const cur = new Date(s.getFullYear(), s.getMonth(), s.getDate());
               const last = new Date(e.getFullYear(), e.getMonth(), e.getDate());
