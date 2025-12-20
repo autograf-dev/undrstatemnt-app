@@ -314,11 +314,13 @@ export async function GET(req: Request) {
           // Fallback: Event/Start, Event/End as locale strings
           const startRaw = (row as any)['Event/Start'];
           const endRaw = (row as any)['Event/End'];
+          console.log('[DEBUG] Time-off row:', { startRaw, endRaw, rowId: (row as any)['🔒 Row ID'] });
           if (startRaw && endRaw) {
             // Parse date strings to extract YYYY-MM-DD components directly
             // Format is typically "12/24/2025, 12:00:00 AM"
             const parseLocaleDateString = (dateStr: string): Date | null => {
               const match = String(dateStr).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+              console.log('[DEBUG] Parsing date:', { dateStr, match });
               if (!match) return null;
               const [, month, day, year] = match;
               // Create date at noon to avoid any timezone edge cases
@@ -327,6 +329,7 @@ export async function GET(req: Request) {
             
             const s = parseLocaleDateString(startRaw);
             const e = parseLocaleDateString(endRaw);
+            console.log('[DEBUG] Parsed dates:', { s, e, sYear: s?.getFullYear(), eYear: e?.getFullYear() });
             if (s && e) {
               // Convert range to per-day entries
               const cur = new Date(s.getFullYear(), s.getMonth(), s.getDate());
@@ -345,12 +348,16 @@ export async function GET(req: Request) {
         // ignore time_off failures
       }
     }
+    console.log('[DEBUG] Time-off list:', timeOffList.map(t => ({ start: ymdInTZ(t.start), end: ymdInTZ(t.end) })));
     const isDateInTimeOff = (date: Date) => {
       const dayKey = ymdInTZ(date);
       for (const p of timeOffList) {
         const s = ymdInTZ(p.start); const e = ymdInTZ(p.end);
         // Treat the end date as inclusive so single-day entries are respected
-        if (dayKey >= s && dayKey <= e) return true;
+        if (dayKey >= s && dayKey <= e) {
+          console.log('[DEBUG] Date in time-off:', { dayKey, s, e, blocked: true });
+          return true;
+        }
       }
       return false;
     };
