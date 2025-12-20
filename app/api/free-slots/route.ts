@@ -104,12 +104,13 @@ function buildStaticSlotsMinutes(days: Date[], intervalMinutes = 15) {
 }
 
 export async function GET(req: Request) {
+  console.log('[free-slots v2.1] Request received - Dec 23 timezone fix deployed');
   const url = new URL(req.url);
-  const calendarId = url.searchParams.get('calendarId') || '';
-  const userId = url.searchParams.get('userId') || undefined;
-  const date = url.searchParams.get('date') || undefined;
-  const serviceDurationParam = url.searchParams.get('serviceDuration') || undefined;
-  const daysParam = url.searchParams.get('days') || undefined;
+  const calendarId = url.searchParams.get('calendarId');
+  const userId = url.searchParams.get('userId');
+  const serviceDurationParam = url.searchParams.get('serviceDuration');
+  const days = parseInt(url.searchParams.get('days') || '7', 10);
+  const dateParam = url.searchParams.get('date');
 
   if (!calendarId) {
     return NextResponse.json({ error: 'calendarId is required' }, { status: 400, headers: cors() });
@@ -121,14 +122,14 @@ export async function GET(req: Request) {
     const supabase = getSupabaseServiceClient();
 
     let startDate = tzTodayDate();
-    if (date) {
-      const parts = date.split('-');
+    if (dateParam) {
+      const parts = dateParam.split('-');
       // Create date at noon to avoid timezone boundary issues when comparing
       if (parts.length === 3) startDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 12, 0, 0);
     }
 
     // Support days parameter (default 7, max 120 for performance)
-    const totalDays = daysParam ? Math.min(Math.max(1, parseInt(daysParam)), 120) : 7;
+    const totalDays = Math.min(Math.max(1, days), 120);
     const daysToCheck: Date[] = [];
     for (let i = 0; i < totalDays; i++) {
       const d = new Date(startDate); d.setDate(startDate.getDate() + i); daysToCheck.push(d);
