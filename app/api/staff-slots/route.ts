@@ -265,7 +265,21 @@ export async function GET(req: Request) {
       }
 
       const { data: timeOffData } = await supabase.from('time_off').select('*').eq('ghl_id', userId);
-      timeOffList = (timeOffData || []).map((item: any) => ({ start: new Date(item['Event/Start']), end: new Date(item['Event/End']) }));
+      timeOffList = (timeOffData || [])
+        .map((item: any) => {
+          const startRaw = item['Event/Start'];
+          const endRaw = item['Event/End'];
+          if (!startRaw || !endRaw) return null;
+          const s = new Date(startRaw);
+          const e = new Date(endRaw);
+          if (isNaN(s.getTime()) || isNaN(e.getTime())) return null;
+          // Use local date components to avoid timezone issues (same fix as free-slots)
+          return {
+            start: new Date(s.getFullYear(), s.getMonth(), s.getDate()),
+            end: new Date(e.getFullYear(), e.getMonth(), e.getDate())
+          };
+        })
+        .filter((item): item is { start: Date; end: Date } => item !== null);
 
       const { data: blockData } = await supabase.from('time_block').select('*').eq('ghl_id', userId);
       timeBlockList = (blockData || []).map((item: any) => {
