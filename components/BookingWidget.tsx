@@ -1214,10 +1214,35 @@ export default function BookingWidget({
     const minDateFromContext = (bookingContext?.preSelectedMinDateIso || '').trim();
     const minDateString = minDateFromContext && minDateFromContext > tomorrowDateString ? minDateFromContext : tomorrowDateString;
 
+    console.log('[BookingWidget] EXTENDED DATES FILTERING:', {
+      todayLocal: today.toLocaleDateString(),
+      tomorrowDateString,
+      minDateString,
+      allSlotDates: Object.keys(slots).slice(0, 20),
+      dec23InSlots: Object.keys(slots).includes('2025-12-23')
+    });
+
     if (Object.keys(slots).length > 0) {
       const workingDates = Object.keys(slots)
-        .filter(dateString => dateString >= minDateString)
+        .filter(dateString => {
+          const passes = dateString >= minDateString;
+          if (dateString === '2025-12-23') {
+            console.log('[BookingWidget] DEC 23 FILTER CHECK:', {
+              dateString,
+              minDateString,
+              passes,
+              comparison: `${dateString} >= ${minDateString}`
+            });
+          }
+          return passes;
+        })
         .sort();
+      
+      console.log('[BookingWidget] AFTER FILTERING:', {
+        workingDates: workingDates.slice(0, 20),
+        dec23Included: workingDates.includes('2025-12-23'),
+        totalFiltered: workingDates.length
+      });
 
       workingDates.forEach((dateString) => {
         const [year, month, day] = dateString.split('-').map(Number);
