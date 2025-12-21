@@ -46,11 +46,15 @@ async function createAppointment(params: Record<string, any>) {
     headers: { Authorization: `Bearer ${accessToken}`, Version: '2021-04-15', 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+  
+  const responseText = await resp.text();
+  console.log('[createAppointment] GHL response:', { status: resp.status, body: responseText });
+  
   if (!resp.ok) {
-    const msg = await resp.text();
-    throw new Error(`Booking failed: ${resp.status} ${msg}`);
+    throw new Error(`Booking failed: ${resp.status} ${responseText}`);
   }
-  const data = await resp.json();
+  
+  const data = responseText ? JSON.parse(responseText) : {};
   return data;
 }
 

@@ -213,9 +213,13 @@ export async function getTimeOff(userId: string, barberData?: BarberData | null)
       const items = String(raw).split(',').map((s) => normalizeYmdToken(s.trim())).filter(Boolean) as string[];
       for (const v of items) {
         const y = v.slice(0, 4), m = v.slice(4, 6), d = v.slice(6, 8);
+        const year = parseInt(y);
+        const month = parseInt(m) - 1; // 0-indexed
+        const day = parseInt(d);
+        // Use explicit date components to avoid timezone interpretation issues
         timeOffList.push({ 
-          start: new Date(`${y}-${m}-${d}T00:00:00`), 
-          end: new Date(`${y}-${m}-${d}T23:59:59`) 
+          start: new Date(year, month, day, 0, 0, 0), 
+          end: new Date(year, month, day, 23, 59, 59) 
         });
       }
     }
@@ -252,9 +256,13 @@ export async function getTimeOff(userId: string, barberData?: BarberData | null)
         const ids = String(datesList).split(',').map(s => normalizeYmdToken(s.trim())).filter(Boolean) as string[];
         for (const v of ids) {
           const y = v.slice(0, 4), m = v.slice(4, 6), d = v.slice(6, 8);
+          const year = parseInt(y);
+          const month = parseInt(m) - 1; // 0-indexed
+          const day = parseInt(d);
+          // Use explicit date components to avoid timezone interpretation issues
           timeOffList.push({ 
-            start: new Date(`${y}-${m}-${d}T00:00:00`), 
-            end: new Date(`${y}-${m}-${d}T23:59:59`) 
+            start: new Date(year, month, day, 0, 0, 0), 
+            end: new Date(year, month, day, 23, 59, 59) 
           });
         }
         continue;
