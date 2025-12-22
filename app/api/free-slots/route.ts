@@ -104,7 +104,7 @@ function buildStaticSlotsMinutes(days: Date[], intervalMinutes = 15) {
 }
 
 export async function GET(req: Request) {
-  console.log('[free-slots v2.1] Request received - Dec 23 timezone fix deployed');
+  console.log('[free-slots v2.2] Dec 23 fix - force rebuild Sun Dec 22 12:15 PM');
   const url = new URL(req.url);
   const calendarId = url.searchParams.get('calendarId');
   const userId = url.searchParams.get('userId');
@@ -281,10 +281,10 @@ export async function GET(req: Request) {
           const year = parseInt(y);
           const month = parseInt(m) - 1; // 0-indexed
           const day = parseInt(d);
-          // Use explicit date components to avoid timezone interpretation issues
+          // Use noon to prevent timezone shifts across date boundaries
           timeOffList.push({ 
-            start: new Date(year, month, day, 0, 0, 0), 
-            end: new Date(year, month, day, 23, 59, 59) 
+            start: new Date(year, month, day, 12, 0, 0), 
+            end: new Date(year, month, day, 12, 0, 0) 
           });
         }
       }
@@ -318,10 +318,10 @@ export async function GET(req: Request) {
               const year = parseInt(y);
               const month = parseInt(m) - 1; // 0-indexed
               const day = parseInt(d);
-              // Use explicit date components to avoid timezone interpretation issues
+              // Use noon to prevent timezone shifts across date boundaries
               timeOffList.push({ 
-                start: new Date(year, month, day, 0, 0, 0), 
-                end: new Date(year, month, day, 23, 59, 59) 
+                start: new Date(year, month, day, 12, 0, 0), 
+                end: new Date(year, month, day, 12, 0, 0) 
               });
             }
             continue;

@@ -216,10 +216,10 @@ export async function getTimeOff(userId: string, barberData?: BarberData | null)
         const year = parseInt(y);
         const month = parseInt(m) - 1; // 0-indexed
         const day = parseInt(d);
-        // Use explicit date components to avoid timezone interpretation issues
+        // Use noon to prevent timezone shifts across date boundaries
         timeOffList.push({ 
-          start: new Date(year, month, day, 0, 0, 0), 
-          end: new Date(year, month, day, 23, 59, 59) 
+          start: new Date(year, month, day, 12, 0, 0), 
+          end: new Date(year, month, day, 12, 0, 0) 
         });
       }
     }
@@ -259,10 +259,10 @@ export async function getTimeOff(userId: string, barberData?: BarberData | null)
           const year = parseInt(y);
           const month = parseInt(m) - 1; // 0-indexed
           const day = parseInt(d);
-          // Use explicit date components to avoid timezone interpretation issues
+          // Use noon to prevent timezone shifts across date boundaries
           timeOffList.push({ 
-            start: new Date(year, month, day, 0, 0, 0), 
-            end: new Date(year, month, day, 23, 59, 59) 
+            start: new Date(year, month, day, 12, 0, 0), 
+            end: new Date(year, month, day, 12, 0, 0) 
           });
         }
         continue;
@@ -272,18 +272,24 @@ export async function getTimeOff(userId: string, barberData?: BarberData | null)
       const startRaw = (row as any)['Event/Start'];
       const endRaw = (row as any)['Event/End'];
       if (startRaw && endRaw) {
-        const s = new Date(startRaw);
-        const e = new Date(endRaw);
-        if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
-          const cur = new Date(s.getFullYear(), s.getMonth(), s.getDate());
-          const last = new Date(e.getFullYear(), e.getMonth(), e.getDate());
+        // Parse date strings directly to avoid timezone issues
+        const parseLocaleDateString = (dateStr: string): Date | null => {
+          const match = String(dateStr).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+          if (!match) return null;
+          const [, month, day, year] = match;
+          // Create date at noon to avoid timezone edge cases
+          return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0);
+        };
+        
+        const s = parseLocaleDateString(startRaw);
+        const e = parseLocaleDateString(endRaw);
+        if (s && e) {
+          const cur = new Date(s.getFullYear(), s.getMonth(), s.getDate(), 12, 0, 0);
+          const last = new Date(e.getFullYear(), e.getMonth(), e.getDate(), 12, 0, 0);
           while (cur <= last) {
-            const y = cur.getFullYear();
-            const m = String(cur.getMonth() + 1).padStart(2, '0');
-            const d = String(cur.getDate()).padStart(2, '0');
             timeOffList.push({ 
-              start: new Date(`${y}-${m}-${d}T00:00:00`), 
-              end: new Date(`${y}-${m}-${d}T23:59:59`) 
+              start: new Date(cur.getFullYear(), cur.getMonth(), cur.getDate(), 12, 0, 0), 
+              end: new Date(cur.getFullYear(), cur.getMonth(), cur.getDate(), 12, 0, 0) 
             });
             cur.setDate(cur.getDate() + 1);
           }
