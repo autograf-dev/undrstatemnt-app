@@ -498,12 +498,76 @@ export function isSlotBooked(
 
 // ============== Complete Validation ==============
 
+export interface OvertimePeriod {
+  date: string; // YYYY-MM-DD
+  start: number; // minutes since midnight
+  end: number; // minutes since midnight
+}
+
 export interface ValidationContext {
   businessHours: Record<number, BusinessHours>;
   barberData: BarberData | null;
   timeOff: TimeOffPeriod[];
   timeBlocks: TimeBlock[];
   existingBookings: ExistingBooking[];
+  overtime: OvertimePeriod[];
+}
+
+async function getOvertime(userId: string, barberData: BarberData | null): Promise<OvertimePeriod[]> {
+  const supabase = getSupabaseServiceClient();
+  const overtimeList: OvertimePeriod[] = [];
+  
+  try {
+    const barberRowId = barberData?.barberRowId;
+    const barberGhlId = barberData?.barberGhlId || userId;
+    let overtimeData: any[] = [];
+
+    // Query by ghl_id
+    if (barberGhlId) {
+      const { data } = await supabase.from('time_overtime').select('*').eq('ghl_id', barberGhlId);
+      if (Array.isArray(data)) overtimeData = overtimeData.concat(data as any[]);
+    }
+
+    // Query by Barber/ID (row id)
+    if (barberRowId) {
+      const { data } = await supabase.from('time_overtime').select('*').eq('Barber/ID', barberRowId);
+      if (Array.isArray(data)) {
+        // Avoid duplicates
+        const existingIds = new Set(overtimeData.map((o: any) => o['🔒 Row ID']));
+        for (const row of data as any[]) {
+          if (!existingIds.has(row['🔒 Row ID'])) {
+            overtimeData.push(row);
+          }
+        }
+      }
+    }
+
+    // Parse overtime entries
+    for (const row of overtimeData) {
+      const dateRaw = row['Overtime/Date'];
+      const startVal = parseInt(row['Overtime/Start Value']);
+      const endVal = parseInt(row['Overtime/End Value']);
+      if (!dateRaw || !Number.isFinite(startVal) || !Number.isFinite(endVal)) continue;
+
+      // Normalize date to YYYY-MM-DD format
+      let dateKey: string | null = null;
+      if (typeof dateRaw === 'string') {
+        if (/^\d{4}-\d{2}-\d{2}/.test(dateRaw)) {
+          dateKey = dateRaw.split('T')[0];
+        } else if (/^\d{8}$/.test(dateRaw)) {
+          dateKey = `${dateRaw.slice(0, 4)}-${dateRaw.slice(4, 6)}-${dateRaw.slice(6, 8)}`;
+        }
+      }
+
+      if (dateKey && startVal < endVal) {
+        overtimeList.push({ date: dateKey, start: startVal, end: endVal });
+      }
+    }
+  } catch (err) {
+    console.error('[slot-validation] Error fetching overtime:', err);
+  }
+  
+  return overtimeList;
 }
 
 export async function buildValidationContext(
@@ -516,6 +580,7 @@ export async function buildValidationContext(
   const timeOff = userId ? await getTimeOff(userId, barberData) : [];
   const timeBlocks = userId ? await getTimeBlocks(userId, barberData) : [];
   const existingBookings = await getExistingBookings(startDate, endDate, userId);
+  const overtime = userId ? await getOvertime(userId, barberData) : [];
   
   return {
     businessHours,
@@ -523,6 +588,7 @@ export async function buildValidationContext(
     timeOff,
     timeBlocks,
     existingBookings,
+    overtime,
   };
 }
 
@@ -537,30 +603,44 @@ export function validateSlot(
   context: ValidationContext
 ): ValidationResult {
   const slotMinutes = minutesInTZ(slotStartTime);
+  const dateKey = ymdInTZ(slotStartTime);
   
-  // 1. Check business hours
-  if (!isWithinBusinessHours(slotStartTime, slotMinutes, durationMinutes, context.businessHours)) {
-    return { valid: false, reason: 'This time slot is no longer available, please try another time slot' };
-  }
+  // Check if this is an overtime slot - overtime bypasses business/barber hours
+  const isOvertime = context.overtime.some(ot => {
+    const matches = ot.date === dateKey && slotMinutes >= ot.start && slotMinutes + durationMinutes <= ot.end;
+    if (dateKey === '2025-12-23') {
+      console.log('[validateSlot] Dec 23 overtime check:', { ot, dateKey, slotMinutes, durationMinutes, matches });
+    }
+    return matches;
+  });
   
-  // 2. Check barber hours (if barber selected)
-  if (context.barberData) {
-    if (!isWithinBarberHours(slotStartTime, slotMinutes, durationMinutes, context.barberData)) {
+  console.log('[validateSlot]', { dateKey, slotMinutes, durationMinutes, isOvertime, overtimeCount: context.overtime.length });
+  
+  if (!isOvertime) {
+    // 1. Check business hours (skip for overtime)
+    if (!isWithinBusinessHours(slotStartTime, slotMinutes, durationMinutes, context.businessHours)) {
       return { valid: false, reason: 'This time slot is no longer available, please try another time slot' };
+    }
+    
+    // 2. Check barber hours (skip for overtime)
+    if (context.barberData) {
+      if (!isWithinBarberHours(slotStartTime, slotMinutes, durationMinutes, context.barberData)) {
+        return { valid: false, reason: 'This time slot is no longer available, please try another time slot' };
+      }
     }
   }
   
-  // 3. Check time off
+  // 3. Check time off (applies even to overtime)
   if (isDateInTimeOff(slotStartTime, context.timeOff)) {
     return { valid: false, reason: 'This time slot is no longer available, please try another time slot' };
   }
   
-  // 4. Check time blocks
+  // 4. Check time blocks (applies even to overtime)
   if (isSlotBlocked(slotStartTime, slotMinutes, context.timeBlocks)) {
     return { valid: false, reason: 'This time slot is no longer available, please try another time slot' };
   }
   
-  // 5. Check existing bookings (double-booking prevention)
+  // 5. Check existing bookings (applies even to overtime)
   if (isSlotBooked(slotStartTime, slotMinutes, durationMinutes, context.existingBookings)) {
     return { valid: false, reason: 'This time slot is no longer available, please try another time slot' };
   }
