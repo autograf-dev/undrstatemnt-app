@@ -265,7 +265,12 @@ export default function AppointmentsList({
     return "normal" as const;
   }
 
-  function promptCancel(bookingId: string) {
+  function promptCancel(bookingId: string, disableReason?: string) {
+    if (disableReason) {
+      setToast(disableReason);
+      setTimeout(() => setToast(null), 4000);
+      return;
+    }
     setBookingIdToCancel(bookingId);
     setConfirmOpen(true);
   }
@@ -309,8 +314,15 @@ export default function AppointmentsList({
     }
   }
 
-  async function handleReschedule(b: any) {
+  async function handleReschedule(b: any, disableReason?: string) {
     try {
+      if (disableReason) {
+        setToast(disableReason);
+        setTimeout(() => setToast(null), 4000);
+        return;
+      }
+      console.log('[AppointmentsList] handleReschedule called', { bookingId: b?.id, hasOnRescheduleClick: !!onRescheduleClick });
+      
       if (onRescheduleClick) {
         await onRescheduleClick(b?.id);
         if (contactId) {
@@ -330,47 +342,87 @@ export default function AppointmentsList({
         const price = raw.servicePrice ?? null;
         const serviceName = raw.serviceName || b?.title || null;
         const staffName = raw.staffName || null;
-        // Min selectable date = next day after original start
+        // Min selectable date = tomorrow (can't reschedule to today or past)
         const startIso = raw.startTime || b?.start_time || null;
         let minDateIso: string | null = null;
-        if (startIso) {
-          const d = new Date(startIso);
-          d.setDate(d.getDate() + 1);
-          const y = d.getFullYear();
-          const m = String(d.getMonth() + 1).padStart(2, '0');
-          const day = String(d.getDate()).padStart(2, '0');
-          minDateIso = `${y}-${m}-${day}`;
-        }
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const y = tomorrow.getFullYear();
+        const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const day = String(tomorrow.getDate()).padStart(2, '0');
+        minDateIso = `${y}-${m}-${day}`;
+        
         // Split name
         const nameRaw = String(raw.customerName || '').trim();
         const parts = nameRaw.split(/\s+/);
         const firstName = parts[0] || '';
         const lastName = parts.slice(1).join(' ') || '';
         const phone = String(raw.customerPhone || '').trim();
-        try { console.log('[AppointmentsList] reschedule preselect', { calendarId, staffId, duration, price, serviceName, staffName, firstName, lastName, phone, minDateIso, contactId }); } catch {}
-        if (drawerControl && bookingContext && calendarId && staffId) {
-          bookingContext.setPreSelectedServiceAndStaff(String(calendarId), String(staffId), {
-            duration: duration != null ? Number(duration) : null,
-            price: price != null ? Number(price) : null,
-            serviceName: serviceName || null,
-            staffName: staffName || null,
-            minDateIso,
-            firstName: firstName || null,
-            lastName: lastName || null,
-            phone: phone || null,
-            isReschedule: true,
-            appointmentId: String(b?.id || raw.apptId || '' ) || null,
-            contactId: contactId || null,
-          });
-          drawerControl.openDrawer();
-        } else {
-          setToast('Unable to open reschedule drawer');
+        
+        console.log('[AppointmentsList] reschedule data:', { 
+          calendarId, 
+          staffId, 
+          duration, 
+          price, 
+          serviceName, 
+          staffName, 
+          firstName, 
+          lastName, 
+          phone, 
+          minDateIso, 
+          contactId,
+          appointmentId: b?.id,
+          hasDrawerControl: !!drawerControl,
+          hasBookingContext: !!bookingContext
+        });
+        
+        if (!drawerControl) {
+          console.error('[AppointmentsList] drawerControl is not available. Component may not be wrapped in PageShellWithHeader.');
+          setToast('Reschedule feature not available. Please reload the page.');
+          return;
         }
+        
+        if (!bookingContext) {
+          console.error('[AppointmentsList] bookingContext is not available. Component may not be wrapped in PageShellWithHeader.');
+          setToast('Reschedule feature not available. Please reload the page.');
+          return;
+        }
+        
+        if (!calendarId) {
+          console.error('[AppointmentsList] calendarId is missing from booking data:', { raw, booking: b });
+          setToast('Cannot reschedule: service information missing');
+          return;
+        }
+        
+        if (!staffId) {
+          console.error('[AppointmentsList] staffId is missing from booking data:', { raw, booking: b });
+          setToast('Cannot reschedule: staff information missing');
+          return;
+        }
+        
+        // Set pre-selection in booking context
+        bookingContext.setPreSelectedServiceAndStaff(String(calendarId), String(staffId), {
+          duration: duration != null ? Number(duration) : null,
+          price: price != null ? Number(price) : null,
+          serviceName: serviceName || null,
+          staffName: staffName || null,
+          minDateIso,
+          firstName: firstName || null,
+          lastName: lastName || null,
+          phone: phone || null,
+          isReschedule: true,
+          appointmentId: String(b?.id || raw.apptId || '') || null,
+          contactId: contactId || null,
+        });
+        
+        console.log('[AppointmentsList] opening drawer for reschedule');
+        drawerControl.openDrawer();
       }
     } catch (e: any) {
+      console.error('[AppointmentsList] handleReschedule error:', e);
       setToast(e?.message || "Failed to reschedule");
     } finally {
-      setTimeout(() => setToast(null), 2200);
+      setTimeout(() => setToast(null), 3000);
     }
   }
 
@@ -456,14 +508,14 @@ export default function AppointmentsList({
                   : pri === "warning" ? "bg-amber-50 text-amber-700 border-amber-200"
                   : pri === "closed" ? "bg-gray-100 text-gray-700 border-gray-200"
                   : "bg-emerald-50 text-emerald-700 border-emerald-200";
-                const isSameDay = (() => {
-                  if (!b.startIso) return false;
-                  const d = new Date(b.startIso);
-                  const now = new Date();
-                  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+                const hoursUntilAppt = (() => {
+                  if (!b.startIso) return Infinity;
+                  const ms = new Date(b.startIso).getTime() - Date.now();
+                  return ms / (60 * 60 * 1000); // convert ms to hours
                 })();
-                const disableActions = isCancelled || isSameDay;
-                const disableTitle = isCancelled ? "This booking is already cancelled" : (isSameDay ? "Same-day bookings can't be changed" : "");
+                const tooCloseToAppt = hoursUntilAppt < 2;
+                const disableActions = isCancelled || tooCloseToAppt;
+                const disableTitle = isCancelled ? "This booking has already been cancelled" : (tooCloseToAppt ? "Changes to appointments are unavailable within 2 hours of the start time" : "");
                 return (
                   <div key={b.id} className="rounded-2xl border shadow-sm p-4 sm:p-5"
                     style={{ borderColor, background: cardBgColor }}>
@@ -509,21 +561,17 @@ export default function AppointmentsList({
                     <div className="mt-3 pt-3 border-t flex flex-wrap gap-2 justify-end" style={{ borderColor }}>
                       <button
                         type="button"
-                        className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold border hover:opacity-90"
+                        className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold border"
                         style={{ background: brandColor, color: "#fff", borderColor: brandColor, opacity: disableActions ? 0.6 : 1, cursor: disableActions ? 'not-allowed' : 'pointer' }}
-                        disabled={disableActions}
-                        title={disableTitle}
-                        onClick={() => handleReschedule(b)}
+                        onClick={() => handleReschedule(b, disableActions ? disableTitle : undefined)}
                       >
                         {rescheduleButtonText}
                       </button>
                       <button
                         type="button"
-                        className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold border hover:opacity-90"
+                        className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold border"
                         style={{ background: textPrimary, color: "#fff", borderColor: textPrimary, opacity: disableActions ? 0.6 : 1, cursor: disableActions ? 'not-allowed' : 'pointer' }}
-                        disabled={disableActions}
-                        title={disableTitle}
-                        onClick={() => promptCancel(b.id)}
+                        onClick={() => promptCancel(b.id, disableActions ? disableTitle : undefined)}
                       >
                         {cancelButtonText}
                       </button>

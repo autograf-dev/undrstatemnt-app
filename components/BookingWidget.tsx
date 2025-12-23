@@ -1590,48 +1590,54 @@ export default function BookingWidget({
     setBookingLoading(true);
 
     try {
-      // 1) Upsert/find customer to get contactId
-      const customerUrl = new URL(customerApiPath, window.location.origin);
-      customerUrl.searchParams.set("firstName", contactForm.firstName.trim());
-      customerUrl.searchParams.set("lastName", contactForm.lastName.trim());
-      customerUrl.searchParams.set("phone", contactForm.phone.replace(/\D/g, ""));
-      const customerRes = await fetch(customerUrl.toString());
-      if (!customerRes.ok) {
-        const err = await customerRes.json().catch(() => ({} as any));
-        console.error('Customer lookup/create failed:', err);
-        setBookingLoading(false);
-        return;
-      }
-      const customerData = await customerRes.json();
-      let contactId = (
-        customerData?.contactId ||
-        customerData?.id ||
-        customerData?.data?.id ||
-        customerData?.meta?.contactId ||
-        customerData?.contact?.id
-      );
-      // Fallback: sometimes create returns without id surfaced; re-query once to fetch it
-      if (!contactId) {
-        try {
-          const verifyUrl = new URL(customerApiPath, window.location.origin);
-          verifyUrl.searchParams.set("firstName", contactForm.firstName.trim());
-          verifyUrl.searchParams.set("lastName", contactForm.lastName.trim());
-          verifyUrl.searchParams.set("phone", digitsOnly(contactForm.phone));
-          const verifyRes = await fetch(verifyUrl.toString());
-          if (verifyRes.ok) {
-            const verifyData = await verifyRes.json();
-            contactId = (
-              verifyData?.contactId ||
-              verifyData?.id ||
-              verifyData?.data?.id ||
-              verifyData?.meta?.contactId ||
-              verifyData?.contact?.id
-            );
+      // 1) Upsert/find customer to get contactId (skip for reschedule, use preSelectedContactId)
+      const isRescheduleFlow = Boolean(bookingContext?.isReschedule && bookingContext?.preSelectedAppointmentId);
+      let contactId = isRescheduleFlow ? bookingContext?.preSelectedContactId : null;
+      
+      if (!isRescheduleFlow) {
+        const customerUrl = new URL(customerApiPath, window.location.origin);
+        customerUrl.searchParams.set("firstName", contactForm.firstName.trim());
+        customerUrl.searchParams.set("lastName", contactForm.lastName.trim());
+        customerUrl.searchParams.set("phone", contactForm.phone.replace(/\D/g, ""));
+        const customerRes = await fetch(customerUrl.toString());
+        if (!customerRes.ok) {
+          const err = await customerRes.json().catch(() => ({} as any));
+          console.error('Customer lookup/create failed:', err);
+          setBookingLoading(false);
+          return;
+        }
+        const customerData = await customerRes.json();
+        contactId = (
+          customerData?.contactId ||
+          customerData?.id ||
+          customerData?.data?.id ||
+          customerData?.meta?.contactId ||
+          customerData?.contact?.id
+        );
+        // Fallback: sometimes create returns without id surfaced; re-query once to fetch it
+        if (!contactId) {
+          try {
+            const verifyUrl = new URL(customerApiPath, window.location.origin);
+            verifyUrl.searchParams.set("firstName", contactForm.firstName.trim());
+            verifyUrl.searchParams.set("lastName", contactForm.lastName.trim());
+            verifyUrl.searchParams.set("phone", digitsOnly(contactForm.phone));
+            const verifyRes = await fetch(verifyUrl.toString());
+            if (verifyRes.ok) {
+              const verifyData = await verifyRes.json();
+              contactId = (
+                verifyData?.contactId ||
+                verifyData?.id ||
+                verifyData?.data?.id ||
+                verifyData?.meta?.contactId ||
+                verifyData?.contact?.id
+              );
+            }
+          } catch (e) {
+            console.error('Customer verify fetch failed:', e);
           }
-        } catch (e) {
-          console.error('Customer verify fetch failed:', e);
         }
       }
+      
       if (!contactId) {
         console.error('Customer response missing contactId after retry');
         setBookingLoading(false);

@@ -61,7 +61,7 @@ async function createAppointment(params: Record<string, any>) {
 export async function OPTIONS() { return new NextResponse('', { headers: cors() }); }
 
 export async function GET(req: Request) {
-  console.log('[appointment v2.0] Dec 23 booking fix - slot-validation timezone corrected');
+  console.log('[appointment v2.1] Dec 23 booking fix deployed - Sun Dec 22 1:01 PM');
   const url = new URL(req.url);
   const params: Record<string, any> = {};
 
