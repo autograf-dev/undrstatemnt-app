@@ -80,13 +80,40 @@ export async function refreshAccessToken(): Promise<string | null> {
 }
 
 export async function getValidAccessToken(): Promise<string | null> {
-  const tokens = await getStoredTokens();
-  if (!tokens) return await refreshAccessToken();
-  const fetchedTime = new Date(tokens.created_at).getTime();
-  const expiresInMs = Number(tokens.expires_in) * 1000;
-  const now = Date.now();
-  if (now - fetchedTime > expiresInMs - 60000) {
-    return await refreshAccessToken();
+  // Fallback to static token if OAuth isn't configured
+  const staticToken = process.env.GHL_ACCESS_TOKEN || process.env.LEADCONNECTOR_TOKEN;
+  
+  try {
+    const tokens = await getStoredTokens();
+    if (!tokens) {
+      console.log('[tokens] No tokens in DB, using static token');
+      return staticToken || null;
+    }
+    const fetchedTime = new Date(tokens.created_at).getTime();
+    const expiresInMs = Number(tokens.expires_in) * 1000;
+    const now = Date.now();
+    const isExpired = now - fetchedTime > expiresInMs - 60000;
+    
+    console.log('[tokens] Token check:', { 
+      hasToken: !!tokens.access_token, 
+      isExpired, 
+      hasOAuthCreds: !!(CLIENT_ID && CLIENT_SECRET && TOKEN_ENDPOINT),
+      hasStaticToken: !!staticToken 
+    });
+    
+    if (isExpired) {
+      // Token expired - try to refresh if OAuth is configured, otherwise use static token
+      if (CLIENT_ID && CLIENT_SECRET && TOKEN_ENDPOINT) {
+        console.log('[tokens] Token expired, attempting refresh...');
+        return await refreshAccessToken();
+      }
+      console.log('[tokens] Token expired but no OAuth creds, using static token');
+      return staticToken || null;
+    }
+    return tokens.access_token as string;
+  } catch (err) {
+    console.error('[tokens] Error getting token from DB:', err);
+    console.log('[tokens] Falling back to static token');
+    return staticToken || null;
   }
-  return tokens.access_token as string;
 }
